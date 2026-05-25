@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AssistenteController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -23,16 +24,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-Route::get('/test-data', function () {
-    return response()->json([
-        'message' => 'Test funziona!',
-        'stats' => [
-            'totale_veicoli' => 42,
-            'totale_clienti' => 128,
-        ]
-    ]);
+    
+    // ROTTE ASSISTENTE
+    Route::get('/assistente', [AssistenteController::class, 'index'])->name('assistente');
+    Route::post('/assistente/invia', [AssistenteController::class, 'inviaDomanda'])->name('assistente.invia');
 });
 
 require __DIR__.'/auth.php';

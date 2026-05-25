@@ -22,14 +22,14 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
         return () => window.removeEventListener('resize', checkScreen);
     }, []);
 
-    const navigation = [
-        { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-        { name: 'Assistente', href: '/assistente', icon: Bot },
-        { name: 'Veicoli', href: '/vehicles', icon: Car },
-        { name: 'Clienti', href: '/customers', icon: Users },
-        { name: 'Report', href: '/reports', icon: TrendingUp },
-        { name: 'Impostazioni', href: '/settings', icon: Settings },
-    ];
+   const navigation = [
+    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+    { name: 'Assistente', href: '/assistente', icon: Bot },  // ← Aggiungi questa
+    { name: 'Veicoli', href: '/vehicles', icon: Car },
+    { name: 'Clienti', href: '/customers', icon: Users },
+    { name: 'Report', href: '/reports', icon: TrendingUp },
+    { name: 'Impostazioni', href: '/settings', icon: Settings },
+];
 
     const handleLinkClick = () => {
         if (isMobile) setSidebarOpen(false);
