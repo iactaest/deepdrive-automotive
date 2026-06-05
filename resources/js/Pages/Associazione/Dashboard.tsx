@@ -58,13 +58,16 @@ export default function DashboardAssociazione() {
         }
     };
 
-    const doughnutOptions = {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: { position: 'bottom', labels: { color: '#94a3b8', font: { size: 10 } } }
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+        legend: { 
+            position: 'bottom' as const,  // ✅ tipo specifico
+            labels: { color: '#94a3b8', font: { size: 11 } }
         }
-    };
+    }
+};
 
     const stats = [
         { title: 'Bandi Aperti', value: '38', icon: Heart, change: '+6', color: 'pink' },

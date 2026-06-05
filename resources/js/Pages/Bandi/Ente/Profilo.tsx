@@ -68,7 +68,7 @@ export default function Profilo({ profilo }: any) {
         setForm(prev => ({
             ...prev,
             categorie_preferite: prev.categorie_preferite.includes(categoria)
-                ? prev.categorie_preferite.filter(c => c !== categoria)
+               ? prev.categorie_preferite.filter((c: string) => c !== categoria)
                 : [...prev.categorie_preferite, categoria]
         }));
     };

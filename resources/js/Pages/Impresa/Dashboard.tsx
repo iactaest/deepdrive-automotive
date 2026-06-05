@@ -58,13 +58,16 @@ export default function DashboardImpresa() {
         }
     };
 
-    const doughnutOptions = {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: { position: 'bottom', labels: { color: '#94a3b8' } }
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: {
+        legend: { 
+            position: 'bottom' as const,  // ✅ tipo specifico
+            labels: { color: '#94a3b8', font: { size: 11 } }
         }
-    };
+    }
+};
 
     const stats = [
         { title: 'Bandi Compatibili', value: '47', icon: Target, change: '+12%', color: 'blue' },
