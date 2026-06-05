@@ -33,7 +33,10 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Reindirizza in base al tipo utente
+        $user = Auth::user();
+        
+        return redirect()->route($this->getDashboardRoute($user->tipo_utente));
     }
 
     /**
@@ -48,5 +51,19 @@ class AuthenticatedSessionController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    /**
+     * Get dashboard route based on user type
+     */
+    private function getDashboardRoute(string $tipoUtente): string
+    {
+        return match ($tipoUtente) {
+            'impresa' => 'impresa.dashboard',
+            'ente' => 'ente.dashboard',
+            'associazione' => 'associazione.dashboard',
+            'professionista' => 'professionista.dashboard',
+            default => 'dashboard',
+        };
     }
 }
