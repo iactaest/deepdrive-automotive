@@ -6,6 +6,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfiloImpresaController;
+use App\Http\Controllers\ProfiloEnteController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -68,6 +69,19 @@ Route::middleware('auth')->group(function () {
     Route::get('/ente/profilo', [EnteController::class, 'profilo'])->name('ente.profilo');
     Route::post('/ente/profilo', [EnteController::class, 'storeProfilo'])->name('ente.profilo.store');
     Route::get('/ente/ricerca', [EnteController::class, 'ricerca'])->name('ente.ricerca');
+
+    // Profilo Ente Wizard
+Route::get('/ente/profilo/completa', [ProfiloEnteController::class, 'create'])->name('ente.profilo.create');
+Route::post('/ente/profilo/completa', [ProfiloEnteController::class, 'store'])->name('ente.profilo.store');
+
+// Profilo Ente - Visualizzazione e Modifica
+Route::get('/ente/profilo', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
+Route::get('/ente/profilo/modifica', [ProfiloEnteController::class, 'edit'])->name('ente.profilo.edit');
+Route::post('/ente/profilo', [ProfiloEnteController::class, 'update'])->name('ente.profilo.update');
 });
+
+
+
+
 
 require __DIR__.'/auth.php';

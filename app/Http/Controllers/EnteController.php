@@ -8,14 +8,19 @@ use App\Models\ProfiloEnte;
 
 class EnteController extends Controller
 {
-    public function index()
-    {
-        $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
-        
-        return Inertia::render('Bandi/Ente/Dashboard', [
-            'profilo' => $profilo,
-        ]);
+   public function index()
+{
+    $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+    
+    // Se il profilo non esiste o non è completo, reindirizza al wizard
+    if (!$profilo || !$profilo->profilo_completo) {
+        return redirect()->route('ente.profilo.create');
     }
+    
+    return Inertia::render('Ente/Dashboard', [
+        'profilo' => $profilo,
+    ]);
+}
 
     public function profilo()
     {

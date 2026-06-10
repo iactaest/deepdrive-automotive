@@ -20,20 +20,18 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
         return () => window.removeEventListener('resize', checkScreen);
     }, []);
 
-    const navigation = [
-        { name: 'Dashboard', href: '/dashboard/ente', icon: LayoutDashboard },
-        { name: 'Assistente AI', href: '/assistente', icon: Bot },
-        { name: 'Bandi Finder', href: '/bandi', icon: Search },
-        { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
-        { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
-        { name: 'Performance', href: '/ente/performance', icon: BarChart3 },
-        { name: 'Match Trovati', href: '/bandi/match', icon: TrendingUp },
-        { name: 'Profilo Ente', href: '/ente/profilo', icon: Landmark },
-        { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
-        { name: 'Notifiche', href: '/notifiche', icon: Bell },
-        { name: 'Supporto', href: '/supporto', icon: HelpCircle },
-        { name: 'Impostazioni', href: '/settings', icon: Settings },
-    ];
+   const navigation = [
+    { name: 'Dashboard', href: '/dashboard/ente', icon: LayoutDashboard },
+    { name: 'Assistente AI', href: '/assistente', icon: Bot },
+    { name: 'Bandi Finder', href: '/bandi', icon: Search },
+    { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
+    { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
+    { name: 'Performance', href: '/ente/performance', icon: BarChart3 },
+    { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },  // ← Questa è la voce per il profilo
+    { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
+    { name: 'Notifiche', href: '/notifiche', icon: Bell },
+    { name: 'Impostazioni', href: '/settings', icon: Settings },
+];
 
     const handleLinkClick = () => { if (isMobile) setSidebarOpen(false); };
 
