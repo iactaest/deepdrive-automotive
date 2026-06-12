@@ -54,34 +54,36 @@ Route::middleware('auth')->group(function () {
     Route::post('/assistente/invia', [AssistenteController::class, 'inviaDomanda'])->name('assistente.invia');
     
     // Bandi Finder - Landing e Ricerca Generale
-    Route::get('/bandi', [BandiController::class, 'landing'])->name('bandi.landing');
-    Route::post('/bandi/cerca', [BandiController::class, 'cerca'])->name('bandi.cerca');
-    Route::get('/bandi/{id}', [BandiController::class, 'show'])->name('bandi.show');
-    Route::post('/bandi/{id}/preferisci', [BandiController::class, 'preferisci'])->name('bandi.preferisci');
-    Route::delete('/bandi/{id}/preferiti', [BandiController::class, 'rimuoviPreferito'])->name('bandi.rimuoviPreferito');
+    // Route::get('/bandi', [BandiController::class, 'landing'])->name('bandi.landing');
+    // Route::post('/bandi/cerca', [BandiController::class, 'cerca'])->name('bandi.cerca');
+    // Route::get('/bandi/{id}', [BandiController::class, 'show'])->name('bandi.show');
+    // Route::post('/bandi/{id}/preferisci', [BandiController::class, 'preferisci'])->name('bandi.preferisci');
+    // Route::delete('/bandi/{id}/preferiti', [BandiController::class, 'rimuoviPreferito'])->name('bandi.rimuoviPreferito');
     
     // Profilo Impresa Privata
     Route::get('/profilo-impresa', [ProfiloImpresaController::class, 'index'])->name('profilo.impresa');
     Route::post('/profilo-impresa', [ProfiloImpresaController::class, 'store'])->name('profilo.impresa.store');
     
-    // Ente Pubblico - Dashboard e Profilo
+    // Ente Pubblico
     Route::get('/ente/dashboard', [EnteController::class, 'index'])->name('ente.dashboard');
     Route::get('/ente/profilo', [EnteController::class, 'profilo'])->name('ente.profilo');
     Route::post('/ente/profilo', [EnteController::class, 'storeProfilo'])->name('ente.profilo.store');
-    Route::get('/ente/ricerca', [EnteController::class, 'ricerca'])->name('ente.ricerca');
-
+    
     // Profilo Ente Wizard
-Route::get('/ente/profilo/completa', [ProfiloEnteController::class, 'create'])->name('ente.profilo.create');
-Route::post('/ente/profilo/completa', [ProfiloEnteController::class, 'store'])->name('ente.profilo.store');
+    Route::get('/ente/profilo/completa', [ProfiloEnteController::class, 'create'])->name('ente.profilo.create');
+    Route::post('/ente/profilo/completa', [ProfiloEnteController::class, 'store'])->name('ente.profilo.store');
 
-// Profilo Ente - Visualizzazione e Modifica
-Route::get('/ente/profilo', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
-Route::get('/ente/profilo/modifica', [ProfiloEnteController::class, 'edit'])->name('ente.profilo.edit');
-Route::post('/ente/profilo', [ProfiloEnteController::class, 'update'])->name('ente.profilo.update');
+    // Profilo Ente - Visualizzazione e Modifica
+    Route::get('/ente/profilo', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
+    Route::get('/ente/profilo/modifica', [ProfiloEnteController::class, 'edit'])->name('ente.profilo.edit');
+    Route::post('/ente/profilo', [ProfiloEnteController::class, 'update'])->name('ente.profilo.update');
+    Route::delete('/ente/profilo', [ProfiloEnteController::class, 'destroy'])->name('ente.profilo.destroy');
+
+    // Bandi Finder - Ricerca Ente
+    Route::get('/ente/ricerca', [BandiController::class, 'ricercaEnte'])->name('ente.ricerca');
+    Route::post('/bandi/cerca', [BandiController::class, 'cerca'])->name('bandi.cerca');
 });
 
-
-
-
+Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');
 
 require __DIR__.'/auth.php';

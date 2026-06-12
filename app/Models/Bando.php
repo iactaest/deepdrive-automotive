@@ -9,12 +9,11 @@ class Bando extends Model
 {
     use HasFactory;
 
-    // FORZA IL NOME CORRETTO DELLA TABELLA
     protected $table = 'bandi';
 
     protected $fillable = [
-        'titolo', 'descrizione', 'ente', 'budget', 'scadenza',
-        'categoria', 'target', 'regione', 'stato', 'testo_integrale'
+        'titolo', 'descrizione', 'ente_erogatore', 'scadenza', 'budget_totale',
+        'livello', 'categoria', 'tipologia', 'stato'
     ];
 
     protected $casts = [

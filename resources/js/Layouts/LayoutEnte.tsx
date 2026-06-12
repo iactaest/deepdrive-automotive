@@ -23,7 +23,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
    const navigation = [
     { name: 'Dashboard', href: '/dashboard/ente', icon: LayoutDashboard },
     { name: 'Assistente AI', href: '/assistente', icon: Bot },
-    { name: 'Bandi Finder', href: '/bandi', icon: Search },
+   { name: 'Bandi Finder', href: '/ente/ricerca', icon: Search },
     { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
     { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
     { name: 'Performance', href: '/ente/performance', icon: BarChart3 },

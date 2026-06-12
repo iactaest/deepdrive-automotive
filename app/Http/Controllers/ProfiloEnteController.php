@@ -97,4 +97,16 @@ class ProfiloEnteController extends Controller
 
         return redirect()->route('ente.profilo.show')->with('success', 'Profilo aggiornato con successo!');
     }
+
+    // Cancella il profilo
+public function destroy()
+{
+    $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+    
+    if ($profilo) {
+        $profilo->delete();
+    }
+    
+    return redirect()->route('ente.profilo.create')->with('success', 'Profilo cancellato. Puoi ricrearlo!');
+}
 }
