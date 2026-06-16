@@ -14,17 +14,17 @@ export default function RicercaEnte({ profilo }: any) {
     const [fallback, setFallback] = useState(false);
     const [showAdvancedStats, setShowAdvancedStats] = useState(false);
     const [filters, setFilters] = useState({
-        livello: profilo?.livelli_interesse || [],
-        categoria: profilo?.categorie_interesse || [],
-        stato: ['aperto', 'in_scadenza'],
-        settore: [],
+        livello: (profilo?.livelli_interesse as string[]) || [],
+        categoria: (profilo?.categorie_interesse as string[]) || [],
+        stato: ['aperto', 'in_scadenza'] as string[],
+        settore: [] as string[],
         importoMin: '',
         importoMax: '',
         scadenza: 'tutti'
     });
 
     useEffect(() => {
-        // Animazione per i grafici
+        // Componente montato
     }, []);
 
     // Opzioni filtri
@@ -99,7 +99,7 @@ export default function RicercaEnte({ profilo }: any) {
         }
     };
 
-    // CHART 1: Trend Bandi (Line Chart)
+    // CHART 1: Trend Bandi
     const trendData = {
         labels: ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu', 'Lug', 'Ago', 'Set', 'Ott', 'Nov', 'Dic'],
         datasets: [{
@@ -114,7 +114,7 @@ export default function RicercaEnte({ profilo }: any) {
         }]
     };
 
-    // CHART 2: Tipo Finanziamento (Doughnut)
+    // CHART 2: Tipo Finanziamento
     const finanziamentoData = {
         labels: ['Fondo perduto', 'Contributo capitale', 'Concessione', 'Agevolazione fiscale'],
         datasets: [{
@@ -124,7 +124,7 @@ export default function RicercaEnte({ profilo }: any) {
         }]
     };
 
-    // CHART 3: Bandi per Stato (Bar Chart)
+    // CHART 3: Bandi per Stato
     const statoData = {
         labels: ['Aperti', 'In scadenza', 'Chiusi', 'Scaduti'],
         datasets: [{
@@ -135,7 +135,7 @@ export default function RicercaEnte({ profilo }: any) {
         }]
     };
 
-    // CHART 4: Budget per Categoria (Radar Chart)
+    // CHART 4: Budget per Categoria
     const budgetPerCategoriaData = {
         labels: ['Digitalizzazione', 'Ambiente', 'Formazione', 'Sociale', 'Cultura', 'Infrastrutture', 'Agricoltura'],
         datasets: [{
@@ -148,7 +148,7 @@ export default function RicercaEnte({ profilo }: any) {
         }]
     };
 
-    // CHART 5: Distribuzione Scadenze (Bar Chart)
+    // CHART 5: Distribuzione Scadenze
     const scadenzeData = {
         labels: ['< 30gg', '30-60gg', '60-90gg', '> 90gg'],
         datasets: [{
@@ -159,7 +159,7 @@ export default function RicercaEnte({ profilo }: any) {
         }]
     };
 
-    // CHART 6: Match per Livello (Doughnut)
+    // CHART 6: Match per Livello
     const matchLivelloData = {
         labels: ['Comunale', 'Regionale', 'Nazionale', 'Europeo'],
         datasets: [{
@@ -169,7 +169,6 @@ export default function RicercaEnte({ profilo }: any) {
         }]
     };
 
-    // Opzioni per grafici con centratura
     const chartOptions = {
         responsive: true,
         maintainAspectRatio: true,
@@ -183,7 +182,6 @@ export default function RicercaEnte({ profilo }: any) {
         }
     };
 
-    // Opzioni per grafici a torta (centrati)
     const doughnutOptions = {
         responsive: true,
         maintainAspectRatio: true,
@@ -191,12 +189,23 @@ export default function RicercaEnte({ profilo }: any) {
             legend: { position: 'bottom' as const, labels: { color: '#94a3b8', font: { size: 10 } } },
             tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
         },
-        layout: {
-            padding: 10
-        }
+        layout: { padding: 10 }
     };
 
-    // Opzioni per Radar (centrato)
+    const barOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: { position: 'top' as const, labels: { color: '#94a3b8', font: { size: 11 } } },
+            tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
+        },
+        scales: {
+            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' }, beginAtZero: true },
+            x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
+        },
+        layout: { padding: 10 }
+    };
+
     const radarOptions = {
         responsive: true,
         maintainAspectRatio: true,
@@ -212,26 +221,7 @@ export default function RicercaEnte({ profilo }: any) {
                 beginAtZero: true
             }
         },
-        layout: {
-            padding: 10
-        }
-    };
-
-    // Opzioni per Bar (centrato)
-    const barOptions = {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-            legend: { position: 'top' as const, labels: { color: '#94a3b8', font: { size: 11 } } },
-            tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
-        },
-        scales: {
-            y: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' }, beginAtZero: true },
-            x: { ticks: { color: '#94a3b8' }, grid: { color: '#334155' } }
-        },
-        layout: {
-            padding: 10
-        }
+        layout: { padding: 10 }
     };
 
     const stats = [
@@ -255,35 +245,29 @@ export default function RicercaEnte({ profilo }: any) {
                         <p className="text-slate-400 mt-2">Cerca bandi e finanziamenti con filtri intelligenti</p>
                     </div>
 
-                    {/* CHART ROW 1 - 3 Charts (tutte stessa altezza e centrate) */}
+                    {/* CHART ROW 1 */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                             <h3 className="text-sm font-semibold text-white mb-3 text-center">Trend Bandi nel Tempo</h3>
                             <div className="h-[250px] flex items-center justify-center">
-                                <div className="w-full">
-                                    <Line data={trendData} options={chartOptions} />
-                                </div>
+                                <div className="w-full"><Line data={trendData} options={chartOptions} /></div>
                             </div>
                         </div>
                         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                             <h3 className="text-sm font-semibold text-white mb-3 text-center">Tipo Finanziamento</h3>
                             <div className="h-[250px] flex items-center justify-center">
-                                <div className="w-full max-w-[220px]">
-                                    <Doughnut data={finanziamentoData} options={doughnutOptions} />
-                                </div>
+                                <div className="w-full max-w-[220px]"><Doughnut data={finanziamentoData} options={doughnutOptions} /></div>
                             </div>
                         </div>
                         <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                             <h3 className="text-sm font-semibold text-white mb-3 text-center">Bandi per Stato</h3>
                             <div className="h-[250px] flex items-center justify-center">
-                                <div className="w-full">
-                                    <Bar data={statoData} options={barOptions} />
-                                </div>
+                                <div className="w-full"><Bar data={statoData} options={barOptions} /></div>
                             </div>
                         </div>
                     </div>
 
-                    {/* Filtri di Ricerca */}
+                    {/* Filtri */}
                     <div className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 mb-8">
                         <div className="flex items-center gap-2 mb-4">
                             <Filter className="h-5 w-5 text-blue-400" />
@@ -291,122 +275,85 @@ export default function RicercaEnte({ profilo }: any) {
                         </div>
                         
                         <div className="space-y-6">
-                            {/* Livello */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-2">Livello Geografico</label>
                                 <div className="flex flex-wrap gap-3">
                                     {livelliOpzioni.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
+                                        <button key={opt.value} type="button"
                                             onClick={() => setFilters({...filters, livello: toggleFilter(filters.livello, opt.value)})}
-                                            className={`px-4 py-2 rounded-lg transition-all ${
-                                                filters.livello.includes(opt.value)
-                                                    ? `bg-${opt.color}-500/20 text-${opt.color}-400 border border-${opt.color}-500/50`
-                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                            }`}
-                                        >
+                                            className={`px-4 py-2 rounded-lg transition-all ${filters.livello.includes(opt.value)
+                                                ? `bg-${opt.color}-500/20 text-${opt.color}-400 border border-${opt.color}-500/50`
+                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                                             {opt.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Categoria */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-2">Categorie</label>
                                 <div className="flex flex-wrap gap-2">
                                     {categorieOpzioni.map((cat) => (
-                                        <button
-                                            key={cat.value}
-                                            type="button"
+                                        <button key={cat.value} type="button"
                                             onClick={() => setFilters({...filters, categoria: toggleFilter(filters.categoria, cat.value)})}
-                                            className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                                                filters.categoria.includes(cat.value)
-                                                    ? `bg-${cat.color}-500/20 text-${cat.color}-400 border border-${cat.color}-500/50`
-                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                            }`}
-                                        >
+                                            className={`px-3 py-1.5 rounded-full text-sm transition-all ${filters.categoria.includes(cat.value)
+                                                ? `bg-${cat.color}-500/20 text-${cat.color}-400 border border-${cat.color}-500/50`
+                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                                             {cat.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Stato Bando */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-2">Stato Bando</label>
                                 <div className="flex flex-wrap gap-3">
                                     {statOpzioni.map((opt) => (
-                                        <button
-                                            key={opt.value}
-                                            type="button"
+                                        <button key={opt.value} type="button"
                                             onClick={() => setFilters({...filters, stato: toggleFilter(filters.stato, opt.value)})}
-                                            className={`px-4 py-2 rounded-lg transition-all ${
-                                                filters.stato.includes(opt.value)
-                                                    ? `bg-${opt.color}-500/20 text-${opt.color}-400 border border-${opt.color}-500/50`
-                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                            }`}
-                                        >
+                                            className={`px-4 py-2 rounded-lg transition-all ${filters.stato.includes(opt.value)
+                                                ? `bg-${opt.color}-500/20 text-${opt.color}-400 border border-${opt.color}-500/50`
+                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                                             {opt.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Settore */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-2">Settore Specifico</label>
                                 <div className="flex flex-wrap gap-2">
                                     {settoreOpzioni.map((set) => (
-                                        <button
-                                            key={set.value}
-                                            type="button"
+                                        <button key={set.value} type="button"
                                             onClick={() => setFilters({...filters, settore: toggleFilter(filters.settore, set.value)})}
-                                            className={`px-3 py-1.5 rounded-full text-sm transition-all ${
-                                                filters.settore.includes(set.value)
-                                                    ? 'bg-teal-500/20 text-teal-400 border border-teal-500/50'
-                                                    : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
-                                            }`}
-                                        >
+                                            className={`px-3 py-1.5 rounded-full text-sm transition-all ${filters.settore.includes(set.value)
+                                                ? 'bg-teal-500/20 text-teal-400 border border-teal-500/50'
+                                                : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
                                             {set.label}
                                         </button>
                                     ))}
                                 </div>
                             </div>
 
-                            {/* Importo */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1">Importo Minimo (€)</label>
-                                    <input
-                                        type="number"
-                                        value={filters.importoMin}
+                                    <input type="number" value={filters.importoMin}
                                         onChange={(e) => setFilters({...filters, importoMin: e.target.value})}
-                                        placeholder="0"
-                                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white"
-                                    />
+                                        placeholder="0" className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" />
                                 </div>
                                 <div>
                                     <label className="block text-sm font-medium text-slate-300 mb-1">Importo Massimo (€)</label>
-                                    <input
-                                        type="number"
-                                        value={filters.importoMax}
+                                    <input type="number" value={filters.importoMax}
                                         onChange={(e) => setFilters({...filters, importoMax: e.target.value})}
-                                        placeholder="Nessun limite"
-                                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white"
-                                    />
+                                        placeholder="Nessun limite" className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" />
                                 </div>
                             </div>
 
-                            {/* Scadenza */}
                             <div>
                                 <label className="block text-sm font-medium text-slate-300 mb-1">Scadenza</label>
-                                <select
-                                    value={filters.scadenza}
-                                    onChange={(e) => setFilters({...filters, scadenza: e.target.value})}
-                                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white"
-                                >
+                                <select value={filters.scadenza} onChange={(e) => setFilters({...filters, scadenza: e.target.value})}
+                                    className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white">
                                     <option value="tutti">Tutti</option>
                                     <option value="7">Prossimi 7 giorni</option>
                                     <option value="15">Prossimi 15 giorni</option>
@@ -415,17 +362,9 @@ export default function RicercaEnte({ profilo }: any) {
                                 </select>
                             </div>
 
-                            {/* Pulsante Ricerca */}
-                            <button
-                                onClick={handleSearch}
-                                disabled={searching}
-                                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition"
-                            >
-                                {searching ? (
-                                    <><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Ricerca in corso...</>
-                                ) : (
-                                    <><Search className="h-5 w-5" /> Cerca Bandi</>
-                                )}
+                            <button onClick={handleSearch} disabled={searching}
+                                className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition">
+                                {searching ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Ricerca in corso...</>) : (<><Search className="h-5 w-5" /> Cerca Bandi</>)}
                             </button>
                         </div>
                     </div>
@@ -433,8 +372,7 @@ export default function RicercaEnte({ profilo }: any) {
                     {/* Messaggio */}
                     {message && (
                         <div className={`mb-6 p-4 rounded-lg ${fallback ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>
-                            {fallback ? <AlertCircle className="h-5 w-5 inline mr-2" /> : null}
-                            {message}
+                            {fallback ? <AlertCircle className="h-5 w-5 inline mr-2" /> : null}{message}
                         </div>
                     )}
 
@@ -444,10 +382,7 @@ export default function RicercaEnte({ profilo }: any) {
                             {stats.map((stat) => (
                                 <div key={stat.title} className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                                     <div className="flex justify-between items-start">
-                                        <div>
-                                            <p className="text-sm text-slate-400">{stat.title}</p>
-                                            <p className="text-2xl font-bold text-white">{stat.value}</p>
-                                        </div>
+                                        <div><p className="text-sm text-slate-400">{stat.title}</p><p className="text-2xl font-bold text-white">{stat.value}</p></div>
                                         <div className={`w-10 h-10 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center`}>
                                             <stat.icon className={`h-5 w-5 text-${stat.color}-400`} />
                                         </div>
@@ -457,43 +392,37 @@ export default function RicercaEnte({ profilo }: any) {
                         </div>
                     )}
 
-                    {/* CHART ROW 2 - Dopo ricerca (tutte stessa altezza e centrate) */}
+                    {/* CHART ROW 2 */}
                     {showAdvancedStats && bandi.length > 0 && (
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                                 <h3 className="text-sm font-semibold text-white mb-3 text-center">Budget per Categoria (Milioni €)</h3>
                                 <div className="h-[250px] flex items-center justify-center">
-                                    <div className="w-full max-w-[280px]">
-                                        <Radar data={budgetPerCategoriaData} options={radarOptions} />
-                                    </div>
+                                    <div className="w-full max-w-[280px]"><Radar data={budgetPerCategoriaData} options={radarOptions} /></div>
                                 </div>
                             </div>
                             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                                 <h3 className="text-sm font-semibold text-white mb-3 text-center">Distribuzione Scadenze</h3>
                                 <div className="h-[250px] flex items-center justify-center">
-                                    <div className="w-full">
-                                        <Bar data={scadenzeData} options={barOptions} />
-                                    </div>
+                                    <div className="w-full"><Bar data={scadenzeData} options={barOptions} /></div>
                                 </div>
                             </div>
                             <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
                                 <h3 className="text-sm font-semibold text-white mb-3 text-center">Match per Livello Geografico</h3>
                                 <div className="h-[250px] flex items-center justify-center">
-                                    <div className="w-full max-w-[220px]">
-                                        <Doughnut data={matchLivelloData} options={doughnutOptions} />
-                                    </div>
+                                    <div className="w-full max-w-[220px]"><Doughnut data={matchLivelloData} options={doughnutOptions} /></div>
                                 </div>
                             </div>
                         </div>
                     )}
 
-                    {/* Risultati Bandi */}
+                    {/* Risultati */}
                     {bandi.length > 0 && (
                         <div className="space-y-4">
                             <h2 className="text-xl font-semibold text-white">🎯 Bandi Trovati ({bandi.length})</h2>
                             {bandi.map((bando: any) => (
                                 <div key={bando.id} className="bg-slate-800/50 rounded-xl border border-slate-700/50 p-6 hover:border-blue-500/50 transition cursor-pointer"
-                                     onClick={() => router.visit(`/bandi/${bando.id}`)}>
+                                    onClick={() => router.visit(`/bandi/${bando.id}`)}>
                                     <div className="flex justify-between items-start flex-wrap gap-4">
                                         <div className="flex-1">
                                             <div className="flex items-center gap-2 flex-wrap">
@@ -509,19 +438,11 @@ export default function RicercaEnte({ profilo }: any) {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                                                bando.punteggio >= 80 ? 'text-green-400 bg-green-500/20' : 
-                                                bando.punteggio >= 60 ? 'text-yellow-400 bg-yellow-500/20' : 
-                                                'text-red-400 bg-red-500/20'
-                                            }`}>
+                                            <div className={`px-3 py-1 rounded-full text-sm font-semibold ${bando.punteggio >= 80 ? 'text-green-400 bg-green-500/20' : bando.punteggio >= 60 ? 'text-yellow-400 bg-yellow-500/20' : 'text-red-400 bg-red-500/20'}`}>
                                                 Match {bando.punteggio}%
                                             </div>
                                             <div className="w-full bg-slate-700 rounded-full h-1.5 mt-2">
-                                                <div className={`h-1.5 rounded-full ${
-                                                    bando.punteggio >= 80 ? 'bg-green-500' : 
-                                                    bando.punteggio >= 60 ? 'bg-yellow-500' : 
-                                                    'bg-red-500'
-                                                }`} style={{ width: `${bando.punteggio}%` }} />
+                                                <div className={`h-1.5 rounded-full ${bando.punteggio >= 80 ? 'bg-green-500' : bando.punteggio >= 60 ? 'bg-yellow-500' : 'bg-red-500'}`} style={{ width: `${bando.punteggio}%` }} />
                                             </div>
                                         </div>
                                     </div>
