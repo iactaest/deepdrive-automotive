@@ -30,9 +30,9 @@ export default function ProfiloWizard({ profilo }: any) {
         cap: profilo?.cap || '',
         
         // STEP 4 - Caratteristiche
-        popolazione_comune: profilo?.popolazione_comune || '',
-        settore_prevalente: profilo?.settore_prevalente || '',
-        esperienza_fondi_europei: profilo?.esperienza_fondi_europei || false,
+          popolazione_comune: profilo?.popolazione_comune || '',
+    settore_prevalente: profilo?.settore_prevalente || [],  // ✅ CAMBIATO DA STRINGA A ARRAY
+    esperienza_fondi_europei: profilo?.esperienza_fondi_europei || false,
         ruolo_bandi: profilo?.ruolo_bandi || 'nessuno',
         cofinanziamento_disponibile: profilo?.cofinanziamento_disponibile || false,
         percentuale_cofinanziamento: profilo?.percentuale_cofinanziamento || '',
@@ -233,7 +233,7 @@ export default function ProfiloWizard({ profilo }: any) {
             indirizzo: form.indirizzo || null,
             cap: form.cap || null,
             popolazione_comune: form.popolazione_comune || null,
-            settore_prevalente: form.settore_prevalente || null,
+            settore_prevalente: form.settore_prevalente || [], 
             esperienza_fondi_europei: form.esperienza_fondi_europei || false,
             ruolo_bandi: form.ruolo_bandi || 'nessuno',
             cofinanziamento_disponibile: form.cofinanziamento_disponibile || false,
@@ -526,17 +526,37 @@ export default function ProfiloWizard({ profilo }: any) {
                                         {popolazioneOpzioni.map(opt => <option key={opt} value={opt}>{opt}</option>)}
                                     </select>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-slate-300 mb-1">Settore Prevalente</label>
-                                    <select 
-                                        value={form.settore_prevalente} 
-                                        onChange={(e) => setForm({...form, settore_prevalente: e.target.value})} 
-                                        className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white"
-                                    >
-                                        <option value="">Seleziona...</option>
-                                        {settoreOpzioni.map(opt => <option key={opt} value={opt}>{opt}</option>)}
-                                    </select>
-                                </div>
+       <div>
+    <label className="block text-sm font-medium text-slate-300 mb-2">Settori Prevalenti *</label>
+    <p className="text-xs text-slate-400 mb-2">Seleziona uno o più settori di interesse</p>
+    <div className="flex flex-wrap gap-2">
+        {settoreOpzioni.map(opt => (
+            <button
+                key={opt}
+                type="button"
+                onClick={() => setForm({
+                    ...form, 
+                    settore_prevalente: form.settore_prevalente.includes(opt) 
+                        ? form.settore_prevalente.filter((s: string) => s !== opt) 
+                        : [...form.settore_prevalente, opt]
+                })}
+                className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    form.settore_prevalente.includes(opt) 
+                        ? 'bg-purple-500/20 text-purple-400 border border-purple-500/50' 
+                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                }`}
+            >
+                {opt}
+            </button>
+        ))}
+    </div>
+    {form.settore_prevalente.length > 0 && (
+        <div className="mt-2">
+            <span className="text-xs text-slate-400">Selezionati: </span>
+            <span className="text-xs text-white">{form.settore_prevalente.join(', ')}</span>
+        </div>
+    )}
+</div>
                                 <div className="flex items-center gap-3">
                                     <input 
                                         type="checkbox" 

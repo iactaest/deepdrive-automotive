@@ -24,7 +24,6 @@ Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-// Dashboard per tipo utente (fuori dal gruppo auth per evitare duplicazione)
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/impresa', function () {
         return Inertia::render('Impresa/Dashboard');
@@ -44,16 +43,13 @@ Route::middleware(['auth'])->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    // Profilo
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     
-    // Assistente
     Route::get('/assistente', [AssistenteController::class, 'index'])->name('assistente');
     Route::post('/assistente/invia', [AssistenteController::class, 'inviaDomanda'])->name('assistente.invia');
     
-    // Profilo Impresa Privata
     Route::get('/profilo-impresa', [ProfiloImpresaController::class, 'index'])->name('profilo.impresa');
     Route::post('/profilo-impresa', [ProfiloImpresaController::class, 'store'])->name('profilo.impresa.store');
     
@@ -61,12 +57,13 @@ Route::middleware('auth')->group(function () {
     // ✅ PROFILO ENTE - ROUTE CORRETTE
     // ============================================================
     
-    // 1. WIZARD - Creazione profilo
+    // 1. VISUALIZZAZIONE profilo
+    Route::get('/ente/profilo', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
+    Route::get('/ente/profilo/show', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
+    
+    // 2. WIZARD - Creazione profilo
     Route::get('/ente/profilo/completa', [ProfiloEnteController::class, 'create'])->name('ente.profilo.create');
     Route::post('/ente/profilo/completa', [ProfiloEnteController::class, 'store'])->name('ente.profilo.completa');
-    
-    // 2. VISUALIZZAZIONE profilo
-    Route::get('/ente/profilo/show', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
     
     // 3. MODIFICA profilo
     Route::get('/ente/profilo/modifica', [ProfiloEnteController::class, 'edit'])->name('ente.profilo.edit');
@@ -75,10 +72,8 @@ Route::middleware('auth')->group(function () {
     // 4. CANCELLAZIONE profilo
     Route::delete('/ente/profilo', [ProfiloEnteController::class, 'destroy'])->name('ente.profilo.destroy');
     
-    // ⚠️ Se hai bisogno di questa route per la dashboard dell'ente
     Route::get('/ente/dashboard', [EnteController::class, 'index'])->name('ente.dashboard');
 
-    // Bandi Finder - Ricerca Ente
     Route::get('/ente/ricerca', [BandiController::class, 'ricercaEnte'])->name('ente.ricerca');
     Route::post('/bandi/cerca', [BandiController::class, 'cerca'])->name('bandi.cerca');
 });

@@ -1,171 +1,196 @@
+import { useState, useEffect } from 'react';
 import { Link } from '@inertiajs/react';
-import { Search, TrendingUp, Award, Globe, Shield, Zap, ArrowRight, Sparkles, Target, Rocket } from 'lucide-react';
+import { 
+    ChevronRight, 
+    Zap, 
+    TrendingUp, 
+    Users, 
+    Award, 
+    Shield,
+    BarChart3,
+    PieChart,
+    Activity,
+    Sparkles
+} from 'lucide-react';
 
-export default function Welcome() {
+export default function Welcome({ canLogin, canRegister, laravelVersion, phpVersion }: any) {
+    const [animatedValues, setAnimatedValues] = useState<number[]>([]);
+    const [isVisible, setIsVisible] = useState(false);
+
+    useEffect(() => {
+        setIsVisible(true);
+        
+        // Animazione barre all'entrata (si bloccano dopo 1.5s)
+        const categories = [78, 65, 82, 70, 58];
+        const initialValues = categories.map(() => 0);
+        setAnimatedValues(initialValues);
+
+        const startTime = Date.now();
+        const duration = 1500; // 1.5 secondi
+
+        const animateBars = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / duration, 1);
+            
+            // Easing ease-out
+            const eased = 1 - Math.pow(1 - progress, 3);
+            
+            const newValues = categories.map((target) => Math.round(target * eased));
+            setAnimatedValues(newValues);
+            
+            if (progress < 1) {
+                requestAnimationFrame(animateBars);
+            }
+        };
+        
+        requestAnimationFrame(animateBars);
+    }, []);
+
+    // Dati per i grafici
+    const stats = [
+        { icon: Zap, label: 'Bandi Attivi', value: '1.247', change: '+12%', color: 'blue' },
+        { icon: TrendingUp, label: 'Match Trovati', value: '8.532', change: '+23%', color: 'emerald' },
+        { icon: Users, label: 'Enti Registrati', value: '3.891', change: '+8%', color: 'purple' },
+        { icon: Award, label: 'Progetti Finanziati', value: '€142M', change: '+18%', color: 'amber' },
+    ];
+
+    const categories = [
+        { label: 'Digitalizzazione', percentage: 78, color: 'from-blue-500 to-cyan-400' },
+        { label: 'Ambiente & Green', percentage: 65, color: 'from-emerald-500 to-teal-400' },
+        { label: 'Innovazione Sociale', percentage: 82, color: 'from-purple-500 to-pink-400' },
+    ];
+
+    const features = [
+        { icon: Shield, title: 'Matching Intelligente', desc: 'AI avanzata per trovare i bandi perfetti per il tuo ente' },
+        { icon: BarChart3, title: 'Analisi in Tempo Reale', desc: 'Monitora le performance e le opportunità in tempo reale' },
+        { icon: Sparkles, title: 'Scopri Nuove Opportunità', desc: 'Ricevi notifiche personalizzate sui bandi più rilevanti' },
+    ];
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-            {/* Effetto profondità sfondo */}
-            <div className="fixed inset-0 pointer-events-none">
-                <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-                <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-purple-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-cyan-500/5 rounded-full blur-3xl" />
+        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden">
+            
+            {/* Luce fioca al centro */}
+            <div className="absolute inset-0 pointer-events-none">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-blue-500/10 blur-3xl animate-pulse" />
+                <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] rounded-full bg-purple-500/5 blur-2xl animate-pulse delay-1000" />
+                <div className="absolute bottom-1/3 right-1/4 w-[400px] h-[400px] rounded-full bg-emerald-500/5 blur-2xl animate-pulse delay-2000" />
             </div>
 
-            {/* Navbar */}
-            <nav className="relative z-10 flex justify-between items-center px-6 py-4 border-b border-slate-700/50 backdrop-blur-sm">
-                <div className="flex items-center gap-2 group">
-                    <div className="relative">
-                        <Search className="h-8 w-8 text-blue-500 group-hover:scale-110 transition-transform" />
-                        <div className="absolute -inset-1 bg-blue-500/20 rounded-full blur-md group-hover:blur-xl transition" />
-                    </div>
-                    <span className="text-xl font-bold bg-gradient-to-r from-white to-blue-400 bg-clip-text text-transparent">
-                        DeepBandi
-                    </span>
-                </div>
-                <div className="space-x-4">
-                    <Link
-                        href="/login"
-                        className="px-4 py-2 text-white hover:text-blue-400 transition"
-                    >
-                        Accedi
-                    </Link>
-                    <Link
-                        href="/register"
-                        className="px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition shadow-lg shadow-blue-500/25"
-                    >
-                        Registrati
-                    </Link>
-                </div>
-            </nav>
-
-            {/* Hero Section */}
-            <main className="relative z-10 flex flex-col items-center justify-center min-h-[calc(100vh-73px)] px-4">
-                <div className="text-center max-w-4xl">
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
-                        <Sparkles className="h-4 w-4 text-blue-400" />
-                        <span className="text-xs text-blue-400 font-medium">Piattaforma Bandi AI</span>
-                    </div>
-
-                    <h1 className="text-5xl md:text-7xl font-bold text-white mb-6">
-                        Trova il{' '}
-                        <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-                            Bando Perfetto
-                        </span>
-                    </h1>
-                    <p className="text-xl text-slate-300 mb-8 max-w-2xl mx-auto">
-                        DeepBandi è la piattaforma intelligente che ti aiuta a scoprire bandi, finanziamenti e opportunità su misura per la tua organizzazione.
-                    </p>
-
-                    {/* CTA Button */}
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
-                        <Link
-                            href="/register"
-                            className="inline-flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold transition-all duration-200 shadow-lg shadow-blue-500/25 group"
-                        >
-                            Inizia Ora
-                            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition" />
-                        </Link>
-                        <Link
-                            href="/bandi"
-                            className="inline-flex items-center gap-2 px-8 py-3 bg-slate-800/50 border border-slate-700 hover:border-blue-500 rounded-lg text-white font-semibold transition-all duration-200 group"
-                        >
-                            Esplora Bandi
-                            <Search className="h-5 w-5 group-hover:scale-110 transition" />
-                        </Link>
-                    </div>
-
-                    {/* Statistiche */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-16">
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-white">10k+</p>
-                            <p className="text-sm text-slate-400">Bandi Attivi</p>
+            <div className="relative z-10">
+                {/* Navbar */}
+                <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                            <span className="text-white font-bold text-xl">D</span>
                         </div>
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-white">€5B+</p>
-                            <p className="text-sm text-slate-400">Budget Totale</p>
+                        <span className="text-2xl font-bold text-white tracking-tight">Deep<span className="text-blue-400">Bandi</span></span>
+                    </div>
+                    <div className="flex items-center gap-4">
+                        {canLogin && (
+                            <>
+                                {canRegister && (
+                                    <Link href="/register" className="text-slate-400 hover:text-white transition px-4 py-2 rounded-lg text-sm font-medium">
+                                        Registrati
+                                    </Link>
+                                )}
+                                <Link href="/login" className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-6 py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-blue-500/20 flex items-center gap-2">
+                                    Accedi <ChevronRight className="h-4 w-4" />
+                                </Link>
+                            </>
+                        )}
+                    </div>
+                </nav>
+
+                {/* Hero Section */}
+                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-16">
+                    <div className={`text-center transform transition-all duration-1000 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`}>
+                        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 mb-6">
+                            <Activity className="h-4 w-4 text-blue-400" />
+                            <span className="text-xs text-blue-400 font-medium">🚀 Piattaforma di Matching Bandi</span>
                         </div>
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-white">50k+</p>
-                            <p className="text-sm text-slate-400">Organizzazioni</p>
-                        </div>
-                        <div className="text-center">
-                            <p className="text-3xl font-bold text-white">98%</p>
-                            <p className="text-sm text-slate-400">Match Accuracy</p>
+                        <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white mb-6 leading-tight">
+                            Trova i Bandi <br />
+                            <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Perfetti per Te</span>
+                        </h1>
+                        <p className="text-lg sm:text-xl text-slate-400 max-w-2xl mx-auto mb-8">
+                            DeepBandi utilizza l'intelligenza artificiale per analizzare il profilo del tuo ente 
+                            e suggerirti le migliori opportunità di finanziamento.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                            <Link href={canLogin ? '/login' : '/register'} className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white px-8 py-3 rounded-xl font-medium transition shadow-xl shadow-blue-500/20 flex items-center gap-2 justify-center">
+                                Inizia Ora <ChevronRight className="h-5 w-5" />
+                            </Link>
+                            <a href="#features" className="border border-slate-700 hover:border-slate-600 text-slate-300 hover:text-white px-8 py-3 rounded-xl font-medium transition flex items-center gap-2 justify-center">
+                                Scopri di più
+                            </a>
                         </div>
                     </div>
 
-                    {/* Feature cards */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
-                        <div className="group relative overflow-hidden rounded-xl bg-slate-800/40 backdrop-blur-sm p-6 border border-slate-700/50 hover:border-blue-500/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                            <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                <Search className="h-6 w-6 text-blue-400" />
+                    {/* Stats Cards */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-16">
+                        {stats.map((stat, idx) => (
+                            <div key={idx} className={`bg-slate-800/40 backdrop-blur-sm rounded-xl p-5 border border-slate-700/30 transition-all duration-700 hover:border-slate-600/50 hover:bg-slate-800/60 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: `${idx * 100}ms` }}>
+                                <div className="flex items-center justify-between">
+                                    <stat.icon className={`h-5 w-5 text-${stat.color}-400`} />
+                                    <span className={`text-xs font-medium text-${stat.color}-400 bg-${stat.color}-500/10 px-2 py-0.5 rounded-full`}>
+                                        {stat.change}
+                                    </span>
+                                </div>
+                                <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
+                                <p className="text-xs text-slate-400">{stat.label}</p>
                             </div>
-                            <h3 className="text-lg font-semibold text-white mb-2">Ricerca Intelligente</h3>
-                            <p className="text-slate-400 text-sm">Cerca bandi per settore, regione, budget e scadenza con filtri avanzati.</p>
-                        </div>
-
-                        <div className="group relative overflow-hidden rounded-xl bg-slate-800/40 backdrop-blur-sm p-6 border border-slate-700/50 hover:border-purple-500/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                            <div className="absolute inset-0 bg-gradient-to-r from-purple-500/0 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                <Sparkles className="h-6 w-6 text-purple-400" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-white mb-2">Match con AI</h3>
-                            <p className="text-slate-400 text-sm">Ricevi bandi consigliati in base al profilo della tua organizzazione.</p>
-                        </div>
-
-                        <div className="group relative overflow-hidden rounded-xl bg-slate-800/40 backdrop-blur-sm p-6 border border-slate-700/50 hover:border-cyan-500/50 transition-all duration-300 hover:scale-105 cursor-pointer">
-                            <div className="absolute inset-0 bg-gradient-to-r from-cyan-500/0 to-cyan-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                            <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center mb-4 group-hover:scale-110 transition">
-                                <Target className="h-6 w-6 text-cyan-400" />
-                            </div>
-                            <h3 className="text-lg font-semibold text-white mb-2">Monitoraggio Scadenze</h3>
-                            <p className="text-slate-400 text-sm">Non perdere mai una scadenza con alert automatici e promemoria.</p>
-                        </div>
+                        ))}
                     </div>
 
-                    {/* Sezione Tipologie Utenti */}
-                    <div className="mt-20">
-                        <h2 className="text-2xl font-bold text-white mb-8">Una piattaforma per ogni organizzazione</h2>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                            <div className="text-center p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                                <span className="text-2xl mb-2 block">🏢</span>
-                                <p className="text-white font-medium">Impresa</p>
-                                <p className="text-xs text-slate-400">Privata</p>
+                    {/* Charts Section - CARD IN ORDINE: CATEGORIE + PERCHÉ DEEPBANDI */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-12">
+                        {/* Categorie Chart - Card 1 (SINISTRA) */}
+                        <div className={`bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700/30 transition-all duration-700 hover:border-slate-600/50 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '400ms' }}>
+                            <div className="flex items-center gap-2 mb-4">
+                                <PieChart className="h-5 w-5 text-blue-400" />
+                                <h3 className="text-white font-semibold">Categorie più Richieste</h3>
                             </div>
-                            <div className="text-center p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                                <span className="text-2xl mb-2 block">🏛️</span>
-                                <p className="text-white font-medium">Ente</p>
-                                <p className="text-xs text-slate-400">Pubblico</p>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                                <span className="text-2xl mb-2 block">🤝</span>
-                                <p className="text-white font-medium">Associazione</p>
-                                <p className="text-xs text-slate-400">No-Profit</p>
-                            </div>
-                            <div className="text-center p-4 rounded-xl bg-slate-800/30 border border-slate-700/50">
-                                <span className="text-2xl mb-2 block">👤</span>
-                                <p className="text-white font-medium">Professionista</p>
-                                <p className="text-xs text-slate-400">Libero</p>
+                            <div className="space-y-2">
+                                {categories.map((cat, idx) => (
+                                    <div key={idx}>
+                                        <div className="flex justify-between text-sm mb-1">
+                                            <span className="text-slate-300">{cat.label}</span>
+                                            <span className="text-white">{animatedValues[idx] || 0}%</span>
+                                        </div>
+                                        <div className="w-full h-2 bg-slate-700/50 rounded-full overflow-hidden">
+                                            <div 
+                                                className={`h-full rounded-full bg-gradient-to-r ${cat.color} transition-all duration-1000 ease-out`}
+                                                style={{ width: `${animatedValues[idx] || 0}%` }}
+                                            />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
 
-                    {/* CTA finale */}
-                    <div className="mt-16 p-8 rounded-2xl bg-gradient-to-r from-blue-600/10 to-purple-600/10 border border-slate-700/50">
-                        <h3 className="text-xl font-semibold text-white mb-2">Pronto a trovare il bando giusto?</h3>
-                        <p className="text-slate-400 mb-4">Unisciti a migliaia di organizzazioni che già utilizzano DeepBandi</p>
-                        <Link
-                            href="/register"
-                            className="inline-flex items-center gap-2 px-6 py-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg transition"
-                        >
-                            Registrati Gratuitamente
-                            <Rocket className="h-4 w-4" />
-                        </Link>
+                        {/* Perché DeepBandi - Card 2 (DESTRA) */}
+                        <div className={`bg-slate-800/40 backdrop-blur-sm rounded-xl p-6 border border-slate-700/30 transition-all duration-700 hover:border-slate-600/50 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-10 opacity-0'}`} style={{ transitionDelay: '500ms' }}>
+                            <div className="flex items-center gap-2 mb-4">
+                                <Sparkles className="h-5 w-5 text-purple-400" />
+                                <h3 className="text-white font-semibold">Perché DeepBandi?</h3>
+                            </div>
+                            <div className="space-y-4">
+                                {features.map((feature, idx) => (
+                                    <div key={idx} className="flex gap-3 items-start">
+                                        <div className="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center flex-shrink-0">
+                                            <feature.icon className="h-4 w-4 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-white font-medium text-sm">{feature.title}</h4>
+                                            <p className="text-slate-400 text-xs">{feature.desc}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </main>
+            </div>
         </div>
     );
 }

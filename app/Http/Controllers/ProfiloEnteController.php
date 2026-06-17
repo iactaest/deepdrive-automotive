@@ -22,19 +22,6 @@ class ProfiloEnteController extends Controller
             Log::info('=== STORE CHIAMATO ===');
             Log::info('Dati ricevuti:', $request->all());
             
-            Log::info('📞 CONTATTI ricevuti:', [
-                'telefono' => $request->telefono,
-                'email_pec' => $request->email_pec,
-                'sito_web' => $request->sito_web,
-                'fax' => $request->fax,
-            ]);
-            
-            Log::info('🎯 PREFERENZE ricevute:', [
-                'categorie' => $request->categorie_interesse,
-                'livelli' => $request->livelli_interesse,
-                'importi' => $request->importi_interesse,
-            ]);
-            
             if (!auth()->check()) {
                 return response()->json(['success' => false, 'message' => 'Utente non autenticato'], 401);
             }
@@ -50,7 +37,6 @@ class ProfiloEnteController extends Controller
             $validator = Validator::make($request->all(), $rules);
             
             if ($validator->fails()) {
-                Log::error('Validazione fallita:', $validator->errors()->toArray());
                 return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
             }
             
@@ -70,7 +56,9 @@ class ProfiloEnteController extends Controller
                 'indirizzo' => $request->indirizzo,
                 'cap' => $request->cap,
                 'popolazione_comune' => $request->popolazione_comune,
-                'settore_prevalente' => $request->settore_prevalente,
+                'settore_prevalente' => is_array($request->settore_prevalente) 
+    ? json_encode($request->settore_prevalente) 
+    : null,
                 'esperienza_fondi_europei' => $request->esperienza_fondi_europei ? 1 : 0,
                 'ruolo_bandi' => $request->ruolo_bandi ?? 'nessuno',
                 'cofinanziamento_disponibile' => $request->cofinanziamento_disponibile ? 1 : 0,
@@ -80,7 +68,26 @@ class ProfiloEnteController extends Controller
                 'categorie_interesse' => is_array($request->categorie_interesse) ? json_encode($request->categorie_interesse) : null,
                 'livelli_interesse' => is_array($request->livelli_interesse) ? json_encode($request->livelli_interesse) : null,
                 'importi_interesse' => is_array($request->importi_interesse) ? json_encode($request->importi_interesse) : null,
-                'profilo_completo' => true
+                'profilo_completo' => true,
+                
+                // STEP 6 - NUOVI CRITERI
+                'num_progetti_europei' => $request->num_progetti_europei ?? null,
+                'staff_dedicato_bandi' => $request->staff_dedicato_bandi ? 1 : 0,
+                'consulente_esterno_bandi' => $request->consulente_esterno_bandi ? 1 : 0,
+                'anticipo_spese_disponibile' => $request->anticipo_spese_disponibile ? 1 : 0,
+                'conto_dedicato_fondi' => $request->conto_dedicato_fondi ? 1 : 0,
+                'tipologia_investimento' => is_array($request->tipologia_investimento) ? json_encode($request->tipologia_investimento) : null,
+                'dimensione_impresa' => is_array($request->dimensione_impresa) ? json_encode($request->dimensione_impresa) : null,
+                'intensita_aiuto' => $request->intensita_aiuto ?? null,
+                'cup_attivo' => $request->cup_attivo ? 1 : 0,
+                'target_group' => is_array($request->target_group) ? json_encode($request->target_group) : null,
+                'attivita_erogabili' => is_array($request->attivita_erogabili) ? json_encode($request->attivita_erogabili) : null,
+                'accreditamento_formativo' => $request->accreditamento_formativo ? 1 : 0,
+                'regione_accreditamento' => $request->regione_accreditamento ?? null,
+                'sistemi_informativi' => is_array($request->sistemi_informativi) ? json_encode($request->sistemi_informativi) : null,
+                'obiettivi_policy' => is_array($request->obiettivi_policy) ? json_encode($request->obiettivi_policy) : null,
+                'modello_budget' => $request->modello_budget ?? null,
+                'assicurazione_catastrofale' => $request->assicurazione_catastrofale ? 1 : 0,
             ];
             
             Log::info('Dati da salvare:', $data);
@@ -95,11 +102,11 @@ class ProfiloEnteController extends Controller
             return response()->json([
                 'success' => true,
                 'message' => 'Profilo completato con successo!',
-                'redirect' => route('ente.profilo.show')  // ✅ CORRETTO
+                'redirect' => route('ente.profilo.show')
             ]);
             
         } catch (\Exception $e) {
-            Log::error('ERRORE GENERALE: ' . $e->getMessage());
+            Log::error('ERRORE: ' . $e->getMessage());
             return response()->json(['success' => false, 'message' => 'Errore: ' . $e->getMessage()], 500);
         }
     }
@@ -112,10 +119,16 @@ class ProfiloEnteController extends Controller
             return redirect()->route('ente.profilo.create');
         }
         
-        // ✅ Decodifica JSON per i campi array
+        // Decodifica JSON
         $profilo->categorie_interesse = json_decode($profilo->categorie_interesse, true) ?? [];
         $profilo->livelli_interesse = json_decode($profilo->livelli_interesse, true) ?? [];
         $profilo->importi_interesse = json_decode($profilo->importi_interesse, true) ?? [];
+        $profilo->tipologia_investimento = json_decode($profilo->tipologia_investimento, true) ?? [];
+        $profilo->dimensione_impresa = json_decode($profilo->dimensione_impresa, true) ?? [];
+        $profilo->target_group = json_decode($profilo->target_group, true) ?? [];
+        $profilo->attivita_erogabili = json_decode($profilo->attivita_erogabili, true) ?? [];
+        $profilo->sistemi_informativi = json_decode($profilo->sistemi_informativi, true) ?? [];
+        $profilo->obiettivi_policy = json_decode($profilo->obiettivi_policy, true) ?? [];
         
         return Inertia::render('Ente/ProfiloShow', ['profilo' => $profilo]);
     }
@@ -128,6 +141,12 @@ class ProfiloEnteController extends Controller
         $profilo->categorie_interesse = json_decode($profilo->categorie_interesse, true) ?? [];
         $profilo->livelli_interesse = json_decode($profilo->livelli_interesse, true) ?? [];
         $profilo->importi_interesse = json_decode($profilo->importi_interesse, true) ?? [];
+        $profilo->tipologia_investimento = json_decode($profilo->tipologia_investimento, true) ?? [];
+        $profilo->dimensione_impresa = json_decode($profilo->dimensione_impresa, true) ?? [];
+        $profilo->target_group = json_decode($profilo->target_group, true) ?? [];
+        $profilo->attivita_erogabili = json_decode($profilo->attivita_erogabili, true) ?? [];
+        $profilo->sistemi_informativi = json_decode($profilo->sistemi_informativi, true) ?? [];
+        $profilo->obiettivi_policy = json_decode($profilo->obiettivi_policy, true) ?? [];
         
         return Inertia::render('Ente/ProfiloEdit', ['profilo' => $profilo]);
     }
@@ -159,25 +178,26 @@ class ProfiloEnteController extends Controller
             'categorie_interesse' => is_array($request->categorie_interesse) ? json_encode($request->categorie_interesse) : null,
             'livelli_interesse' => is_array($request->livelli_interesse) ? json_encode($request->livelli_interesse) : null,
             'importi_interesse' => is_array($request->importi_interesse) ? json_encode($request->importi_interesse) : null,
-             'num_progetti_europei' => $request->num_progetti_europei ?? null,
-    'staff_dedicato_bandi' => $request->staff_dedicato_bandi ? 1 : 0,
-    'consulente_esterno_bandi' => $request->consulente_esterno_bandi ? 1 : 0,
-    'anticipo_spese_disponibile' => $request->anticipo_spese_disponibile ? 1 : 0,
-    'conto_dedicato_fondi' => $request->conto_dedicato_fondi ? 1 : 0,
-    'tipologia_investimento' => is_array($request->tipologia_investimento) ? json_encode($request->tipologia_investimento) : null,
-    'dimensione_impresa' => is_array($request->dimensione_impresa) ? json_encode($request->dimensione_impresa) : null,
-    'intensita_aiuto' => $request->intensita_aiuto ?? null,
-    'cup_attivo' => $request->cup_attivo ? 1 : 0,
-    'target_group' => is_array($request->target_group) ? json_encode($request->target_group) : null,
-    'attivita_erogabili' => is_array($request->attivita_erogabili) ? json_encode($request->attivita_erogabili) : null,
-    'accreditamento_formativo' => $request->accreditamento_formativo ? 1 : 0,
-    'regione_accreditamento' => $request->regione_accreditamento ?? null,
-    'sistemi_informativi' => is_array($request->sistemi_informativi) ? json_encode($request->sistemi_informativi) : null,
-    'obiettivi_policy' => is_array($request->obiettivi_policy) ? json_encode($request->obiettivi_policy) : null,
-    'modello_budget' => $request->modello_budget ?? null,
-    'assicurazione_catastrofale' => $request->assicurazione_catastrofale ? 1 : 0,
-];
-      
+            
+            // STEP 6 - NUOVI CRITERI
+            'num_progetti_europei' => $request->num_progetti_europei ?? null,
+            'staff_dedicato_bandi' => $request->staff_dedicato_bandi ? 1 : 0,
+            'consulente_esterno_bandi' => $request->consulente_esterno_bandi ? 1 : 0,
+            'anticipo_spese_disponibile' => $request->anticipo_spese_disponibile ? 1 : 0,
+            'conto_dedicato_fondi' => $request->conto_dedicato_fondi ? 1 : 0,
+            'tipologia_investimento' => is_array($request->tipologia_investimento) ? json_encode($request->tipologia_investimento) : null,
+            'dimensione_impresa' => is_array($request->dimensione_impresa) ? json_encode($request->dimensione_impresa) : null,
+            'intensita_aiuto' => $request->intensita_aiuto ?? null,
+            'cup_attivo' => $request->cup_attivo ? 1 : 0,
+            'target_group' => is_array($request->target_group) ? json_encode($request->target_group) : null,
+            'attivita_erogabili' => is_array($request->attivita_erogabili) ? json_encode($request->attivita_erogabili) : null,
+            'accreditamento_formativo' => $request->accreditamento_formativo ? 1 : 0,
+            'regione_accreditamento' => $request->regione_accreditamento ?? null,
+            'sistemi_informativi' => is_array($request->sistemi_informativi) ? json_encode($request->sistemi_informativi) : null,
+            'obiettivi_policy' => is_array($request->obiettivi_policy) ? json_encode($request->obiettivi_policy) : null,
+            'modello_budget' => $request->modello_budget ?? null,
+            'assicurazione_catastrofale' => $request->assicurazione_catastrofale ? 1 : 0,
+        ];
         
         ProfiloEnte::updateOrCreate(['user_id' => auth()->id()], $data);
         
