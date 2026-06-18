@@ -17,8 +17,10 @@ export default function ProfiloShow({ profilo }: any) {
     };
 
     const handleDelete = () => {
-        if (confirm('⚠️ Sei sicuro di voler cancellare il profilo?')) router.delete('/ente/profilo');
-    };
+    if (confirm('⚠️ Sei sicuro di voler cancellare il profilo?')) {
+        router.post('/ente/profilo', { _method: 'DELETE' });
+    }
+};
 
     // Normalizzazione dati
     const categorie: string[] = Array.isArray(profilo.categorie_interesse) ? profilo.categorie_interesse : (profilo.categorie_interesse ? JSON.parse(profilo.categorie_interesse) : []);
