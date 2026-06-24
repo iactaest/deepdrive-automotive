@@ -12,24 +12,37 @@ class BandoMatch extends Model
     protected $table = 'bandi_match';
 
     protected $fillable = [
-        'user_id', 'bando_id', 'punteggio_compatibilita',
-        'punti_forza', 'punti_debolezza', 'requisiti_mancanti', 'match_obbligatori'
+        'user_id', 'bando_id', 'punteggio', 'match_dettaglio', 'letto', 'notificato'
     ];
 
     protected $casts = [
-        'punti_forza' => 'array',
-        'punti_debolezza' => 'array',
-        'requisiti_mancanti' => 'array',
-        'match_obbligatori' => 'boolean',
+        'match_dettaglio' => 'array',
+        'letto' => 'boolean',
+        'notificato' => 'boolean',
+        'punteggio' => 'integer',
     ];
 
+    // Relazione con l'utente
     public function user()
     {
         return $this->belongsTo(User::class);
     }
 
+    // Relazione con il bando
     public function bando()
     {
         return $this->belongsTo(Bando::class);
+    }
+
+    // Scope per match non letti
+    public function scopeNonLetti($query)
+    {
+        return $query->where('letto', false);
+    }
+
+    // Scope per match ad alta compatibilità
+    public function scopeAltaCompatibilita($query, $soglia = 80)
+    {
+        return $query->where('punteggio', '>=', $soglia);
     }
 }

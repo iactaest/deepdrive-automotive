@@ -413,6 +413,7 @@ export default function ProfiloWizard({ profilo }: any) {
                                     <label className="block text-sm font-medium text-slate-300 mb-1">Sito Web</label>
                                     <input 
                                         type="url" 
+                                        placeholder="https://www.comune.it"
                                         value={form.sito_web} 
                                         onChange={(e) => setForm({...form, sito_web: e.target.value})} 
                                         className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" 

@@ -79,79 +79,62 @@ export default function ProfiloEdit({ profilo }: any) {
         return array.includes(value) ? array.filter(v => v !== value) : [...array, value];
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setSaving(true);
-        
-        const dataToSend = {
-            nome_ente: form.nome_ente,
-            tipo_ente: form.tipo_ente,
-            codice_fiscale: form.codice_fiscale || null,
-            partita_iva: form.partita_iva || null,
-            telefono: form.telefono || null,
-            email_pec: form.email_pec || null,
-            sito_web: form.sito_web || null,
-            fax: form.fax || null,
-            regione: form.regione,
-            provincia: form.provincia,
-            comune: form.comune,
-            indirizzo: form.indirizzo || null,
-            cap: form.cap || null,
-            popolazione_comune: form.popolazione_comune || null,
-            settore_prevalente: form.settore_prevalente || [],
-            esperienza_fondi_europei: form.esperienza_fondi_europei || false,
-            ruolo_bandi: form.ruolo_bandi || 'nessuno',
-            cofinanziamento_disponibile: form.cofinanziamento_disponibile || false,
-            percentuale_cofinanziamento: form.percentuale_cofinanziamento || null,
-            referente_bandi: form.referente_bandi || false,
-            gia_beneficiario_pnrr: form.gia_beneficiario_pnrr || false,
-            categorie_interesse: form.categorie_interesse || [],
-            livelli_interesse: form.livelli_interesse || [],
-            importi_interesse: form.importi_interesse || [],
-            
-            // STEP 6
-            num_progetti_europei: form.num_progetti_europei || null,
-            staff_dedicato_bandi: form.staff_dedicato_bandi || false,
-            consulente_esterno_bandi: form.consulente_esterno_bandi || false,
-            anticipo_spese_disponibile: form.anticipo_spese_disponibile || false,
-            conto_dedicato_fondi: form.conto_dedicato_fondi || false,
-            tipologia_investimento: form.tipologia_investimento || [],
-            dimensione_impresa: form.dimensione_impresa || [],
-            intensita_aiuto: form.intensita_aiuto || null,
-            cup_attivo: form.cup_attivo || false,
-            target_group: form.target_group || [],
-            attivita_erogabili: form.attivita_erogabili || [],
-            accreditamento_formativo: form.accreditamento_formativo || false,
-            regione_accreditamento: form.regione_accreditamento || null,
-            sistemi_informativi: form.sistemi_informativi || [],
-            obiettivi_policy: form.obiettivi_policy || [],
-            modello_budget: form.modello_budget || null,
-            assicurazione_catastrofale: form.assicurazione_catastrofale || false,
-        };
+const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
 
-        try {
-            const response = await fetch('/ente/profilo', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                },
-                body: JSON.stringify(dataToSend)
-            });
-            
-            if (response.ok) {
-                router.visit('/ente/profilo/show');
-            } else {
-                const data = await response.json();
-                alert('Errore: ' + (data.message || 'Salvataggio fallito'));
-            }
-        } catch (error) {
-            console.error('Errore salvataggio:', error);
-            alert('Errore di connessione al server');
-        } finally {
+    router.post('/ente/profilo', {
+        _method: 'PUT',
+        nome_ente: form.nome_ente,
+        tipo_ente: form.tipo_ente,
+        codice_fiscale: form.codice_fiscale || null,
+        partita_iva: form.partita_iva || null,
+        telefono: form.telefono || null,
+        email_pec: form.email_pec || null,
+        sito_web: form.sito_web || null,
+        fax: form.fax || null,
+        regione: form.regione,
+        provincia: form.provincia,
+        comune: form.comune,
+        indirizzo: form.indirizzo || null,
+        cap: form.cap || null,
+        popolazione_comune: form.popolazione_comune || null,
+        settore_prevalente: form.settore_prevalente || [],
+        esperienza_fondi_europei: form.esperienza_fondi_europei || false,
+        ruolo_bandi: form.ruolo_bandi || 'nessuno',
+        cofinanziamento_disponibile: form.cofinanziamento_disponibile || false,
+        percentuale_cofinanziamento: form.percentuale_cofinanziamento || null,
+        referente_bandi: form.referente_bandi || false,
+        gia_beneficiario_pnrr: form.gia_beneficiario_pnrr || false,
+        categorie_interesse: form.categorie_interesse || [],
+        livelli_interesse: form.livelli_interesse || [],
+        importi_interesse: form.importi_interesse || [],
+        num_progetti_europei: form.num_progetti_europei || null,
+        staff_dedicato_bandi: form.staff_dedicato_bandi || false,
+        consulente_esterno_bandi: form.consulente_esterno_bandi || false,
+        anticipo_spese_disponibile: form.anticipo_spese_disponibile || false,
+        conto_dedicato_fondi: form.conto_dedicato_fondi || false,
+        tipologia_investimento: form.tipologia_investimento || [],
+        dimensione_impresa: form.dimensione_impresa || [],
+        intensita_aiuto: form.intensita_aiuto || null,
+        cup_attivo: form.cup_attivo || false,
+        target_group: form.target_group || [],
+        attivita_erogabili: form.attivita_erogabili || [],
+        accreditamento_formativo: form.accreditamento_formativo || false,
+        regione_accreditamento: form.regione_accreditamento || null,
+        sistemi_informativi: form.sistemi_informativi || [],
+        obiettivi_policy: form.obiettivi_policy || [],
+        modello_budget: form.modello_budget || null,
+        assicurazione_catastrofale: form.assicurazione_catastrofale || false,
+    }, {
+        onFinish: () => setSaving(false),
+        onSuccess: () => router.visit('/ente/profilo'),
+        onError: () => {
             setSaving(false);
-        }
-    };
+            alert('Errore durante il salvataggio');
+        },
+    });
+};
 
     // DATI PER I SELECT
     const categorieBandi = [
@@ -250,7 +233,7 @@ export default function ProfiloEdit({ profilo }: any) {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div><label className="block text-sm text-slate-300 mb-1">Telefono</label><input type="tel" value={form.telefono} onChange={(e) => setForm({...form, telefono: e.target.value})} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" /></div>
                                 <div><label className="block text-sm text-slate-300 mb-1">Email PEC</label><input type="email" value={form.email_pec} onChange={(e) => setForm({...form, email_pec: e.target.value})} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" /></div>
-                                <div><label className="block text-sm text-slate-300 mb-1">Sito Web</label><input type="url" value={form.sito_web} onChange={(e) => setForm({...form, sito_web: e.target.value})} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" /></div>
+                                <div><label className="block text-sm text-slate-300 mb-1">Sito Web</label><input type="url" value={form.sito_web} placeholder="es. https://www.comune.it" onChange={(e) => setForm({...form, sito_web: e.target.value})} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" /></div>
                                 <div><label className="block text-sm text-slate-300 mb-1">Fax</label><input type="text" value={form.fax} onChange={(e) => setForm({...form, fax: e.target.value})} className="w-full px-4 py-2 bg-slate-900/50 border border-slate-700 rounded-lg text-white" /></div>
                             </div>
                         </div>

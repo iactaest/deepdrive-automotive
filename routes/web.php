@@ -7,6 +7,7 @@ use App\Http\Controllers\EnteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfiloImpresaController;
 use App\Http\Controllers\ProfiloEnteController;
+use App\Http\Controllers\BandiListaController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -57,25 +58,23 @@ Route::middleware('auth')->group(function () {
     // ✅ PROFILO ENTE - ROUTE CORRETTE
     // ============================================================
     
-    // 1. VISUALIZZAZIONE profilo
     Route::get('/ente/profilo', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
     Route::get('/ente/profilo/show', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
-    
-    // 2. WIZARD - Creazione profilo
     Route::get('/ente/profilo/completa', [ProfiloEnteController::class, 'create'])->name('ente.profilo.create');
     Route::post('/ente/profilo/completa', [ProfiloEnteController::class, 'store'])->name('ente.profilo.completa');
-    
-    // 3. MODIFICA profilo
     Route::get('/ente/profilo/modifica', [ProfiloEnteController::class, 'edit'])->name('ente.profilo.edit');
     Route::put('/ente/profilo', [ProfiloEnteController::class, 'update'])->name('ente.profilo.update');
-    
-    // 4. CANCELLAZIONE profilo
     Route::delete('/ente/profilo', [ProfiloEnteController::class, 'destroy'])->name('ente.profilo.destroy');
     
     Route::get('/ente/dashboard', [EnteController::class, 'index'])->name('ente.dashboard');
-
     Route::get('/ente/ricerca', [BandiController::class, 'ricercaEnte'])->name('ente.ricerca');
     Route::post('/bandi/cerca', [BandiController::class, 'cerca'])->name('bandi.cerca');
+
+    // ============================================================
+    // ✅ LISTA BANDI
+    // ============================================================
+   Route::get('/ente/lista-bandi', [BandiListaController::class, 'index'])->name('lista.bandi');
+Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->name('lista.bandi.dettaglio');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');

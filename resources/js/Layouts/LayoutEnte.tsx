@@ -1,7 +1,25 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { LayoutDashboard, Bot, Search, Landmark, Star, Settings, LogOut, Menu, X,
-    Calendar, FileText, Building2, Bell, HelpCircle, TrendingUp, BarChart3, Award } from 'lucide-react';
+import { 
+    LayoutDashboard, 
+    Bot, 
+    Search, 
+    Landmark, 
+    Star, 
+    Settings, 
+    LogOut, 
+    Menu, 
+    X,
+    Calendar, 
+    FileText, 
+    Building2, 
+    Bell, 
+    HelpCircle, 
+    TrendingUp, 
+    BarChart3, 
+    Award,
+    ListChecks  // ← Icona per Lista Bandi
+} from 'lucide-react';
 
 export default function LayoutEnte({ children }: { children: React.ReactNode }) {
     const { user } = usePage().props.auth;
@@ -20,18 +38,19 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
         return () => window.removeEventListener('resize', checkScreen);
     }, []);
 
-   const navigation = [
-    { name: 'Dashboard', href: '/dashboard/ente', icon: LayoutDashboard },
-    { name: 'Assistente AI', href: '/assistente', icon: Bot },
-    { name: 'Bandi Finder', href: '/bandi', icon: Search },
-    { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
-    { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
-    { name: 'Performance', href: '/ente/performance', icon: BarChart3 },
-    { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },  // ← Questa è la voce per il profilo
-    { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
-    { name: 'Notifiche', href: '/notifiche', icon: Bell },
-    { name: 'Impostazioni', href: '/settings', icon: Settings },
-];
+    const navigation = [
+        { name: 'Dashboard', href: '/dashboard/ente', icon: LayoutDashboard },
+         { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },
+          { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },  // ← NUOVA VOCE
+        { name: 'Assistente AI', href: '/assistente', icon: Bot },
+        { name: 'Bandi Finder', href: '/bandi', icon: Search },
+        { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
+        { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
+        { name: 'Performance', href: '/ente/performance', icon: BarChart3 },
+        { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
+        { name: 'Notifiche', href: '/notifiche', icon: Bell },
+        { name: 'Impostazioni', href: '/settings', icon: Settings },
+    ];
 
     const handleLinkClick = () => { if (isMobile) setSidebarOpen(false); };
 
@@ -63,8 +82,12 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
                     <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
                         {navigation.map((item) => (
-                            <Link key={item.name} href={item.href} onClick={handleLinkClick}
-                                className="flex items-center gap-3 px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group hover:translate-x-1">
+                            <Link 
+                                key={item.name} 
+                                href={item.href} 
+                                onClick={handleLinkClick}
+                                className="flex items-center gap-3 px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group hover:translate-x-1"
+                            >
                                 <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
                                 <span>{item.name}</span>
                             </Link>
@@ -76,11 +99,16 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-green-500/30">
                                 <span className="text-white text-sm font-bold">{user?.name?.charAt(0)?.toUpperCase() || 'U'}</span>
                             </div>
-                            <div className="flex-1 min-w-0"><p className="text-sm font-medium text-white truncate">{user?.name}</p><p className="text-xs text-slate-400 truncate">{user?.email}</p></div>
+                            <div className="flex-1 min-w-0">
+                                <p className="text-sm font-medium text-white truncate">{user?.name}</p>
+                                <p className="text-xs text-slate-400 truncate">{user?.email}</p>
+                            </div>
                         </div>
                         <Link href="/logout" method="post" as="button"
-                            className="flex items-center gap-3 w-full px-4 py-2.5 text-slate-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition group">
-                            <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" /><span>Logout</span>
+                            className="flex items-center gap-3 w-full px-4 py-2.5 text-slate-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition group"
+                        >
+                            <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+                            <span>Logout</span>
                         </Link>
                     </div>
                 </div>
@@ -89,8 +117,12 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
             <main className="flex-1 min-w-0 overflow-auto">
                 <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50 lg:hidden">
                     <div className="flex items-center p-3">
-                        <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-white"><Menu className="h-6 w-6" /></button>
-                        <div className="flex-1 text-center"><span className="text-white font-bold">DeepAuto - Ente</span></div>
+                        <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-white">
+                            <Menu className="h-6 w-6" />
+                        </button>
+                        <div className="flex-1 text-center">
+                            <span className="text-white font-bold">DeepBandi - Ente</span>
+                        </div>
                         <div className="w-6" />
                     </div>
                 </div>
