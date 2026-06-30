@@ -17,19 +17,20 @@ class BandiListaController extends Controller
         $ente = Ente::where('user_id', $userId)->first();
         $profilo = ProfiloEnte::where('user_id', $userId)->first();
 
-        $minMatch = (int) $request->get('min_match', 50);
-        $maxMatch = $request->filled('max_match') ? (int) $request->get('max_match') : null;
+        $minMatch   = (int) $request->get('min_match', 50);
+        $maxMatch   = $request->filled('max_match') ? (int) $request->get('max_match') : null;
+        $statoFiltro = $request->get('stato', '');
 
-        $oggi      = now()->startOfDay();
+        $oggi       = now()->startOfDay();
         $treMessiFa = $oggi->copy()->subMonths(3)->toDateString();
-        $oggiStr   = $oggi->toDateString();
+        $oggiStr    = $oggi->toDateString();
 
+        // Query base: solo filtri su campi testuali + finestra temporale
+        // Stato e match vengono applicati in PHP per mantenere le stats sempre stabili
         $query = BandoImportato::query();
 
-        // Finestra temporale: scadenza nulla oppure >= 3 mesi fa
         $query->where(function ($q) use ($treMessiFa) {
-            $q->whereNull('scadenza')
-              ->orWhere('scadenza', '>=', $treMessiFa);
+            $q->whereNull('scadenza')->orWhere('scadenza', '>=', $treMessiFa);
         });
 
         if ($request->filled('categoria')) {
@@ -38,38 +39,22 @@ class BandiListaController extends Controller
         if ($request->filled('regione')) {
             $query->where('regione', $request->regione);
         }
-        // Il filtro stato usa la scadenza reale, non il campo salvato nel DB
-        if ($request->filled('stato')) {
-            $statoFiltro = $request->stato;
-            if ($statoFiltro === 'aperto') {
-                $query->where(function ($q) use ($oggiStr) {
-                    $q->whereNull('scadenza')->orWhere('scadenza', '>=', $oggiStr);
-                });
-            } elseif ($statoFiltro === 'in_scadenza') {
-                $query->whereBetween('scadenza', [$oggiStr, $oggi->copy()->addDays(30)->toDateString()]);
-            } elseif ($statoFiltro === 'chiuso') {
-                $query->where('scadenza', '<', $oggiStr);
-            }
-        }
         if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('titolo', 'LIKE', "%{$search}%")
-                  ->orWhere('descrizione', 'LIKE', "%{$search}%");
-            });
+            $s = $request->search;
+            $query->where(fn ($q) => $q->where('titolo', 'LIKE', "%{$s}%")->orWhere('descrizione', 'LIKE', "%{$s}%"));
         }
 
         $tuttiBandi = $query->orderBy('scadenza', 'asc')->get();
 
-        $bandiConMatch = [];
+        // 1. Calcola match per tutti i bandi e costruisce l'insieme base (≥50%)
+        $baselineMatch = [];
         foreach ($tuttiBandi as $bando) {
-            // Stato calcolato live dalla scadenza
             $statoReale = $this->statoReale($bando->scadenza, $oggiStr);
+            $risultato  = $this->calcolaMatch($bando, $profilo);
+            $punteggio  = $risultato['punteggio'];
 
-            $risultato = $this->calcolaMatch($bando, $profilo);
-            $punteggio = $risultato['punteggio'];
-            if ($punteggio >= $minMatch && ($maxMatch === null || $punteggio <= $maxMatch)) {
-                $bandiConMatch[] = [
+            if ($punteggio >= 50) {
+                $baselineMatch[] = [
                     'id'              => $bando->id,
                     'titolo'          => $bando->titolo,
                     'fonte'           => $bando->fonte,
@@ -87,16 +72,25 @@ class BandiListaController extends Controller
             }
         }
 
-        usort($bandiConMatch, fn ($a, $b) => $b['match_punteggio'] <=> $a['match_punteggio']);
-
+        // 2. Stats sempre calcolate sull'insieme base — non cambiano al click dei filtri
         $stats = [
-            'totale'       => count($bandiConMatch),
-            'aperti'       => count(array_filter($bandiConMatch, fn ($b) => $b['stato'] === 'aperto')),
-            'in_scadenza'  => count(array_filter($bandiConMatch, fn ($b) => $b['stato'] === 'in_scadenza')),
-            'chiusi'       => count(array_filter($bandiConMatch, fn ($b) => $b['stato'] === 'chiuso')),
-            'match_alti'   => count(array_filter($bandiConMatch, fn ($b) => $b['match_punteggio'] >= 70)),
-            'match_medi'   => count(array_filter($bandiConMatch, fn ($b) => $b['match_punteggio'] >= 50 && $b['match_punteggio'] < 70)),
+            'totale'      => count($baselineMatch),
+            'aperti'      => count(array_filter($baselineMatch, fn ($b) => $b['stato'] === 'aperto')),
+            'in_scadenza' => count(array_filter($baselineMatch, fn ($b) => $b['stato'] === 'in_scadenza')),
+            'chiusi'      => count(array_filter($baselineMatch, fn ($b) => $b['stato'] === 'chiuso')),
+            'match_alti'  => count(array_filter($baselineMatch, fn ($b) => $b['match_punteggio'] >= 70)),
+            'match_medi'  => count(array_filter($baselineMatch, fn ($b) => $b['match_punteggio'] >= 50 && $b['match_punteggio'] < 70)),
         ];
+
+        // 3. Applica filtri stato e match solo alla lista visualizzata
+        $bandiConMatch = array_values(array_filter($baselineMatch, function ($b) use ($statoFiltro, $minMatch, $maxMatch) {
+            if ($statoFiltro && $b['stato'] !== $statoFiltro) return false;
+            if ($b['match_punteggio'] < $minMatch) return false;
+            if ($maxMatch !== null && $b['match_punteggio'] > $maxMatch) return false;
+            return true;
+        }));
+
+        usort($bandiConMatch, fn ($a, $b) => $b['match_punteggio'] <=> $a['match_punteggio']);
 
         $categorie = BandoImportato::whereNotNull('categoria')->distinct()->pluck('categoria')->filter()->values();
         $regioni   = BandoImportato::whereNotNull('regione')->distinct()->pluck('regione')->filter()->values();
