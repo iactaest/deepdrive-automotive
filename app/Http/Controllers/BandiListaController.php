@@ -4,94 +4,211 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\BandoImportato;
-use App\Models\BandiMatch;
 use App\Models\Ente;
+use App\Models\ProfiloEnte;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class BandiListaController extends Controller
 {
-    /**
-     * Mostra la lista dei bandi con i match per l'ente loggato
-     */
     public function index(Request $request)
     {
-        $ente = Ente::where('user_id', Auth::id())->first();
-        
-        // Query base per i bandi importati
+        $userId = Auth::id();
+        $ente = Ente::where('user_id', $userId)->first();
+        $profilo = ProfiloEnte::where('user_id', $userId)->first();
+
+        $minMatch = (int) $request->get('min_match', 50);
+        $maxMatch = $request->filled('max_match') ? (int) $request->get('max_match') : null;
+
+        $oggi      = now()->startOfDay();
+        $treMessiFa = $oggi->copy()->subMonths(3)->toDateString();
+        $oggiStr   = $oggi->toDateString();
+
         $query = BandoImportato::query();
-        
-        // Filtri
+
+        // Finestra temporale: scadenza nulla oppure >= 3 mesi fa
+        $query->where(function ($q) use ($treMessiFa) {
+            $q->whereNull('scadenza')
+              ->orWhere('scadenza', '>=', $treMessiFa);
+        });
+
         if ($request->filled('categoria')) {
             $query->where('categoria', $request->categoria);
         }
-        
         if ($request->filled('regione')) {
             $query->where('regione', $request->regione);
         }
-        
+        // Il filtro stato usa la scadenza reale, non il campo salvato nel DB
         if ($request->filled('stato')) {
-            $query->where('stato', $request->stato);
+            $statoFiltro = $request->stato;
+            if ($statoFiltro === 'aperto') {
+                $query->where(function ($q) use ($oggiStr) {
+                    $q->whereNull('scadenza')->orWhere('scadenza', '>=', $oggiStr);
+                });
+            } elseif ($statoFiltro === 'in_scadenza') {
+                $query->whereBetween('scadenza', [$oggiStr, $oggi->copy()->addDays(30)->toDateString()]);
+            } elseif ($statoFiltro === 'chiuso') {
+                $query->where('scadenza', '<', $oggiStr);
+            }
         }
-        
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->where(function($q) use ($search) {
+            $query->where(function ($q) use ($search) {
                 $q->where('titolo', 'LIKE', "%{$search}%")
                   ->orWhere('descrizione', 'LIKE', "%{$search}%");
             });
         }
-        
-        $query->orderBy('scadenza', 'asc');
-        $bandi = $query->paginate(20);
-        
-        // Per ogni bando, recupera il match per l'ente
+
+        $tuttiBandi = $query->orderBy('scadenza', 'asc')->get();
+
         $bandiConMatch = [];
-        foreach ($bandi as $bando) {
-            $match = null;
-            if ($ente) {
-                $match = BandiMatch::where('user_id', $ente->id)
-                                   ->where('bando_id', $bando->id)
-                                   ->first();
+        foreach ($tuttiBandi as $bando) {
+            // Stato calcolato live dalla scadenza
+            $statoReale = $this->statoReale($bando->scadenza, $oggiStr);
+
+            $risultato = $this->calcolaMatch($bando, $profilo);
+            $punteggio = $risultato['punteggio'];
+            if ($punteggio >= $minMatch && ($maxMatch === null || $punteggio <= $maxMatch)) {
+                $bandiConMatch[] = [
+                    'id'              => $bando->id,
+                    'titolo'          => $bando->titolo,
+                    'fonte'           => $bando->fonte,
+                    'categoria'       => $bando->categoria,
+                    'regione'         => $bando->regione,
+                    'budget_totale'   => $bando->budget_totale,
+                    'scadenza'        => $bando->scadenza,
+                    'stato'           => $statoReale,
+                    'url'             => $bando->url,
+                    'descrizione'     => $bando->descrizione,
+                    'match_punteggio' => $punteggio,
+                    'punti_forza'     => $risultato['punti_forza'],
+                    'punti_debolezza' => $risultato['punti_debolezza'],
+                ];
             }
-            
-            $bandiConMatch[] = [
-                'id' => $bando->id,
-                'titolo' => $bando->titolo,
-                'fonte' => $bando->fonte,
-                'categoria' => $bando->categoria,
-                'regione' => $bando->regione,
-                'budget_totale' => $bando->budget_totale,
-                'scadenza' => $bando->scadenza,
-                'stato' => $bando->stato,
-                'url' => $bando->url,
-                'descrizione' => $bando->descrizione,
-                'match_punteggio' => $match ? $match->punteggio_compatibilita : 0,
-                'punti_forza' => $match ? json_decode($match->punti_forza, true) : [],
-                'punti_debolezza' => $match ? json_decode($match->punti_debolezza, true) : [],
-            ];
         }
-        
-        // Statistiche
+
+        usort($bandiConMatch, fn ($a, $b) => $b['match_punteggio'] <=> $a['match_punteggio']);
+
         $stats = [
-            'totale' => BandoImportato::count(),
-            'aperti' => BandoImportato::where('stato', 'aperto')->count(),
-            'match_alti' => $ente ? BandiMatch::where('user_id', $ente->id)->where('punteggio_compatibilita', '>=', 70)->count() : 0,
-            'match_medi' => $ente ? BandiMatch::where('user_id', $ente->id)->whereBetween('punteggio_compatibilita', [50, 69])->count() : 0,
+            'totale'       => count($bandiConMatch),
+            'aperti'       => count(array_filter($bandiConMatch, fn ($b) => $b['stato'] === 'aperto')),
+            'in_scadenza'  => count(array_filter($bandiConMatch, fn ($b) => $b['stato'] === 'in_scadenza')),
+            'chiusi'       => count(array_filter($bandiConMatch, fn ($b) => $b['stato'] === 'chiuso')),
+            'match_alti'   => count(array_filter($bandiConMatch, fn ($b) => $b['match_punteggio'] >= 70)),
+            'match_medi'   => count(array_filter($bandiConMatch, fn ($b) => $b['match_punteggio'] >= 50 && $b['match_punteggio'] < 70)),
         ];
-        
+
         $categorie = BandoImportato::whereNotNull('categoria')->distinct()->pluck('categoria')->filter()->values();
-        $regioni = BandoImportato::whereNotNull('regione')->distinct()->pluck('regione')->filter()->values();
-        
+        $regioni   = BandoImportato::whereNotNull('regione')->distinct()->pluck('regione')->filter()->values();
+
         return Inertia::render('Ente/ListaBandi/Index', [
-            'bandi' => $bandiConMatch,
-            'bandiPaginate' => $bandi,
-            'stats' => $stats,
+            'bandi'    => $bandiConMatch,
+            'stats'    => $stats,
             'categorie' => $categorie,
-            'regioni' => $regioni,
-            'filtri' => $request->all(),
-            'ente' => $ente,
+            'regioni'  => $regioni,
+            'filtri'   => array_merge($request->all(), ['min_match' => $minMatch, 'max_match' => $maxMatch]),
+            'ente'     => $ente,
         ]);
+    }
+
+    private function statoReale(?string $scadenza, string $oggi): string
+    {
+        if ($scadenza === null) {
+            return 'aperto';
+        }
+        if ($scadenza < $oggi) {
+            return 'chiuso';
+        }
+        // Scadenza oggi o entro 30 giorni → in scadenza
+        $fra30 = now()->addDays(30)->toDateString();
+        if ($scadenza <= $fra30) {
+            return 'in_scadenza';
+        }
+        return 'aperto';
+    }
+
+    private function calcolaMatch($bando, ?ProfiloEnte $profilo): array
+    {
+        if (!$profilo) {
+            return ['punteggio' => 0, 'punti_forza' => [], 'punti_debolezza' => []];
+        }
+
+        $punteggio     = 0;
+        $puntiForza    = [];
+        $puntiDebolezza = [];
+
+        $toArray = fn ($v) => is_array($v) ? $v : (is_string($v) ? (json_decode($v, true) ?? []) : []);
+
+        $categorieInteresse = array_map('strtolower', $toArray($profilo->categorie_interesse));
+        $settori            = array_map('strtolower', $toArray($profilo->settore_prevalente));
+        $livelliInteresse   = array_map('strtolower', $toArray($profilo->livelli_interesse));
+        $regioneEnte        = strtolower($profilo->regione ?? '');
+
+        $categoriaBando = strtolower($bando->categoria ?? '');
+        $livelloBando   = strtolower($bando->livello ?? '');
+        $regioneBando   = strtolower($bando->regione ?? '');
+
+        // 1. Categoria / Settore (45 pts)
+        $tuttiSettori = array_unique(array_merge($categorieInteresse, $settori));
+        if (!empty($categoriaBando)) {
+            $matchCat = false;
+            foreach ($tuttiSettori as $s) {
+                if (str_contains($categoriaBando, $s) || str_contains($s, $categoriaBando)) {
+                    $matchCat = true;
+                    break;
+                }
+            }
+            if ($matchCat) {
+                $punteggio += 45;
+                $puntiForza[] = 'Categoria compatibile: ' . $bando->categoria;
+            } else {
+                $puntiDebolezza[] = 'Categoria non in linea con i tuoi interessi (' . $bando->categoria . ')';
+            }
+        } else {
+            $punteggio += 15;
+        }
+
+        // 2. Livello (35 pts)
+        if (!empty($livelloBando)) {
+            if (in_array($livelloBando, $livelliInteresse)) {
+                $punteggio += 35;
+                $puntiForza[] = 'Livello compatibile: ' . $bando->livello;
+            } elseif ($livelloBando === 'regionale' && !empty($regioneEnte) && str_contains($regioneBando, $regioneEnte)) {
+                $punteggio += 25;
+                $puntiForza[] = 'Bando regionale per ' . $bando->regione;
+            } elseif ($livelloBando === 'nazionale') {
+                $punteggio += 15;
+                $puntiDebolezza[] = 'Livello nazionale (aperto a tutti, ma non preferito)';
+            } else {
+                $puntiDebolezza[] = 'Livello ' . $bando->livello . ' non tra i tuoi livelli di interesse';
+            }
+        } else {
+            $punteggio += 15;
+        }
+
+        // 3. Regione (20 pts)
+        if (!empty($regioneBando)) {
+            $isEuropeo = in_array('europeo', $livelliInteresse);
+            if (in_array($regioneBando, ['europa', 'europe']) && $isEuropeo) {
+                $punteggio += 20;
+                $puntiForza[] = 'Bando europeo compatibile con il tuo profilo';
+            } elseif (!empty($regioneEnte) && str_contains($regioneBando, $regioneEnte)) {
+                $punteggio += 20;
+                $puntiForza[] = 'Regione compatibile: ' . $bando->regione;
+            } elseif (in_array($regioneBando, ['nazionale', 'italia', 'national', 'italy'])) {
+                $punteggio += 10;
+            } else {
+                $puntiDebolezza[] = 'Regione ' . $bando->regione . ' diversa dalla tua (' . $profilo->regione . ')';
+            }
+        } else {
+            $punteggio += 10;
+        }
+
+        return [
+            'punteggio'      => min($punteggio, 100),
+            'punti_forza'    => $puntiForza,
+            'punti_debolezza' => $puntiDebolezza,
+        ];
     }
     
     /**

@@ -23,6 +23,8 @@ interface Props {
     stats: {
         totale: number;
         aperti: number;
+        in_scadenza: number;
+        chiusi: number;
         match_alti: number;
         match_medi: number;
     };
@@ -32,221 +34,266 @@ interface Props {
     ente: any;
 }
 
-export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filtri, ente }: Props) {
-    const [search, setSearch] = useState(filtri.search || '');
-    const [categoria, setCategoria] = useState(filtri.categoria || '');
-    const [regione, setRegione] = useState(filtri.regione || '');
-    const [stato, setStato] = useState(filtri.stato || '');
+const getMatchColor = (scadenza: string | null, stato: string): string => {
+    if (stato === 'chiuso') return 'text-red-400';
+    if (!scadenza) return 'text-green-400';
+    const oggi = new Date(); oggi.setHours(0,0,0,0);
+    const sc = new Date(scadenza); sc.setHours(0,0,0,0);
+    const gg = Math.floor((sc.getTime() - oggi.getTime()) / 86400000);
+    if (gg < 0)    return 'text-red-400';
+    if (gg <= 30)  return 'text-yellow-400';
+    if (gg <= 180) return 'text-orange-400';
+    return 'text-green-400';
+};
 
-    const handleFilter = () => {
-        router.get('/lista-bandi', {
-            search,
-            categoria,
-            regione,
-            stato
-        });
+const getScadenzaBadgeClass = (scadenza: string | null, stato: string): string => {
+    if (stato === 'chiuso') return 'bg-red-500/20 text-red-400';
+    if (!scadenza) return 'bg-green-500/20 text-green-400';
+    const oggi = new Date(); oggi.setHours(0,0,0,0);
+    const sc = new Date(scadenza); sc.setHours(0,0,0,0);
+    const gg = Math.floor((sc.getTime() - oggi.getTime()) / 86400000);
+    if (gg < 0)    return 'bg-red-500/20 text-red-400';
+    if (gg <= 30)  return 'bg-yellow-500/20 text-yellow-400';
+    if (gg <= 180) return 'bg-orange-500/20 text-orange-400';
+    return 'bg-green-500/20 text-green-400';
+};
+
+const getStatoBadgeClass = (stato: string): string => {
+    if (stato === 'aperto')      return 'bg-green-500/20 text-green-400';
+    if (stato === 'in_scadenza') return 'bg-yellow-500/20 text-yellow-400';
+    return 'bg-red-500/20 text-red-400';
+};
+
+const PER_PAGINA = 10;
+
+export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filtri }: Props) {
+    const [search, setSearch]       = useState(filtri.search || '');
+    const [categoria, setCategoria] = useState(filtri.categoria || '');
+    const [regione, setRegione]     = useState(filtri.regione || '');
+    const [stato, setStato]         = useState(filtri.stato || '');
+    const [minMatch, setMinMatch]   = useState<number>(filtri.min_match ?? 50);
+    const [pagina, setPagina]       = useState(1);
+
+    const filtroAttivo = {
+        stato: filtri.stato || '',
+        min_match: filtri.min_match ?? 50,
+        max_match: filtri.max_match ?? null,
     };
+
+    const naviga = (params: Record<string, any>) => {
+        setPagina(1);
+        router.get('/ente/lista-bandi', { search, categoria, regione, ...params });
+    };
+
+    const handleFilter = () => naviga({ stato, min_match: minMatch });
 
     const handleReset = () => {
-        setSearch('');
-        setCategoria('');
-        setRegione('');
-        setStato('');
-        router.get('/lista-bandi');
+        setSearch(''); setCategoria(''); setRegione(''); setStato(''); setMinMatch(50); setPagina(1);
+        router.get('/ente/lista-bandi');
     };
 
-    const getMatchColor = (punteggio: number) => {
-        if (punteggio >= 70) return 'text-green-400';
-        if (punteggio >= 50) return 'text-yellow-400';
-        return 'text-red-400';
+    // Bottoni riga 1 — stato
+    const btnStato = (label: string, valore: string, count: number, colorNum: string, colorBorder: string) => {
+        const attivo = filtroAttivo.stato === valore;
+        return (
+            <button
+                onClick={() => naviga({ stato: valore, min_match: 50 })}
+                className={`flex-1 rounded-xl p-4 border text-left transition-all hover:brightness-110 ${
+                    attivo
+                        ? `${colorBorder.replace('border-', 'border-').replace('/40', '')} bg-slate-700/60`
+                        : `${colorBorder} bg-slate-800/50`
+                }`}
+            >
+                <div className={`text-2xl font-bold ${colorNum}`}>{count}</div>
+                <div className="text-sm text-slate-400 mt-0.5">{label}</div>
+                {attivo && <div className="text-xs text-slate-500 mt-1">▼ filtro attivo</div>}
+            </button>
+        );
     };
+
+    // Bottoni riga 2 — match
+    const btnMatch = (label: string, min: number, max: number | null, count: number, colorNum: string, colorBorder: string) => {
+        const attivo = filtroAttivo.min_match === min && filtroAttivo.max_match === max;
+        return (
+            <button
+                onClick={() => {
+                    const p: Record<string, any> = { stato: filtroAttivo.stato, min_match: min };
+                    if (max !== null) p.max_match = max;
+                    naviga(p);
+                }}
+                className={`flex-1 rounded-xl p-4 border text-left transition-all hover:brightness-110 ${
+                    attivo
+                        ? `${colorBorder.replace('/40', '')} bg-slate-700/60`
+                        : `${colorBorder} bg-slate-800/50`
+                }`}
+            >
+                <div className={`text-2xl font-bold ${colorNum}`}>{count}</div>
+                <div className="text-sm text-slate-400 mt-0.5">{label}</div>
+                {attivo && <div className="text-xs text-slate-500 mt-1">▼ filtro attivo</div>}
+            </button>
+        );
+    };
+
+    // Paginazione
+    const totalePagine = Math.ceil(bandi.length / PER_PAGINA);
+    const bandiPagina  = bandi.slice((pagina - 1) * PER_PAGINA, pagina * PER_PAGINA);
 
     return (
         <LayoutEnte>
             <div className="py-8">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
                     {/* Header */}
-                    <div className="mb-8">
+                    <div className="mb-6">
                         <h1 className="text-3xl font-bold text-white">📋 Lista Bandi</h1>
-                        <p className="text-slate-400 mt-2">
-                            Visualizza tutti i bandi disponibili e il loro match con il tuo profilo
+                        <p className="text-slate-400 mt-1">
+                            {stats.totale} bandi trovati — clicca le card per filtrare
                         </p>
                     </div>
 
-                    {/* Statistiche */}
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-2xl font-bold text-white">{stats.totale}</div>
-                            <div className="text-sm text-slate-400">Totale Bandi</div>
-                        </div>
-                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-2xl font-bold text-green-400">{stats.aperti}</div>
-                            <div className="text-sm text-slate-400">Bandi Aperti</div>
-                        </div>
-                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-2xl font-bold text-blue-400">{stats.match_alti}</div>
-                            <div className="text-sm text-slate-400">Match Alto (&gt;70%)</div>
-                        </div>
-                        <div className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50">
-                            <div className="text-2xl font-bold text-yellow-400">{stats.match_medi}</div>
-                            <div className="text-sm text-slate-400">Match Medio (50-69%)</div>
+                    {/* Unica riga — tutti i filtri */}
+                    <div className="flex gap-3 mb-8 flex-wrap">
+                        {btnStato('Aperti',            'aperto',      stats.aperti,      'text-green-400',  'border-green-700/40')}
+                        {btnStato('Chiusi recenti',    'chiuso',      stats.chiusi,      'text-red-400',    'border-red-700/40')}
+                        {btnStato('In scadenza ≤30gg', 'in_scadenza', stats.in_scadenza, 'text-yellow-400', 'border-yellow-700/40')}
+                        {btnMatch('Bandi ≥ 50% match', 50, null, stats.totale,     'text-white',      'border-slate-600/60')}
+                        {btnMatch('Match Alto >70%',   70, null, stats.match_alti, 'text-blue-400',   'border-blue-700/40')}
+                        {btnMatch('Match Medio 50–69%',50, 69,  stats.match_medi, 'text-orange-400', 'border-orange-700/40')}
+                    </div>
+
+                    {/* Legenda colori */}
+                    <div className="flex flex-wrap gap-4 mb-4 text-xs text-slate-400">
+                        <span>% match colorato per scadenza:</span>
+                        <span className="text-green-400 font-semibold">● Verde</span><span>&gt;6 mesi</span>
+                        <span className="text-orange-400 font-semibold">● Arancio</span><span>1–6 mesi</span>
+                        <span className="text-yellow-400 font-semibold">● Giallo</span><span>≤1 mese</span>
+                        <span className="text-red-400 font-semibold">● Rosso</span><span>chiuso</span>
+                    </div>
+
+                    {/* Filtri */}
+                    <div className="bg-slate-800/50 rounded-xl px-3 py-2 border border-slate-700/50 mb-6">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                            <div className="flex-1 min-w-[140px]">
+                                <input
+                                    type="text"
+                                    placeholder="Cerca per titolo..."
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleFilter()}
+                                    className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
+                                />
+                            </div>
+                            <div className="flex-1 min-w-[120px] max-w-[160px]">
+                                <select value={categoria} onChange={(e) => setCategoria(e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                    <option value="">Tutte le categorie</option>
+                                    {categorie.map((cat) => (
+                                        <option key={cat} value={cat}>{cat.length > 40 ? cat.substring(0, 40) + '…' : cat}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1 min-w-[120px] max-w-[150px]">
+                                <select value={regione} onChange={(e) => setRegione(e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                    <option value="">Tutte le regioni</option>
+                                    {regioni.map((r) => (
+                                        <option key={r} value={r}>{r.length > 28 ? r.substring(0, 28) + '…' : r}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="flex-1 min-w-[100px] max-w-[130px]">
+                                <select value={stato} onChange={(e) => setStato(e.target.value)}
+                                    className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500">
+                                    <option value="">Tutti gli stati</option>
+                                    <option value="aperto">Aperto</option>
+                                    <option value="in_scadenza">In scadenza</option>
+                                    <option value="chiuso">Chiuso</option>
+                                </select>
+                            </div>
+                            <div className="flex-1 min-w-[110px] max-w-[140px]">
+                                <select value={minMatch} onChange={(e) => setMinMatch(Number(e.target.value))}
+                                    className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-blue-500/50 rounded-lg text-blue-300 focus:outline-none focus:border-blue-400">
+                                    <option value={0}>Tutti i bandi</option>
+                                    <option value={50}>≥ 50% match</option>
+                                    <option value={70}>≥ 70% match</option>
+                                    <option value={90}>≥ 90% match</option>
+                                </select>
+                            </div>
+                            <button onClick={handleFilter}
+                                className="px-3.5 py-1.5 text-sm bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition whitespace-nowrap">
+                                🔍 Filtra
+                            </button>
+                            <button onClick={handleReset}
+                                className="px-3.5 py-1.5 text-sm bg-slate-700 rounded-lg text-white hover:bg-slate-600 transition whitespace-nowrap">
+                                ↻ Reset
+                            </button>
                         </div>
                     </div>
 
-                    {/* Filtri - COMPATTI */}
-{/* Filtri - DISTRIBUITI SU TUTTA LA LARGHEZZA */}
-<div className="bg-slate-800/50 rounded-xl px-3 py-2 border border-slate-700/50 mb-8">
-    <div className="flex flex-wrap items-center gap-1.5">
-        {/* Input ricerca - occupa più spazio */}
-        <div className="flex-1 min-w-[140px]">
-            <input
-                type="text"
-                placeholder="Cerca per titolo..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
-            />
-        </div>
-
-        {/* Select Categorie - con ellissi */}
-        <div className="flex-1 min-w-[120px] max-w-[160px]">
-            <select
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 truncate"
-                title={categoria || 'Tutte le categorie'}
-            >
-                <option value="">Tutte le categorie</option>
-                {categorie.map((cat) => (
-                    <option key={cat} value={cat} title={cat}>
-                        {cat.length > 50 ? cat.substring(0, 50) + '...' : cat}
-                    </option>
-                ))}
-            </select>
-        </div>
-
-        {/* Select Regioni - con ellissi */}
-        <div className="flex-1 min-w-[120px] max-w-[150px]">
-            <select
-                value={regione}
-                onChange={(e) => setRegione(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 truncate"
-                title={regione || 'Tutte le regioni'}
-            >
-                <option value="">Tutte le regioni</option>
-                {regioni.map((r) => (
-                    <option key={r} value={r} title={r}>
-                        {r.length > 30 ? r.substring(0, 30) + '...' : r}
-                    </option>
-                ))}
-            </select>
-        </div>
-
-        {/* Select Stati */}
-        <div className="flex-1 min-w-[100px] max-w-[130px]">
-            <select
-                value={stato}
-                onChange={(e) => setStato(e.target.value)}
-                className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:outline-none focus:border-blue-500 truncate"
-                title={stato || 'Tutti gli stati'}
-            >
-                <option value="">Tutti gli stati</option>
-                <option value="aperto">Aperto</option>
-                <option value="in_scadenza">In scadenza</option>
-                <option value="chiuso">Chiuso</option>
-            </select>
-        </div>
-
-        {/* Pulsanti */}
-        <button
-            onClick={handleFilter}
-            className="px-3.5 py-1.5 text-sm bg-blue-600 rounded-lg text-white hover:bg-blue-500 transition whitespace-nowrap"
-        >
-            🔍 Filtra
-        </button>
-        <button
-            onClick={handleReset}
-            className="px-3.5 py-1.5 text-sm bg-slate-700 rounded-lg text-white hover:bg-slate-600 transition whitespace-nowrap"
-        >
-            ↻ Reset
-        </button>
-    </div>
-</div>
-
                     {/* Lista Bandi */}
-                    <div className="space-y-4">
+                    <div className="space-y-3">
                         {bandi.length === 0 ? (
                             <div className="bg-slate-800/50 rounded-xl p-8 border border-slate-700/50 text-center">
                                 <div className="text-4xl mb-4">📭</div>
                                 <h2 className="text-xl font-semibold text-white mb-2">Nessun bando trovato</h2>
-                                <p className="text-slate-400">Prova a modificare i filtri o a sincronizzare nuove fonti.</p>
+                                <p className="text-slate-400">Prova a modificare i filtri o clicca Reset.</p>
                             </div>
                         ) : (
-                            bandi.map((bando) => (
-                                <div
-                                    key={bando.id}
-                                    className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-blue-500/50 transition-all"
-                                >
+                            bandiPagina.map((bando) => (
+                                <div key={bando.id}
+                                    className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/50 hover:border-blue-500/50 transition-all">
                                     <div className="flex flex-wrap items-start gap-4">
-                                        <div className="flex-shrink-0 w-16 text-center">
-                                            <div className={`text-2xl font-bold ${getMatchColor(bando.match_punteggio)}`}>
+
+                                        <div className="flex-shrink-0 w-14 text-center">
+                                            <div className={`text-2xl font-bold ${getMatchColor(bando.scadenza, bando.stato)}`}>
                                                 {bando.match_punteggio}%
                                             </div>
                                             <div className="text-xs text-slate-400">Match</div>
                                         </div>
 
                                         <div className="flex-1 min-w-[200px]">
-                                            <h2 className="text-lg font-semibold text-white">
-                                                <a
-                                                    href={`/ente/lista-bandi/${bando.id}`}
-                                                    className="hover:text-blue-400 transition"
-                                                >
+                                            <h2 className="text-base font-semibold text-white">
+                                                <a href={`/ente/lista-bandi/${bando.id}`} className="hover:text-blue-400 transition">
                                                     {bando.titolo}
                                                 </a>
                                             </h2>
-
                                             <div className="flex flex-wrap gap-2 mt-2">
                                                 {bando.categoria && (
-                                                    <span className="px-2 py-1 bg-blue-500/20 text-blue-400 text-xs rounded-full">
-                                                        {bando.categoria}
-                                                    </span>
+                                                    <span className="px-2 py-0.5 bg-blue-500/20 text-blue-400 text-xs rounded-full">{bando.categoria}</span>
                                                 )}
                                                 {bando.regione && (
-                                                    <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full">
-                                                        📍 {bando.regione}
-                                                    </span>
+                                                    <span className="px-2 py-0.5 bg-slate-600/40 text-slate-300 text-xs rounded-full">📍 {bando.regione}</span>
                                                 )}
                                                 {bando.scadenza && (
-                                                    <span className="px-2 py-1 bg-red-500/20 text-red-400 text-xs rounded-full">
+                                                    <span className={`px-2 py-0.5 text-xs rounded-full ${getScadenzaBadgeClass(bando.scadenza, bando.stato)}`}>
                                                         📅 {new Date(bando.scadenza).toLocaleDateString('it-IT')}
                                                     </span>
                                                 )}
                                                 {bando.budget_totale && (
-                                                    <span className="px-2 py-1 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
-                                                        💰 {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR' }).format(bando.budget_totale)}
+                                                    <span className="px-2 py-0.5 bg-yellow-500/20 text-yellow-400 text-xs rounded-full">
+                                                        💰 {new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(bando.budget_totale)}
                                                     </span>
                                                 )}
-                                                <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full">
+                                                <span className="px-2 py-0.5 bg-purple-500/20 text-purple-400 text-xs rounded-full">
                                                     {bando.fonte || 'Sconosciuta'}
                                                 </span>
-                                                <span className={`px-2 py-1 ${bando.stato === 'aperto' ? 'bg-green-500/20 text-green-400' : 'bg-red-500/20 text-red-400'} text-xs rounded-full`}>
-                                                    {bando.stato}
+                                                <span className={`px-2 py-0.5 text-xs rounded-full ${getStatoBadgeClass(bando.stato)}`}>
+                                                    {bando.stato === 'aperto' ? 'Aperto' : bando.stato === 'in_scadenza' ? 'In scadenza' : 'Chiuso'}
                                                 </span>
                                             </div>
-
                                             {bando.match_punteggio > 0 && (
-                                                <div className="mt-3 space-y-1">
-                                                    {bando.punti_forza && bando.punti_forza.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {bando.punti_forza.map((punto, idx) => (
-                                                                <span key={idx} className="text-xs text-green-400">✅ {punto}</span>
+                                                <div className="mt-2 space-y-1">
+                                                    {bando.punti_forza?.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {bando.punti_forza.map((p, i) => (
+                                                                <span key={i} className="text-xs text-green-400">✅ {p}</span>
                                                             ))}
                                                         </div>
                                                     )}
-                                                    {bando.punti_debolezza && bando.punti_debolezza.length > 0 && (
-                                                        <div className="flex flex-wrap gap-1">
-                                                            {bando.punti_debolezza.map((punto, idx) => (
-                                                                <span key={idx} className="text-xs text-red-400">⚠️ {punto}</span>
+                                                    {bando.punti_debolezza?.length > 0 && (
+                                                        <div className="flex flex-wrap gap-2">
+                                                            {bando.punti_debolezza.map((p, i) => (
+                                                                <span key={i} className="text-xs text-red-400">⚠️ {p}</span>
                                                             ))}
                                                         </div>
                                                     )}
@@ -255,10 +302,8 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
                                         </div>
 
                                         <div className="flex-shrink-0">
-                                            <a
-                                                href={`/ente/lista-bandi/${bando.id}`}
-                                                className="inline-block px-4 py-2 bg-blue-600 rounded-lg text-white text-sm hover:bg-blue-500 transition"
-                                            >
+                                            <a href={`/ente/lista-bandi/${bando.id}`}
+                                                className="inline-block px-4 py-2 bg-blue-600 rounded-lg text-white text-sm hover:bg-blue-500 transition">
                                                 📖 Dettaglio
                                             </a>
                                         </div>
@@ -267,6 +312,56 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
                             ))
                         )}
                     </div>
+
+                    {/* Paginazione */}
+                    {totalePagine > 1 && (
+                        <div className="flex items-center justify-between mt-6">
+                            <p className="text-sm text-slate-400">
+                                {(pagina - 1) * PER_PAGINA + 1}–{Math.min(pagina * PER_PAGINA, bandi.length)} di {bandi.length} bandi
+                            </p>
+                            <div className="flex gap-1">
+                                <button
+                                    onClick={() => setPagina(p => Math.max(1, p - 1))}
+                                    disabled={pagina === 1}
+                                    className="px-3 py-1.5 text-sm rounded-lg bg-slate-700 text-white disabled:opacity-30 hover:bg-slate-600 transition"
+                                >
+                                    ‹ Prec
+                                </button>
+                                {Array.from({ length: totalePagine }, (_, i) => i + 1)
+                                    .filter(n => n === 1 || n === totalePagine || Math.abs(n - pagina) <= 2)
+                                    .reduce<(number | '…')[]>((acc, n, idx, arr) => {
+                                        if (idx > 0 && n - (arr[idx - 1] as number) > 1) acc.push('…');
+                                        acc.push(n);
+                                        return acc;
+                                    }, [])
+                                    .map((n, i) =>
+                                        n === '…' ? (
+                                            <span key={`e${i}`} className="px-2 py-1.5 text-sm text-slate-500">…</span>
+                                        ) : (
+                                            <button
+                                                key={n}
+                                                onClick={() => setPagina(n as number)}
+                                                className={`px-3 py-1.5 text-sm rounded-lg transition ${
+                                                    pagina === n
+                                                        ? 'bg-blue-600 text-white'
+                                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'
+                                                }`}
+                                            >
+                                                {n}
+                                            </button>
+                                        )
+                                    )}
+                                <button
+                                    onClick={() => setPagina(p => Math.min(totalePagine, p + 1))}
+                                    disabled={pagina === totalePagine}
+                                    className="px-3 py-1.5 text-sm rounded-lg bg-slate-700 text-white disabled:opacity-30 hover:bg-slate-600 transition"
+                                >
+                                    Succ ›
+                                </button>
+                            </div>
+                        </div>
+                    )}
+
                 </div>
             </div>
         </LayoutEnte>

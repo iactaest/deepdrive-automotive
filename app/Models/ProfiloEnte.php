@@ -31,7 +31,7 @@ class ProfiloEnte extends Model
         
         // STEP 4 - Caratteristiche
         'popolazione_comune',
-        'settore_prevalente' => 'array',
+        'settore_prevalente',
         'esperienza_fondi_europei',
         'ruolo_bandi',
         'cofinanziamento_disponibile',
@@ -66,6 +66,7 @@ class ProfiloEnte extends Model
     ];
 
     protected $casts = [
+        'settore_prevalente' => 'array',
         'categorie_interesse' => 'array',
         'livelli_interesse' => 'array',
         'importi_interesse' => 'array',
