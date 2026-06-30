@@ -74,34 +74,42 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
     const [minMatch, setMinMatch]   = useState<number>(filtri.min_match ?? 50);
     const [pagina, setPagina]       = useState(1);
 
-    const filtroAttivo = {
-        stato: filtri.stato || '',
-        min_match: filtri.min_match ?? 50,
-        max_match: filtri.max_match ?? null,
+    // Parametri persistenti dalla URL (search/categoria/regione)
+    const baseParams = {
+        search:    filtri.search    || '',
+        categoria: filtri.categoria || '',
+        regione:   filtri.regione   || '',
     };
 
-    const naviga = (params: Record<string, any>) => {
+    const statoAttivo   = filtri.stato    || '';
+    const minMatchAttivo = filtri.min_match != null ? Number(filtri.min_match) : 50;
+    const maxMatchAttivo = filtri.max_match != null ? Number(filtri.max_match) : null;
+
+    const handleFilter = () => {
         setPagina(1);
-        router.get('/ente/lista-bandi', { search, categoria, regione, ...params });
+        router.get('/ente/lista-bandi', { ...baseParams, stato, min_match: minMatch });
     };
-
-    const handleFilter = () => naviga({ stato, min_match: minMatch });
 
     const handleReset = () => {
         setSearch(''); setCategoria(''); setRegione(''); setStato(''); setMinMatch(50); setPagina(1);
         router.get('/ente/lista-bandi');
     };
 
-    // Bottoni riga 1 — stato
+    // Bottoni stato: filtrano solo per stato, reset match a default (50, no max)
     const btnStato = (label: string, valore: string, count: number, colorNum: string, colorBorder: string) => {
-        const attivo = filtroAttivo.stato === valore;
+        const attivo = statoAttivo === valore;
         return (
             <button
-                onClick={() => naviga({ stato: valore, min_match: 50 })}
+                onClick={() => {
+                    setPagina(1);
+                    router.get('/ente/lista-bandi', {
+                        ...baseParams,
+                        stato: attivo ? '' : valore,
+                        min_match: 50,
+                    });
+                }}
                 className={`flex-1 rounded-xl p-4 border text-left transition-all hover:brightness-110 ${
-                    attivo
-                        ? `${colorBorder.replace('border-', 'border-').replace('/40', '')} bg-slate-700/60`
-                        : `${colorBorder} bg-slate-800/50`
+                    attivo ? `${colorBorder.replace('/40', '')} bg-slate-700/60` : `${colorBorder} bg-slate-800/50`
                 }`}
             >
                 <div className={`text-2xl font-bold ${colorNum}`}>{count}</div>
@@ -111,20 +119,19 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
         );
     };
 
-    // Bottoni riga 2 — match
+    // Bottoni match: filtrano solo per punteggio, azzerano il filtro stato
     const btnMatch = (label: string, min: number, max: number | null, count: number, colorNum: string, colorBorder: string) => {
-        const attivo = filtroAttivo.min_match === min && filtroAttivo.max_match === max;
+        const attivo = minMatchAttivo === min && maxMatchAttivo === max && !statoAttivo;
         return (
             <button
                 onClick={() => {
-                    const p: Record<string, any> = { stato: filtroAttivo.stato, min_match: min };
+                    setPagina(1);
+                    const p: Record<string, any> = { ...baseParams, min_match: min };
                     if (max !== null) p.max_match = max;
-                    naviga(p);
+                    router.get('/ente/lista-bandi', p);
                 }}
                 className={`flex-1 rounded-xl p-4 border text-left transition-all hover:brightness-110 ${
-                    attivo
-                        ? `${colorBorder.replace('/40', '')} bg-slate-700/60`
-                        : `${colorBorder} bg-slate-800/50`
+                    attivo ? `${colorBorder.replace('/40', '')} bg-slate-700/60` : `${colorBorder} bg-slate-800/50`
                 }`}
             >
                 <div className={`text-2xl font-bold ${colorNum}`}>{count}</div>

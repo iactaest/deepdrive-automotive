@@ -205,40 +205,36 @@ class BandiListaController extends Controller
         ];
     }
     
-    /**
-     * Mostra i dettagli di un bando specifico
-     */
     public function show($id)
     {
-        $bando = BandoImportato::findOrFail($id);
-        
-        $ente = Ente::where('user_id', Auth::id())->first();
-        
-        $match = null;
-        if ($ente) {
-            $match = BandiMatch::where('user_id', $ente->id)
-                               ->where('bando_id', $id)
-                               ->first();
-        }
-        
+        $bando   = BandoImportato::findOrFail($id);
+        $userId  = Auth::id();
+        $ente    = Ente::where('user_id', $userId)->first();
+        $profilo = ProfiloEnte::where('user_id', $userId)->first();
+
+        $oggiStr    = now()->startOfDay()->toDateString();
+        $statoReale = $this->statoReale($bando->scadenza, $oggiStr);
+        $risultato  = $this->calcolaMatch($bando, $profilo);
+
         return Inertia::render('Ente/ListaBandi/Dettaglio', [
             'bando' => [
-                'id' => $bando->id,
-                'titolo' => $bando->titolo,
-                'fonte' => $bando->fonte,
-                'categoria' => $bando->categoria,
-                'regione' => $bando->regione,
-                'budget_totale' => $bando->budget_totale,
-                'scadenza' => $bando->scadenza,
-                'stato' => $bando->stato,
-                'url' => $bando->url,
-                'descrizione' => $bando->descrizione,
+                'id'           => $bando->id,
+                'titolo'       => $bando->titolo,
+                'fonte'        => $bando->fonte,
+                'categoria'    => $bando->categoria,
+                'regione'      => $bando->regione,
+                'livello'      => $bando->livello,
+                'budget_totale'=> $bando->budget_totale,
+                'scadenza'     => $bando->scadenza,
+                'stato'        => $statoReale,
+                'url'          => $bando->url,
+                'descrizione'  => $bando->descrizione,
             ],
-            'match' => $match ? [
-                'punteggio' => $match->punteggio_compatibilita,
-                'punti_forza' => json_decode($match->punti_forza, true),
-                'punti_debolezza' => json_decode($match->punti_debolezza, true),
-            ] : null,
+            'match' => [
+                'punteggio'      => $risultato['punteggio'],
+                'punti_forza'    => $risultato['punti_forza'],
+                'punti_debolezza'=> $risultato['punti_debolezza'],
+            ],
             'ente' => $ente,
         ]);
     }
