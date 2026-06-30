@@ -173,21 +173,21 @@ class SyncEuFundingTenders extends Command
             $bando = BandoImportato::updateOrCreate(
                 ['codice_esterno' => $id, 'fonte' => 'eu_funding_' . strtolower(str_replace(' ', '_', $programmaNome))],
                 [
-                    'titolo' => substr($titolo, 0, 255),
-                    'descrizione' => $descrizione ? substr($descrizione, 0, 2000) : null,
+                    'titolo' => mb_substr($this->sanitizeString($titolo), 0, 255),
+                    'descrizione' => $descrizione ? mb_substr($this->sanitizeString($descrizione), 0, 2000) : null,
                     'url' => $url,
                     'categoria' => $categoria,
                     'livello' => 'europeo',
                     'regione' => 'Europa',
-                    'target' => $typeOfAction ?? 'Tutti',
+                    'target' => $typeOfAction ? mb_substr($typeOfAction, 0, 255) : 'Tutti',
                     'budget_totale' => null,
                     'scadenza' => $scadenza ? date('Y-m-d', strtotime($scadenza)) : null,
                     'stato' => $stato,
-                    'extra_data' => json_encode($data),
+                    'extra_data' => json_encode($data, JSON_UNESCAPED_UNICODE),
                 ]
             );
-            
-            $this->info("✅ Importato: " . substr($titolo, 0, 50) . "...");
+
+            $this->info("✅ Importato: " . mb_substr($titolo, 0, 50) . "...");
             return true;
             
         } catch (\Exception $e) {
@@ -250,5 +250,14 @@ class SyncEuFundingTenders extends Command
         }
         
         return 'aperto';
+    }
+
+    private function sanitizeString(string $value): string
+    {
+        // Converte in UTF-8 valido e rimuove sequenze non supportate da MySQL utf8mb4
+        $value = mb_convert_encoding($value, 'UTF-8', 'UTF-8');
+        // Rimuove caratteri di controllo eccetto tab/newline/carriage return
+        $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value);
+        return $value ?? '';
     }
 }
