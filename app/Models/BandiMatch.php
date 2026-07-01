@@ -38,6 +38,6 @@ class BandiMatch extends Model
     
     public function bando()
     {
-        return $this->belongsTo(Bando::class);
+        return $this->belongsTo(BandoImportato::class, 'bando_id');
     }
 }

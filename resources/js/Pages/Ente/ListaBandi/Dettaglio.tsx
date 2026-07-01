@@ -73,7 +73,50 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                     </div>
 
                     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                        <h1 className="text-2xl font-bold text-white mb-6">{bando.titolo}</h1>
+
+                        {/* Header: titolo + badges + button */}
+                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
+                            <div className="flex-1">
+                                <h1 className="text-2xl font-bold text-white mb-3">{bando.titolo}</h1>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatoBadge(bando.stato)}`}>
+                                        {statoLabel(bando.stato)}
+                                    </span>
+                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 ${getMatchColor(bando.scadenza, bando.stato)}`}>
+                                        📅 Scadenza:{' '}
+                                        {bando.scadenza
+                                            ? new Date(bando.scadenza + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                                            : 'Non specificata'}
+                                    </span>
+                                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 text-slate-300">
+                                        🎯 Match: {match.punteggio}%
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Button link bando — sempre visibile */}
+                            <div className="shrink-0 flex flex-col gap-2">
+                                {bando.url ? (
+                                    <a
+                                        href={bando.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm font-medium transition"
+                                    >
+                                        🔗 Vai al bando originale
+                                    </a>
+                                ) : (
+                                    <a
+                                        href={`https://www.google.com/search?q=${encodeURIComponent(bando.titolo + ' bando sito:gov.it OR sito:regione.sicilia.it OR sito:europa.eu')}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-medium transition border border-slate-600/60"
+                                    >
+                                        🔍 Cerca il bando online
+                                    </a>
+                                )}
+                            </div>
+                        </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
@@ -85,15 +128,9 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                                         <span className="text-slate-400">Fonte</span>
                                         <span className="text-white">{bando.fonte || '—'}</span>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-slate-400">Stato</span>
-                                        <span className={`px-2 py-0.5 rounded-full text-xs ${getStatoBadge(bando.stato)}`}>
-                                            {statoLabel(bando.stato)}
-                                        </span>
-                                    </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-400">Categoria</span>
-                                        <span className="text-white">{bando.categoria || '—'}</span>
+                                        <span className="text-right text-white max-w-[60%]">{bando.categoria || '—'}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-400">Livello</span>
@@ -101,10 +138,10 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-slate-400">Regione</span>
-                                        <span className="text-white">{bando.regione || '—'}</span>
+                                        <span className="text-right text-white max-w-[60%]">{bando.regione || '—'}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span className="text-slate-400">Budget</span>
+                                        <span className="text-slate-400">Budget totale</span>
                                         <span className="text-white">
                                             {bando.budget_totale
                                                 ? new Intl.NumberFormat('it-IT', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(bando.budget_totale)
@@ -115,13 +152,13 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                                         <span className="text-slate-400">Scadenza</span>
                                         <span className={`font-medium ${getMatchColor(bando.scadenza, bando.stato)}`}>
                                             {bando.scadenza
-                                                ? new Date(bando.scadenza).toLocaleDateString('it-IT')
-                                                : '—'}
+                                                ? new Date(bando.scadenza + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                                                : 'Non specificata'}
                                         </span>
                                     </div>
                                 </div>
 
-                                {/* Descrizione sotto scadenza */}
+                                {/* Descrizione */}
                                 {bando.descrizione && (
                                     <div className="mt-4">
                                         <h3 className="text-sm font-semibold text-slate-400 mb-2">📝 Descrizione</h3>
@@ -172,33 +209,12 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                             </div>
                         </div>
 
-                        {/* Fonte e link originale */}
-                        <div className="mt-6 pt-4 border-t border-slate-700/50 space-y-3">
-                            <div>
-                                <span className="text-xs text-slate-400 uppercase tracking-wide">Fonte dati</span>
-                                <p className="text-sm text-slate-300 mt-0.5">{bando.fonte || '—'}</p>
+                        {/* Footer: URL per esteso se disponibile */}
+                        {bando.url && (
+                            <div className="mt-6 pt-4 border-t border-slate-700/50">
+                                <p className="text-xs text-slate-500 break-all">{bando.url}</p>
                             </div>
-
-                            {bando.url ? (
-                                <div>
-                                    <span className="text-xs text-slate-400 uppercase tracking-wide">Link bando originale</span>
-                                    <p className="text-xs text-slate-500 break-all mt-0.5 mb-2">{bando.url}</p>
-                                    <a
-                                        href={bando.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-block px-5 py-2 bg-blue-600 rounded-lg text-white text-sm hover:bg-blue-500 transition"
-                                    >
-                                        🔗 Vai al bando originale
-                                    </a>
-                                </div>
-                            ) : (
-                                <div>
-                                    <span className="text-xs text-slate-400 uppercase tracking-wide">Link bando originale</span>
-                                    <p className="text-sm text-slate-500 mt-1">URL non disponibile per questo bando</p>
-                                </div>
-                            )}
-                        </div>
+                        )}
                     </div>
                 </div>
             </div>

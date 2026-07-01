@@ -17,21 +17,20 @@ class BandiListaController extends Controller
         $ente = Ente::where('user_id', $userId)->first();
         $profilo = ProfiloEnte::where('user_id', $userId)->first();
 
-        $minMatch   = (int) $request->get('min_match', 50);
+        $minMatch   = $request->has('min_match') ? (int) $request->get('min_match') : 0;
         $maxMatch   = $request->filled('max_match') ? (int) $request->get('max_match') : null;
         $statoFiltro = $request->get('stato', '');
 
-        $oggi       = now()->startOfDay();
-        $treMessiFa = $oggi->copy()->subMonths(3)->toDateString();
-        $oggiStr    = $oggi->toDateString();
+        $oggi    = now()->startOfDay();
+        $oggiStr = $oggi->toDateString();
 
-        // Query base: solo filtri su campi testuali + finestra temporale
-        // Stato e match vengono applicati in PHP per mantenere le stats sempre stabili
+        // Query base: solo bandi attivi (non chiusi, scadenza futura o assente)
         $query = BandoImportato::query();
 
-        $query->where(function ($q) use ($treMessiFa) {
-            $q->whereNull('scadenza')->orWhere('scadenza', '>=', $treMessiFa);
-        });
+        $query->where('stato', '!=', 'chiuso')
+              ->where(function ($q) use ($oggiStr) {
+                  $q->whereNull('scadenza')->orWhere('scadenza', '>=', $oggiStr);
+              });
 
         if ($request->filled('categoria')) {
             $query->where('categoria', $request->categoria);
@@ -46,14 +45,14 @@ class BandiListaController extends Controller
 
         $tuttiBandi = $query->orderBy('scadenza', 'asc')->get();
 
-        // 1. Calcola match per tutti i bandi e costruisce l'insieme base (≥50%)
+        // 1. Calcola match per tutti i bandi e costruisce l'insieme base (≥30%)
         $baselineMatch = [];
         foreach ($tuttiBandi as $bando) {
             $statoReale = $this->statoReale($bando->scadenza, $oggiStr);
             $risultato  = $this->calcolaMatch($bando, $profilo);
             $punteggio  = $risultato['punteggio'];
 
-            if ($punteggio >= 50) {
+            if ($punteggio >= 30) {
                 $baselineMatch[] = [
                     'id'              => $bando->id,
                     'titolo'          => $bando->titolo,
@@ -127,8 +126,17 @@ class BandiListaController extends Controller
             return ['punteggio' => 0, 'punti_forza' => [], 'punti_debolezza' => []];
         }
 
-        $punteggio     = 0;
-        $puntiForza    = [];
+        // GUARD: bandi TED sono appalti, non finanziamenti
+        if ($bando->fonte === 'ted') {
+            return [
+                'punteggio'      => 0,
+                'punti_forza'    => [],
+                'punti_debolezza' => ["Gara d'appalto (non un contributo o finanziamento)"],
+            ];
+        }
+
+        $punteggio      = 0;
+        $puntiForza     = [];
         $puntiDebolezza = [];
 
         $toArray = fn ($v) => is_array($v) ? $v : (is_string($v) ? (json_decode($v, true) ?? []) : []);
@@ -137,65 +145,118 @@ class BandiListaController extends Controller
         $settori            = array_map('strtolower', $toArray($profilo->settore_prevalente));
         $livelliInteresse   = array_map('strtolower', $toArray($profilo->livelli_interesse));
         $regioneEnte        = strtolower($profilo->regione ?? '');
+        $tipoEnte           = strtolower($profilo->tipo_ente ?? '');
+        $importiInteresse   = $toArray($profilo->importi_interesse);
 
         $categoriaBando = strtolower($bando->categoria ?? '');
         $livelloBando   = strtolower($bando->livello ?? '');
         $regioneBando   = strtolower($bando->regione ?? '');
+        $targetBando    = strtolower($bando->target ?? '');
 
-        // 1. Categoria / Settore (45 pts)
+        // 1. TIPOLOGIA ENTE — guard hard: se target specificato e non include il tipo ente → score 0
+        if (!empty($targetBando) && !empty($tipoEnte)) {
+            $keywords = $this->tipoEnteKeywords($tipoEnte);
+            $matchTipo = false;
+            foreach ($keywords as $kw) {
+                if (str_contains($targetBando, $kw)) { $matchTipo = true; break; }
+            }
+            if (!$matchTipo) {
+                return [
+                    'punteggio'       => 0,
+                    'punti_forza'     => [],
+                    'punti_debolezza' => ['Bando non rivolto a ' . $profilo->tipo_ente . ' (destinatari: ' . $bando->target . ')'],
+                ];
+            }
+            $punteggio += 25;
+            $puntiForza[] = 'Tipologia ente compatibile (' . $profilo->tipo_ente . ')';
+        } else {
+            $punteggio += 15; // target non specificato: beneficio del dubbio
+        }
+
+        // 2. SETTORI / CATEGORIA (25 pts)
         $tuttiSettori = array_unique(array_merge($categorieInteresse, $settori));
-        if (!empty($categoriaBando)) {
+        if (empty($categoriaBando) || empty($tuttiSettori)) {
+            $punteggio += 10;
+        } else {
             $matchCat = false;
             foreach ($tuttiSettori as $s) {
-                if (str_contains($categoriaBando, $s) || str_contains($s, $categoriaBando)) {
+                if ($s && (str_contains($categoriaBando, $s) || str_contains($s, $categoriaBando))) {
                     $matchCat = true;
                     break;
                 }
             }
             if ($matchCat) {
-                $punteggio += 45;
-                $puntiForza[] = 'Categoria compatibile: ' . $bando->categoria;
-            } else {
-                $puntiDebolezza[] = 'Categoria non in linea con i tuoi interessi (' . $bando->categoria . ')';
-            }
-        } else {
-            $punteggio += 15;
-        }
-
-        // 2. Livello (35 pts)
-        if (!empty($livelloBando)) {
-            if (in_array($livelloBando, $livelliInteresse)) {
-                $punteggio += 35;
-                $puntiForza[] = 'Livello compatibile: ' . $bando->livello;
-            } elseif ($livelloBando === 'regionale' && !empty($regioneEnte) && str_contains($regioneBando, $regioneEnte)) {
                 $punteggio += 25;
-                $puntiForza[] = 'Bando regionale per ' . $bando->regione;
-            } elseif ($livelloBando === 'nazionale') {
-                $punteggio += 15;
-                $puntiDebolezza[] = 'Livello nazionale (aperto a tutti, ma non preferito)';
+                $puntiForza[] = 'Settore compatibile: ' . $bando->categoria;
             } else {
-                $puntiDebolezza[] = 'Livello ' . $bando->livello . ' non tra i tuoi livelli di interesse';
+                $puntiDebolezza[] = 'Settore non in linea con i tuoi interessi (' . $bando->categoria . ')';
             }
-        } else {
-            $punteggio += 15;
         }
 
-        // 3. Regione (20 pts)
-        if (!empty($regioneBando)) {
-            $isEuropeo = in_array('europeo', $livelliInteresse);
-            if (in_array($regioneBando, ['europa', 'europe']) && $isEuropeo) {
-                $punteggio += 20;
-                $puntiForza[] = 'Bando europeo compatibile con il tuo profilo';
-            } elseif (!empty($regioneEnte) && str_contains($regioneBando, $regioneEnte)) {
-                $punteggio += 20;
-                $puntiForza[] = 'Regione compatibile: ' . $bando->regione;
-            } elseif (in_array($regioneBando, ['nazionale', 'italia', 'national', 'italy'])) {
-                $punteggio += 10;
-            } else {
-                $puntiDebolezza[] = 'Regione ' . $bando->regione . ' diversa dalla tua (' . $profilo->regione . ')';
+        // 3. TERRITORIO (20 pts) — 0 se regione specifica diversa dall'ente
+        $isEuropeo        = in_array('europeo', $livelliInteresse);
+        $regioneNazionale = in_array($regioneBando, ['nazionale', 'italia', 'national', 'italy', 'europeo', 'europe', '']);
+
+        if (empty($regioneBando)) {
+            $punteggio += 5;
+        } elseif (in_array($livelloBando, ['europeo', 'europe']) && $isEuropeo) {
+            $punteggio += 20;
+            $puntiForza[] = 'Livello europeo compatibile';
+        } elseif (!empty($regioneEnte) && str_contains($regioneBando, $regioneEnte)) {
+            $punteggio += 20;
+            $puntiForza[] = 'Bando per la tua regione: ' . $bando->regione;
+        } elseif ($regioneNazionale) {
+            $punteggio += 10;
+            $puntiDebolezza[] = 'Bando nazionale (non specifico per la tua regione)';
+        } else {
+            $puntiDebolezza[] = 'Territorio non corrispondente (' . $bando->regione . ' vs ' . $profilo->regione . ')';
+        }
+
+        // 4. LIVELLO INTERESSE (15 pts)
+        if (!empty($livelloBando) && !empty($livelliInteresse)) {
+            if (in_array($livelloBando, $livelliInteresse)) {
+                $punteggio += 15;
+                $puntiForza[] = 'Livello compatibile: ' . $bando->livello;
+            } elseif ($livelloBando === 'nazionale') {
+                $punteggio += 8;
             }
         } else {
-            $punteggio += 10;
+            $punteggio += 8;
+        }
+
+        // 5. BUDGET (15 pts) — strict: 0 se il valore è fuori range
+        if (!$bando->budget_totale) {
+            $punteggio += 8;
+        } else {
+            [$budgetMin, $budgetMax] = $this->parseBudgetRange($importiInteresse);
+            if ($budgetMin === null) {
+                $punteggio += 8;
+            } elseif ($bando->budget_totale >= $budgetMin && ($budgetMax === null || $bando->budget_totale <= $budgetMax)) {
+                $punteggio += 15;
+                $puntiForza[] = 'Budget nel range di interesse';
+            } else {
+                $over  = $budgetMax && $bando->budget_totale > $budgetMax;
+                $label = $over
+                    ? 'Budget troppo alto (' . number_format($bando->budget_totale / 1000, 0) . 'k vs max ' . number_format($budgetMax / 1000, 0) . 'k)'
+                    : 'Budget troppo basso (' . number_format($bando->budget_totale / 1000, 0) . 'k)';
+                $puntiDebolezza[] = $label;
+            }
+        }
+
+        // 6. SCADENZA (5 pts)
+        if (!$bando->scadenza) {
+            $punteggio += 3;
+        } else {
+            $giorni = now()->diffInDays($bando->scadenza, false);
+            if ($giorni > 90) {
+                $punteggio += 5;
+                $puntiForza[] = 'Scadenza: ampio margine di tempo';
+            } elseif ($giorni > 30) {
+                $punteggio += 3;
+            } elseif ($giorni > 0) {
+                $punteggio += 1;
+                $puntiDebolezza[] = 'Scadenza imminente';
+            }
         }
 
         return [
@@ -203,6 +264,61 @@ class BandiListaController extends Controller
             'punti_forza'    => $puntiForza,
             'punti_debolezza' => $puntiDebolezza,
         ];
+    }
+
+    private function tipoEnteKeywords(string $tipoEnte): array
+    {
+        return match ($tipoEnte) {
+            'comune'         => ['comune', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'pa '],
+            'provincia'      => ['provincia', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico'],
+            'regione'        => ['regione', 'pubblica amministrazione', 'ente pubblico'],
+            'associazione'   => ['associaz', 'no profit', 'non profit', 'terzo settore', 'cooperativ', 'ente del terzo'],
+            'professionista' => ['professionista', 'libero professionista'],
+            default          => [$tipoEnte],
+        };
+    }
+
+    private function parseBudgetRange(array $importi): array
+    {
+        if (empty($importi)) return [null, null];
+
+        $str = strtolower(trim(implode(' ', $importi)));
+        if ($str === '') return [null, null];
+
+        $parseNum = function (string $raw): float {
+            $raw = trim($raw);
+            if (preg_match('/^([\d.,]+)\s*(k|m)?$/i', $raw, $m)) {
+                $n = (float) str_replace(',', '.', $m[1]);
+                $s = strtolower($m[2] ?? '');
+                if ($s === 'k') $n *= 1_000;
+                if ($s === 'm') $n *= 1_000_000;
+                return $n;
+            }
+            return 0.0;
+        };
+
+        // < prefix: "<40k" → [0, 40000]
+        if (preg_match('/^<\s*([\d.,]+\s*(?:k|m)?)/i', $str, $m)) {
+            return [0, $parseNum($m[1])];
+        }
+
+        // > prefix: ">1M" → [1000000, null]
+        if (preg_match('/^>\s*([\d.,]+\s*(?:k|m)?)/i', $str, $m)) {
+            return [$parseNum($m[1]), null];
+        }
+
+        // Range: "40k-150k" o "150k-1m"
+        if (preg_match('/([\d.,]+\s*(?:k|m)?)\s*[-–]\s*([\d.,]+\s*(?:k|m)?)/i', $str, $m)) {
+            return [$parseNum($m[1]), $parseNum($m[2])];
+        }
+
+        // Singolo valore
+        if (preg_match('/([\d.,]+\s*(?:k|m)?)/i', $str, $m)) {
+            $n = $parseNum($m[1]);
+            return [$n, $n];
+        }
+
+        return [null, null];
     }
     
     public function show($id)

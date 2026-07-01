@@ -21,19 +21,32 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // Sincronizzazione bandi dalla Regione Siciliana (ogni 24 ore)
-        $schedule->command('bandi:sync-regione-sicilia --limit=20')
+        // Regione Siciliana CKAN — dataset bandi/finanziamenti
+        $schedule->command('bandi:sync-regione-sicilia --limit=30')
                  ->daily()
                  ->at('02:00')
                  ->withoutOverlapping();
 
-        // Sincronizzazione bandi EU Funding & Tenders (ogni 24 ore)
+        // EU Funding & Tenders (Horizon Europe e altri programmi EU)
         $schedule->command('bandi:sync-eu-funding --limit=50')
+                 ->daily()
+                 ->at('03:00')
+                 ->withoutOverlapping();
+
+        // incentivi.gov.it — agevolazioni MIMIT + Invitalia
+        $schedule->command('bandi:sync-incentivi --solo-attivi')
+                 ->weekly()
+                 ->mondays()
+                 ->at('03:30')
+                 ->withoutOverlapping();
+
+        // TED — gare d'appalto PA italiane (enti locali e organismi pubblici)
+        $schedule->command('bandi:sync-ted --paese=ITA --pagine=3 --giorni=30')
                  ->daily()
                  ->at('04:00')
                  ->withoutOverlapping();
 
-        // Calcolo match (dopo le sincronizzazioni)
+        // Calcolo match (dopo tutte le sincronizzazioni)
         $schedule->command('bandi:calculate-matches')
                  ->daily()
                  ->at('05:00')

@@ -9,516 +9,404 @@ use App\Models\BandoImportato;
 class SyncRegioneSicilia extends Command
 {
     protected $signature = 'bandi:sync-regione-sicilia
-                            {--dataset= : Sincronizza solo un dataset specifico}
-                            {--limit=10 : Numero massimo di dataset da processare}
+                            {--dataset= : Sincronizza solo un dataset specifico (ID o slug)}
+                            {--limit=30 : Numero massimo di dataset da processare}
+                            {--rows=100 : Risultati per pagina nella package_search}
                             {--keep-files : Mantiene i file scaricati per debug}';
-    
-    protected $description = 'Sincronizza bandi e avvisi dal portale open data della Regione Siciliana (CKAN)';
 
-    // Lista di parole chiave per identificare dataset rilevanti
-    private $keywords = [
-        'bandi', 'avvisi', 'finanziamenti', 'contributi', 'gare', 'appalti',
-        'agevolazioni', 'incentivi', 'sostegno', 'fondi', 'pnrr'
+    protected $description = 'Sincronizza bandi e finanziamenti dal portale open data della Regione Siciliana (CKAN)';
+
+    // Termini di ricerca per trovare dataset di bandi/finanziamenti
+    private array $searchTerms = [
+        'bandi', 'finanziamento', 'finanziamenti', 'contributi',
+        'agevolazioni', 'fondi', 'PNRR', 'sovvenzione', 'incentivi',
     ];
 
-    public function handle()
+    // Pattern da escludere — dataset meteo/ambientali/civili che matchano per errore
+    private array $excludePatterns = [
+        'meteo', 'allerta', 'sismico', 'sismica', 'idrogeologico', 'idrogeologica',
+        'incendi', 'fuochi', 'vulcanico', 'vulcano', 'protezione-civile',
+        'protezione_civile', 'rifiuti', 'qualita-aria', 'qualita_aria',
+        'rete-stradale', 'rete_stradale', 'catasto', 'cartografia',
+        'rischio', 'pericolosita', 'zoonosi', 'fitosanitari',
+        'precipitazioni', 'temperatura', 'vento', 'mareggiate',
+    ];
+
+    // Whitelist di dataset ID noti contenenti bandi/finanziamenti
+    private array $whitelistIds = [
+        '0959a9ad-6010-442c-bec2-77c5d8080679', // Progetti finanziati ricerca finalizzata
+    ];
+
+    public function handle(): void
     {
-        $this->info('🔄 Sincronizzazione dataset Regione Siciliana...');
+        $this->info('🔄 Sincronizzazione bandi Regione Siciliana (CKAN)...');
 
-        // 1. Ottieni la lista dei dataset
-        $response = Http::get('https://dati.regione.sicilia.it/api/3/action/package_list');
-        
-        if (!$response->successful()) {
-            $this->error('❌ Impossibile ottenere la lista dei dataset');
-            return;
-        }
-
-        $packages = $response->json('result') ?? [];
-        $this->info("📊 Trovati " . count($packages) . " dataset totali");
-
-        // 2. Filtra i dataset rilevanti
-        $relevantPackages = $this->filterRelevantPackages($packages);
-        $this->info("📊 Dataset rilevanti: " . count($relevantPackages));
-
-        // 3. Se specificato un dataset, processa solo quello
         if ($this->option('dataset')) {
-            $datasetName = $this->option('dataset');
-            if (in_array($datasetName, $packages)) {
-                $this->processDataset($datasetName);
-            } else {
-                $this->error("❌ Dataset '$datasetName' non trovato");
-            }
+            $count = $this->processDataset($this->option('dataset'));
+            $this->info("✅ Importati $count bandi.");
             return;
         }
 
-        // 4. Processa i dataset rilevanti
-        $limit = (int)$this->option('limit');
-        $processed = 0;
+        $datasets = $this->findGrantDatasets();
+        $this->info("📊 Dataset grant rilevanti trovati: " . count($datasets));
+
+        $limit = (int) $this->option('limit');
         $imported = 0;
+        $processed = 0;
 
-        foreach ($relevantPackages as $packageName) {
-            if ($processed >= $limit) {
-                break;
-            }
+        foreach ($datasets as $id) {
+            if ($processed >= $limit) break;
 
-            $this->info("📥 Processando: $packageName");
-            $count = $this->processDataset($packageName);
-            $imported += $count;
+            $this->info("📥 Processando: $id");
+            $imported += $this->processDataset($id);
             $processed++;
-
-            // Rispetta il rate limit
             sleep(1);
         }
 
-        $this->info("✅ Sincronizzazione completata!");
-        $this->info("📊 Dataset processati: $processed");
-        $this->info("📊 Bandi importati: $imported");
+        $this->info("✅ Completato — Dataset: $processed, Bandi importati: $imported");
     }
 
-    private function filterRelevantPackages($packages)
+    /**
+     * Cerca i dataset rilevanti via package_search (invece del vecchio package_list generico).
+     * Per ogni termine di ricerca fa una chiamata separata, poi deuplica i risultati.
+     */
+    private function findGrantDatasets(): array
     {
-        return array_filter($packages, function ($name) {
-            $nameLower = strtolower($name);
-            foreach ($this->keywords as $keyword) {
-                if (str_contains($nameLower, $keyword)) {
-                    return true;
+        $ids = $this->whitelistIds;
+        $rows = (int) $this->option('rows');
+
+        foreach ($this->searchTerms as $term) {
+            $response = Http::timeout(30)->get(
+                'https://dati.regione.sicilia.it/api/3/action/package_search',
+                ['q' => $term, 'rows' => $rows]
+            );
+
+            if (!$response->successful()) {
+                $this->warn("⚠️ Ricerca fallita per termine: $term");
+                continue;
+            }
+
+            $results = $response->json('result.results') ?? [];
+
+            foreach ($results as $package) {
+                $id = $package['id'] ?? $package['name'] ?? null;
+                if (!$id) continue;
+
+                $name = strtolower($package['name'] ?? $id);
+                $title = strtolower($package['title'] ?? '');
+
+                if ($this->isExcluded($name, $title)) continue;
+
+                if (!in_array($id, $ids)) {
+                    $ids[] = $id;
                 }
             }
-            return false;
-        });
+
+            sleep(1); // rispetta rate limit
+        }
+
+        return array_unique($ids);
     }
 
-    private function processDataset($packageName)
+    private function isExcluded(string $name, string $title): bool
     {
-        $this->info("📥 Ottenendo dettagli per: $packageName");
+        foreach ($this->excludePatterns as $pattern) {
+            if (str_contains($name, $pattern) || str_contains($title, $pattern)) {
+                return true;
+            }
+        }
+        return false;
+    }
 
-        $response = Http::get("https://dati.regione.sicilia.it/api/3/action/package_show?id={$packageName}");
-        
+    private function processDataset(string $datasetId): int
+    {
+        $response = Http::timeout(30)->get(
+            'https://dati.regione.sicilia.it/api/3/action/package_show',
+            ['id' => $datasetId]
+        );
+
         if (!$response->successful()) {
-            $this->warn("⚠️ Impossibile ottenere dettagli per: $packageName");
+            $this->warn("⚠️ Impossibile ottenere dettagli per: $datasetId");
             return 0;
         }
 
         $package = $response->json('result');
-        
-        if (!$package) {
-            return 0;
-        }
+        if (!$package) return 0;
 
-        // Estrai le risorse (file)
         $resources = $package['resources'] ?? [];
-        
         if (empty($resources)) {
-            $this->warn("⚠️ Nessuna risorsa trovata per: $packageName");
+            $this->warn("⚠️ Nessuna risorsa in: $datasetId");
             return 0;
         }
-
-        $this->info("📊 Trovate " . count($resources) . " risorse");
 
         $count = 0;
         foreach ($resources as $resource) {
-            // Cerca file CSV o JSON
             $format = strtolower($resource['format'] ?? '');
-            $url = $resource['url'] ?? null;
+            $url    = $resource['url'] ?? null;
+            if (!$url || !in_array($format, ['csv', 'json', 'xlsx', 'xls'])) continue;
 
-            if (!$url) {
-                continue;
-            }
-
-            if (in_array($format, ['csv', 'json', 'xlsx', 'xls'])) {
-                $this->info("📥 Importando risorsa: " . ($resource['name'] ?? 'unnamed'));
-                $count += $this->importResource($url, $format, $packageName);
-            }
+            $this->info("  📥 Risorsa: " . ($resource['name'] ?? 'unnamed') . " ($format)");
+            $count += $this->importResource($url, $format, $datasetId);
         }
 
         return $count;
     }
 
-    private function importResource($url, $format, $source)
+    private function importResource(string $url, string $format, string $source): int
     {
         try {
             $response = Http::timeout(60)->get($url);
-            
             if (!$response->successful()) {
-                $this->warn("⚠️ Impossibile scaricare: $url");
+                $this->warn("⚠️ Download fallito: $url");
                 return 0;
             }
 
-            $data = $response->body();
-            
-            // Salva il file localmente per elaborazione
             $timestamp = time();
             $path = storage_path("app/temp_{$source}_{$timestamp}.$format");
-            file_put_contents($path, $data);
+            file_put_contents($path, $response->body());
 
-            $this->info("✅ Scaricato: " . basename($path));
+            $count = match ($format) {
+                'csv'  => $this->importCsv($path, $source),
+                'json' => $this->importJson($path, $source),
+                default => 0,
+            };
 
-            // Processa in base al formato
-            $count = 0;
-            if ($format === 'csv') {
-                $count = $this->importCsv($path, $source);
-            } elseif ($format === 'json') {
-                $count = $this->importJson($path, $source);
-            }
-
-            // Pulisci file temporaneo SOLO se non è richiesto di mantenerli
             if (!$this->option('keep-files')) {
                 @unlink($path);
             }
 
             return $count;
-
         } catch (\Exception $e) {
-            $this->warn("⚠️ Errore importazione: " . $e->getMessage());
+            $this->warn("⚠️ Errore import: " . $e->getMessage());
             return 0;
         }
     }
 
-    private function importCsv($path, $source)
+    private function importCsv(string $path, string $source): int
     {
-        $this->info("📊 Importazione CSV da: $source");
-        
-        if (!file_exists($path)) {
-            return 0;
-        }
-        
-        // Leggi le prime righe per capire il formato
-        $content = file_get_contents($path);
-        $lines = explode("\n", $content);
-        $firstLine = $lines[0] ?? '';
-        
-        // Determina il separatore
-        $separator = ';';
-        if (str_contains($firstLine, ',')) {
-            $separator = ',';
-        }
-        
-        $this->info("📋 Separatore rilevato: '$separator'");
-        
         $handle = fopen($path, 'r');
-        if (!$handle) {
-            return 0;
-        }
-        
-        // Leggi intestazione
+        if (!$handle) return 0;
+
+        // Rileva BOM UTF-8 e separatore
+        $firstLine = fgets($handle);
+        $firstLine = ltrim($firstLine, "\xEF\xBB\xBF");
+        $separator = str_contains($firstLine, ';') ? ';' : ',';
+        rewind($handle);
+
         $headers = fgetcsv($handle, 0, $separator);
-        if (!$headers) {
-            fclose($handle);
-            return 0;
-        }
-        
-        // Pulisci header
-        $headers = array_map(function($h) {
-            $h = trim($h);
-            $h = preg_replace('/^\xEF\xBB\xBF/', '', $h); // Rimuovi BOM
-            return $h;
-        }, $headers);
-        
-        $this->info("📋 Colonne trovate: " . count($headers));
-        $this->info("📋 Prime 5 colonne: " . implode(', ', array_slice($headers, 0, 5)));
-        
-        // Mostra tutte le colonne per debug
-        $this->info("📋 Tutte le colonne:");
-        foreach ($headers as $index => $header) {
-            $this->info("   [$index] $header");
-        }
-        
+        if (!$headers) { fclose($handle); return 0; }
+
+        $headers = array_map(fn ($h) => trim(ltrim($h, "\xEF\xBB\xBF")), $headers);
+
         $count = 0;
         $batch = [];
-        $batchSize = 100;
-        $rowNumber = 0;
-        
-        while (($row = fgetcsv($handle, 0, $separator)) !== false) {
-            $rowNumber++;
-            
-            // Salta righe vuote
-            if (empty(array_filter($row))) {
-                continue;
-            }
-            
-            // Se il numero di colonne non corrisponde, salta
-            if (count($row) !== count($headers)) {
-                continue;
-            }
-            
-            try {
-                // Crea array associativo
-                $data = array_combine($headers, $row);
-                if (!$data) continue;
-                
-                // Debug: mostra la prima riga di dati
-                if ($count === 0 && $rowNumber === 1) {
-                    $this->info("📋 Esempio di dati: " . json_encode(array_slice($data, 0, 5)));
+        $row = 0;
+
+        while (($line = fgetcsv($handle, 0, $separator)) !== false) {
+            $row++;
+            if (empty(array_filter($line)) || count($line) !== count($headers)) continue;
+
+            $data = array_combine($headers, $line);
+            if (!$data) continue;
+
+            $bando = $this->mapToBando($data, $source);
+            if ($bando) {
+                $batch[] = $bando;
+                $count++;
+                if (count($batch) >= 100) {
+                    $this->insertBatch($batch);
+                    $batch = [];
                 }
-                
-                // Mappa al bando
-                $bando = $this->mapToBando($data, $source);
-                if ($bando) {
-                    $batch[] = $bando;
-                    $count++;
-                    
-                    if (count($batch) >= $batchSize) {
-                        $this->insertBatch($batch);
-                        $batch = [];
-                    }
-                }
-            } catch (\Exception $e) {
-                $this->warn("⚠️ Errore riga $rowNumber: " . $e->getMessage());
             }
         }
-        
-        // Inserisci ultimo batch
-        if (!empty($batch)) {
-            $this->insertBatch($batch);
-        }
-        
+
+        if (!empty($batch)) $this->insertBatch($batch);
         fclose($handle);
-        
-        $this->info("✅ Importati $count record da: $source");
+
+        $this->info("  ✅ CSV: $count record importati");
         return $count;
     }
 
-    private function importJson($path, $source)
+    private function importJson(string $path, string $source): int
     {
-        $this->info("📊 Importazione JSON da: $source");
-        
-        if (!file_exists($path)) {
-            return 0;
-        }
-        
         $content = file_get_contents($path);
-        $data = json_decode($content, true);
-        
-        if (empty($data)) {
-            $this->warn("⚠️ Nessun dato JSON trovato");
-            return 0;
-        }
-        
-        // Determina la struttura dei dati
-        $items = [];
-        
-        // Se è un array di oggetti
-        if (is_array($data) && isset($data[0]) && is_array($data[0])) {
-            $items = $data;
-        }
-        // Se ha un campo 'data' che contiene l'array
-        elseif (isset($data['data']) && is_array($data['data'])) {
-            $items = $data['data'];
-        }
-        // Se è un oggetto singolo
-        elseif (is_array($data) && !isset($data[0])) {
-            $items = [$data];
-        }
-        // Se è una stringa (es. JSON malformato o con BOM)
-        else {
-            $this->warn("⚠️ Struttura JSON non riconosciuta, provo a decodificare come stringa");
-            try {
-                $decoded = json_decode($content, true);
-                if (is_array($decoded)) {
-                    $items = $decoded;
-                } else {
-                    $items = [];
-                }
-            } catch (\Exception $e) {
-                $items = [];
-            }
-        }
-        
-        // Se items è vuoto o non è un array, prova a forzare
-        if (empty($items) || !is_array($items)) {
-            $this->warn("⚠️ Impossibile estrarre dati dal JSON");
-            $this->warn("📋 Primi 500 caratteri: " . substr($content, 0, 500));
-            return 0;
-        }
-        
-        $this->info("📋 Trovati " . count($items) . " elementi");
-        
+        $data    = json_decode($content, true);
+        if (empty($data)) return 0;
+
+        $items = match (true) {
+            isset($data[0]) && is_array($data[0]) => $data,
+            isset($data['data']) && is_array($data['data']) => $data['data'],
+            is_array($data) => [$data],
+            default => [],
+        };
+
         $count = 0;
         $batch = [];
-        $batchSize = 100;
-        
+
         foreach ($items as $item) {
-            if (!is_array($item)) {
-                continue;
-            }
-            try {
-                $bando = $this->mapToBando($item, $source);
-                if ($bando) {
-                    $batch[] = $bando;
-                    $count++;
-                    
-                    if (count($batch) >= $batchSize) {
-                        $this->insertBatch($batch);
-                        $batch = [];
-                    }
+            if (!is_array($item)) continue;
+            $bando = $this->mapToBando($item, $source);
+            if ($bando) {
+                $batch[] = $bando;
+                $count++;
+                if (count($batch) >= 100) {
+                    $this->insertBatch($batch);
+                    $batch = [];
                 }
-            } catch (\Exception $e) {
-                $this->warn("⚠️ Errore importazione: " . $e->getMessage());
             }
         }
-        
-        if (!empty($batch)) {
-            $this->insertBatch($batch);
-        }
-        
-        $this->info("✅ Importati $count record da: $source");
+
+        if (!empty($batch)) $this->insertBatch($batch);
+        $this->info("  ✅ JSON: $count record importati");
         return $count;
     }
 
-  private function mapToBando($data, $source)
-{
-    // Cerca il titolo
-    $titolo = $this->findField($data, [
-        'titolo', 'nome', 'denominazione', 'oggetto', 'descrizione', 
-        'title', 'name', 'Titolo', 'Nome', 'Denominazione',
-        'sovvenzione', 'contributo', 'bando',
-        'BENEFICIARIO'
-    ]);
-    
-    if (empty($titolo)) {
-        return null;
-    }
-    
-    // Cerca la scadenza
-    $scadenza = $this->findField($data, [
-        'scadenza', 'data_scadenza', 'termine', 'data_termine', 
-        'deadline', 'Data_scadenza', 'DataTermine',
-        'DATA_PUBBLICAZIONE', 'DATA'
-    ]);
-    if ($scadenza) {
-        $scadenza = date('Y-m-d', strtotime($scadenza));
-    }
-    
-    // Cerca l'importo
-    $importo = $this->findField($data, [
-        'importo', 'budget', 'stanziamento', 'finanziamento', 
-        'amount', 'budget_totale', 'Importo',
-        'IMPORTO_N', 'IMPORTO'
-    ]);
-    $importo = $this->parseNumber($importo);
-    
-    // Cerca il codice esterno
-    $codiceEsterno = $this->findField($data, [
-        'id', 'codice', 'code', 'ID',
-        'NUMPROVVEDIMENTO'
-    ]);
-    
-    // Cerca la regione
-    $regione = $this->findField($data, [
-        'regione', 'territorio', 'area', 'region'
-    ]);
-    if (empty($regione)) {
-        $regione = 'Sicilia';
-    }
-    
-    // Cerca provincia e comune
-    $provincia = $this->findField($data, ['provincia', 'Provincia']);
-    $comune = $this->findField($data, ['comune', 'Comune', 'citta', 'Citta']);
-    
-    // Cerca il tema/categoria
-    $tema = $this->findField($data, [
-        'tema', 'categoria', 'settore', 'area_tematica', 
-        'tipo', 'category', 'Tema',
-        'NORMA'
-    ]);
-    
-    // Cerca il target (beneficiario)
-    $target = $this->findField($data, [
-        'target', 'beneficiario', 'destinatari', 'soggetto',
-        'BENEFICIARIO'
-    ]);
-    
-    // Cerca l'URL
-    $url = $this->findField($data, [
-        'url', 'link', 'sito', 'source', 'fonte', 'URL'
-    ]);
-    
-    // Cerca la descrizione
-    $descrizione = $this->findField($data, [
-        'descrizione', 'note', 'dettagli', 'desc', 'description',
-        'Descrizione', 'Note', 'Oggetto',
-        'UFFICIO', 'RESPONSABILE'
-    ]);
-    
-    // Determina il livello
-    $livello = 'regionale';
-    
-    // Determina lo stato
-    $stato = $this->determinaStato($scadenza);
-    
-    return [
-        'codice_esterno' => $codiceEsterno ?: null,
-        'fonte' => 'regione_sicilia_' . $source,
-        'titolo' => substr($titolo, 0, 255),
-        'descrizione' => $descrizione ? substr($descrizione, 0, 2000) : null,
-        'url' => $url ? substr($url, 0, 255) : null,
-        'categoria' => $tema ? substr($tema, 0, 255) : null,
-        'tema' => null,
-        'livello' => $livello,
-        'regione' => substr($regione, 0, 255),
-        'provincia' => $provincia ? substr($provincia, 0, 255) : null,
-        'comune' => $comune ? substr($comune, 0, 255) : null,
-        'target' => $target ? substr($target, 0, 255) : null,
-        'budget_totale' => $importo,
-        'budget_min' => $importo,
-        'budget_max' => $importo,
-        'scadenza' => $scadenza,
-        'data_pubblicazione' => null,
-        'data_inizio' => null,
-        'stato' => $stato,
-        'extra_data' => json_encode($data),
-    ];
-}
+    private function mapToBando(array $data, string $source): ?array
+    {
+        // — Formato "contributi e sussidi" (trasparenza L.124/2017) —
+        // Ogni riga è un pagamento. Teniamo solo quelli derivanti da "Avviso pubblico"
+        // e scartiamo i pagamenti a persone fisiche (DATI_FISCALI = codice fiscale personale).
+        $individuazione = strtolower($this->findField($data, ['INDIVIDUAZIONE', 'individuazione']) ?? '');
+        $datiFiscali    = $this->findField($data, ['DATI_FISCALI', 'dati_fiscali']) ?? '';
 
-    private function findField($data, $keys)
+        $isFormatoTrasparenza = array_key_exists('NORMA', $data)
+            || array_key_exists('INDIVIDUAZIONE', $data)
+            || array_key_exists('BENEFICIARIO', $data);
+
+        if ($isFormatoTrasparenza) {
+            // Scarta pagamenti a persone fisiche (CF ha 16 caratteri alfanumerici)
+            if (preg_match('/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i', trim($datiFiscali))) {
+                return null;
+            }
+            // Scarta se non è un avviso/bando pubblico
+            if ($individuazione && !str_contains($individuazione, 'avviso')
+                && !str_contains($individuazione, 'bando')
+                && !str_contains($individuazione, 'concorso')
+                && !str_contains($individuazione, 'manifestazione')) {
+                return null;
+            }
+        }
+
+        // Cerca il titolo con supporto per formati CKAN siciliani
+        $titolo = $this->findField($data, [
+            'titolo', 'nome', 'denominazione', 'oggetto', 'title', 'name',
+            'Titolo', 'Nome', 'sovvenzione', 'bando',
+        ]);
+
+        // Fallback per formato trasparenza: combina NORMA + INDIVIDUAZIONE
+        if (empty($titolo)) {
+            $norma         = $this->findField($data, ['NORMA', 'norma']);
+            $tipoAvviso    = $this->findField($data, ['INDIVIDUAZIONE', 'individuazione']);
+            $titolo = trim(implode(' — ', array_filter([$tipoAvviso, $norma])));
+        }
+
+        if (empty($titolo)) return null;
+
+        $scadenza = $this->findField($data, [
+            'scadenza', 'data_scadenza', 'termine', 'deadline', 'DataTermine', 'DATA',
+        ]);
+        $scadenza = $scadenza ? $this->parseDate($scadenza) : null;
+
+        $importo = $this->parseNumber($this->findField($data, [
+            'importo', 'budget', 'stanziamento', 'finanziamento', 'amount',
+            'IMPORTO_N', 'IMPORTO',
+        ]));
+
+        // Per formato trasparenza usa NUMPROVVEDIMENTO come codice, altrimenti il solito
+        $codice = $this->findField($data, ['NUMPROVVEDIMENTO', 'id', 'codice', 'code', 'ID']);
+        // Se non c'è codice univoco, crea uno slug dal titolo (evita duplicati su re-sync)
+        if (empty($codice)) {
+            $codice = 'rs_' . substr(md5($titolo), 0, 12);
+        }
+
+        $tema   = $this->findField($data, ['NORMA', 'tema', 'categoria', 'settore', 'area_tematica', 'tipo']);
+        // BENEFICIARIO = nome specifico del soggetto che ha ricevuto il contributo (non la categoria ammissibile).
+        // Non lo usiamo come target per non bloccare il matching: lasciamo null (beneficio del dubbio).
+        $target = $this->findField($data, ['destinatari', 'soggetto_ammissibile', 'beneficiari_ammissibili']);
+        $url    = $this->findField($data, ['url', 'link', 'sito', 'fonte', 'URL']);
+        $ufficio = $this->findField($data, ['UFFICIO', 'ufficio', 'descrizione', 'description', 'Descrizione']);
+
+        return [
+            'codice_esterno'     => $codice,
+            'fonte'              => 'regione_sicilia',
+            'titolo'             => mb_substr($titolo, 0, 255),
+            'descrizione'        => $ufficio ? mb_substr($ufficio, 0, 2000) : null,
+            'url'                => $url ? mb_substr($url, 0, 255) : null,
+            'categoria'          => $tema ? mb_substr($tema, 0, 255) : null,
+            'livello'            => 'regionale',
+            'regione'            => 'Sicilia',
+            'target'             => $target ? mb_substr($target, 0, 255) : null,
+            'budget_totale'      => $importo,
+            'budget_min'         => $importo,
+            'budget_max'         => $importo,
+            'scadenza'           => $scadenza,
+            'data_pubblicazione' => null,
+            'data_inizio'        => null,
+            'stato'              => $this->determinaStato($scadenza),
+            'extra_data'         => json_encode($data, JSON_UNESCAPED_UNICODE),
+        ];
+    }
+
+    private function findField(array $data, array $keys): ?string
     {
         foreach ($keys as $key) {
-            if (isset($data[$key]) && !empty($data[$key]) && $data[$key] !== 'null') {
-                return trim($data[$key]);
+            if (!empty($data[$key]) && $data[$key] !== 'null') {
+                return trim((string) $data[$key]);
             }
-            // Cerca anche in case-insensitive
+        }
+        // Ricerca case-insensitive come fallback
+        foreach ($keys as $key) {
             foreach ($data as $k => $v) {
                 if (is_string($k) && strtolower($k) === strtolower($key) && !empty($v) && $v !== 'null') {
-                    return trim($v);
+                    return trim((string) $v);
                 }
             }
         }
         return null;
     }
 
-    private function parseNumber($value)
+    private function parseNumber(?string $value): ?float
     {
-        if (empty($value) || $value === 'null') {
-            return null;
-        }
-        $value = trim($value);
-        $value = str_replace('.', '', $value);
+        if (empty($value) || $value === 'null') return null;
+        $value = str_replace(['.', ' '], ['', ''], trim($value));
         $value = str_replace(',', '.', $value);
         $value = preg_replace('/[^0-9.]/', '', $value);
-        return floatval($value);
+        return empty($value) ? null : (float) $value;
     }
 
-    private function determinaStato($scadenza)
+    private function parseDate(?string $value): ?string
     {
-        if (!$scadenza) {
-            return 'aperto';
+        if (empty($value)) return null;
+        foreach (['Y-m-d', 'd/m/Y', 'd-m-Y', 'm/d/Y'] as $fmt) {
+            $d = \DateTime::createFromFormat($fmt, trim($value));
+            if ($d) return $d->format('Y-m-d');
         }
-        try {
-            $diff = now()->diffInDays($scadenza);
-            if ($diff < 0) return 'chiuso';
-            if ($diff < 30) return 'in_scadenza';
-            return 'aperto';
-        } catch (\Exception $e) {
-            return 'aperto';
-        }
+        $ts = strtotime($value);
+        return $ts ? date('Y-m-d', $ts) : null;
     }
 
-  private function insertBatch($batch)
-{
-    try {
-        BandoImportato::insert($batch);
-    } catch (\Exception $e) {
-        $this->warn('⚠️ Errore batch: ' . $e->getMessage());
+    private function determinaStato(?string $scadenza): string
+    {
+        if (!$scadenza) return 'aperto';
+        $diff = now()->diffInDays($scadenza, false);
+        if ($diff < 0) return 'chiuso';
+        if ($diff <= 30) return 'in_scadenza';
+        return 'aperto';
     }
-}
+
+    private function insertBatch(array $batch): void
+    {
+        try {
+            BandoImportato::upsert(
+                $batch,
+                ['codice_esterno', 'fonte'],
+                ['titolo', 'descrizione', 'scadenza', 'stato', 'budget_totale', 'extra_data']
+            );
+        } catch (\Exception $e) {
+            $this->warn('⚠️ Batch insert fallito: ' . $e->getMessage());
+            foreach ($batch as $record) {
+                try { BandoImportato::create($record); } catch (\Exception) {}
+            }
+        }
+    }
 }

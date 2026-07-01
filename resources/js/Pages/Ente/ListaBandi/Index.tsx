@@ -71,31 +71,24 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
     const [categoria, setCategoria] = useState(filtri.categoria || '');
     const [regione, setRegione]     = useState(filtri.regione || '');
     const [stato, setStato]         = useState(filtri.stato || '');
-    const [minMatch, setMinMatch]   = useState<number>(filtri.min_match ?? 50);
+    const [minMatch, setMinMatch]   = useState<number>(filtri.min_match ?? 0);
     const [pagina, setPagina]       = useState(1);
 
-    // Parametri persistenti dalla URL (search/categoria/regione)
-    const baseParams = {
-        search:    filtri.search    || '',
-        categoria: filtri.categoria || '',
-        regione:   filtri.regione   || '',
-    };
-
-    const statoAttivo   = filtri.stato    || '';
-    const minMatchAttivo = filtri.min_match != null ? Number(filtri.min_match) : 50;
+    const statoAttivo    = filtri.stato    || '';
+    const minMatchAttivo = filtri.min_match != null ? Number(filtri.min_match) : 0;
     const maxMatchAttivo = filtri.max_match != null ? Number(filtri.max_match) : null;
 
     const handleFilter = () => {
         setPagina(1);
-        router.get('/ente/lista-bandi', { ...baseParams, stato, min_match: minMatch });
+        router.get('/ente/lista-bandi', { search, categoria, regione, stato, min_match: minMatch });
     };
 
     const handleReset = () => {
-        setSearch(''); setCategoria(''); setRegione(''); setStato(''); setMinMatch(50); setPagina(1);
+        setSearch(''); setCategoria(''); setRegione(''); setStato(''); setMinMatch(0); setPagina(1);
         router.get('/ente/lista-bandi');
     };
 
-    // Bottoni stato: filtrano solo per stato, reset match a default (50, no max)
+    // Bottoni stato: filtrano solo per stato, preservano i filtri testo correnti
     const btnStato = (label: string, valore: string, count: number, colorNum: string, colorBorder: string) => {
         const attivo = statoAttivo === valore;
         return (
@@ -103,9 +96,9 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
                 onClick={() => {
                     setPagina(1);
                     router.get('/ente/lista-bandi', {
-                        ...baseParams,
+                        search, categoria, regione,
                         stato: attivo ? '' : valore,
-                        min_match: 50,
+                        min_match: 0,
                     });
                 }}
                 className={`flex-1 rounded-xl p-4 border text-left transition-all hover:brightness-110 ${
@@ -126,7 +119,7 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
             <button
                 onClick={() => {
                     setPagina(1);
-                    const p: Record<string, any> = { ...baseParams, min_match: min };
+                    const p: Record<string, any> = { search, categoria, regione, min_match: min };
                     if (max !== null) p.max_match = max;
                     router.get('/ente/lista-bandi', p);
                 }}
@@ -163,8 +156,8 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
                         {btnStato('Aperti',            'aperto',      stats.aperti,      'text-green-400',  'border-green-700/40')}
                         {btnStato('Chiusi recenti',    'chiuso',      stats.chiusi,      'text-red-400',    'border-red-700/40')}
                         {btnStato('In scadenza ≤30gg', 'in_scadenza', stats.in_scadenza, 'text-yellow-400', 'border-yellow-700/40')}
-                        {btnMatch('Bandi ≥ 50% match', 50, null, stats.totale,     'text-white',      'border-slate-600/60')}
-                        {btnMatch('Match Alto >70%',   70, null, stats.match_alti, 'text-blue-400',   'border-blue-700/40')}
+                        {btnMatch('Tutti i bandi',       0,  null, stats.totale,     'text-white',      'border-slate-600/60')}
+                        {btnMatch('Match Alto ≥ 70%',  70, null, stats.match_alti, 'text-blue-400',   'border-blue-700/40')}
                         {btnMatch('Match Medio 50–69%',50, 69,  stats.match_medi, 'text-orange-400', 'border-orange-700/40')}
                     </div>
 
@@ -221,9 +214,9 @@ export default function ListaBandiIndex({ bandi, stats, categorie, regioni, filt
                                 <select value={minMatch} onChange={(e) => setMinMatch(Number(e.target.value))}
                                     className="w-full px-2.5 py-1.5 text-sm bg-slate-900/50 border border-blue-500/50 rounded-lg text-blue-300 focus:outline-none focus:border-blue-400">
                                     <option value={0}>Tutti i bandi</option>
+                                    <option value={30}>≥ 30% match</option>
                                     <option value={50}>≥ 50% match</option>
                                     <option value={70}>≥ 70% match</option>
-                                    <option value={90}>≥ 90% match</option>
                                 </select>
                             </div>
                             <button onClick={handleFilter}
