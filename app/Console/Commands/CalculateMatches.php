@@ -11,7 +11,8 @@ class CalculateMatches extends Command
 {
     protected $signature = 'bandi:calculate-matches
                             {--ente-id= : Calcola match solo per un ente specifico (ID Ente)}
-                            {--force : Ricalcola anche i match già esistenti}';
+                            {--force : Ricalcola anche i match già esistenti}
+                            {--debug : Mostra il dettaglio del punteggio per ogni bando}';
 
     protected $description = 'Calcola il match tra BandoImportato e ProfiloEnte, salva in bandi_match';
 
@@ -51,18 +52,44 @@ class CalculateMatches extends Command
             $bar = $this->output->createProgressBar($bandi->count());
             $bar->start();
 
+            $debug = $this->option('debug');
+
             foreach ($bandi as $bando) {
                 if (!$this->option('force')) {
                     $esiste = BandiMatch::where('user_id', $userId)
                                         ->where('bando_id', $bando->id)
                                         ->exists();
                     if ($esiste) {
-                        $bar->advance();
+                        if (!$debug) $bar->advance();
                         continue;
                     }
                 }
 
                 $result = $this->calculateMatch($bando, $profilo);
+
+                if ($debug) {
+                    $soglia  = $result['punteggio'] >= 30 ? '✅ SALVO' : '❌ SCARTO';
+                    $titolo  = mb_substr($bando->titolo, 0, 60);
+                    $this->line('');
+                    $this->line("  [{$soglia}] <comment>{$titolo}</comment> (ID {$bando->id})");
+                    $this->line("    fonte={$bando->fonte} | target=" . ($bando->target ?? 'NULL') . " | regione=" . ($bando->regione ?? 'NULL'));
+                    $breakdown = $result['breakdown'] ?? [];
+                    $this->line("    TIPOLOGIA  : " . str_pad($breakdown['tipologia'] ?? '?', 4) . " pts");
+                    $this->line("    SETTORI    : " . str_pad($breakdown['settori'] ?? '?', 4) . " pts");
+                    $this->line("    TERRITORIO : " . str_pad($breakdown['territorio'] ?? '?', 4) . " pts");
+                    $this->line("    LIVELLO    : " . str_pad($breakdown['livello'] ?? '?', 4) . " pts");
+                    $this->line("    BUDGET     : " . str_pad($breakdown['budget'] ?? '?', 4) . " pts");
+                    $this->line("    ESPERIENZA : " . str_pad($breakdown['esperienza'] ?? '?', 4) . " pts");
+                    $this->line("    SCADENZA   : " . str_pad($breakdown['scadenza'] ?? '?', 4) . " pts");
+                    $this->line("    TOTALE     : <info>{$result['punteggio']}</info> / 100");
+                    if (!empty($result['punti_debolezza'])) {
+                        foreach ($result['punti_debolezza'] as $d) {
+                            $this->line("    ⚠️  $d");
+                        }
+                    }
+                } else {
+                    $bar->advance();
+                }
 
                 // Soglia minima 30%: match sotto soglia non vengono salvati
                 if ($result['punteggio'] >= 30) {
@@ -79,12 +106,9 @@ class CalculateMatches extends Command
                     );
                     $matchCount++;
                 }
-
-                $bar->advance();
             }
 
-            $bar->finish();
-            $this->newLine();
+            if (!$debug) { $bar->finish(); $this->newLine(); }
             $this->info("✅ {$nomeEnte}: {$matchCount} match salvati");
         }
 
@@ -134,6 +158,8 @@ class CalculateMatches extends Command
             ];
         }
 
+        $breakdown = ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0];
+
         // 1. TIPOLOGIA ENTE — guard hard: se target specificato e non include il tipo ente → score 0
         if (!empty($targetBando) && !empty($tipoEnte)) {
             $keywords  = $this->tipoEnteKeywords($tipoEnte);
@@ -148,36 +174,33 @@ class CalculateMatches extends Command
                     'punti_debolezza'    => ['Bando non rivolto a ' . $profilo->tipo_ente . ' (destinatari: ' . $bando->target . ')'],
                     'requisiti_mancanti' => ['Tipologia ente'],
                     'match_obbligatori'  => false,
+                    'breakdown'          => ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0],
                 ];
             }
-            $punteggio += 25;
+            $punteggio += 25; $breakdown['tipologia'] = 25;
             $puntiForza[] = 'Tipologia ente compatibile (' . $profilo->tipo_ente . ')';
         } else {
-            $punteggio += 15; // target non specificato: beneficio del dubbio
+            $punteggio += 15; $breakdown['tipologia'] = 15; // target non specificato: beneficio del dubbio
         }
 
         // 2. TERRITORIO (20 pts)
-        // Regola: se il bando ha un territorio specifico diverso dall'ente → 0 pts.
-        // Solo bandi nazionali/europei/senza territorio danno punti parziali.
         $isEuropeo         = in_array('europeo', $livelliInteresse);
         $regioneNazionale  = in_array($regioneBando, ['nazionale', 'italia', 'national', 'italy', 'europeo', 'europe', '']);
 
         if (empty($regioneBando)) {
-            // Territorio non specificato: beneficio del dubbio minimo
-            $punteggio += 5;
+            $punteggio += 5; $breakdown['territorio'] = 5;
         } elseif (in_array($livelloBando, ['europeo', 'europe']) && $isEuropeo) {
-            $punteggio += 20;
+            $punteggio += 20; $breakdown['territorio'] = 20;
             $puntiForza[] = 'Livello europeo compatibile';
         } elseif (!empty($regioneEnte) && str_contains($regioneBando, $regioneEnte)) {
-            // Regione bando contiene la regione dell'ente (es. bando sicilia → ente sicilia)
-            $punteggio += ($livelloBando === 'regionale') ? 20 : 18;
+            $pts = ($livelloBando === 'regionale') ? 20 : 18;
+            $punteggio += $pts; $breakdown['territorio'] = $pts;
             $puntiForza[] = 'Bando regionale per ' . $bando->regione;
         } elseif ($regioneNazionale) {
-            // Bando aperto a tutta Italia: credito parziale
-            $punteggio += 10;
+            $punteggio += 10; $breakdown['territorio'] = 10;
             $puntiDebolezza[] = 'Bando nazionale (non specifico per la tua regione)';
         } else {
-            // Territorio specifico diverso dalla regione dell'ente → 0 pts
+            $breakdown['territorio'] = 0;
             $puntiDebolezza[] = 'Territorio non corrispondente (' . $bando->regione . ')';
             $requisitiMancanti[] = 'Territorio';
         }
@@ -185,36 +208,36 @@ class CalculateMatches extends Command
         // 3. SETTORI / CATEGORIA (25 pts)
         $tuttiSettori = array_unique(array_merge($categorieInteresse, $settori));
         if (empty($categoriaBando) || empty($tuttiSettori)) {
-            $punteggio += 10;
+            $punteggio += 10; $breakdown['settori'] = 10;
         } else {
             $matchCat = false;
             foreach ($tuttiSettori as $s) {
                 if (str_contains($categoriaBando, $s) || str_contains($s, $categoriaBando)) {
-                    $matchCat = true;
-                    break;
+                    $matchCat = true; break;
                 }
             }
             if ($matchCat) {
-                $punteggio += 25;
+                $punteggio += 25; $breakdown['settori'] = 25;
                 $puntiForza[] = 'Settore compatibile: ' . $bando->categoria;
             } else {
+                $breakdown['settori'] = 0;
                 $puntiDebolezza[] = 'Settore non in linea (' . $bando->categoria . ')';
                 $requisitiMancanti[] = 'Settore';
             }
         }
 
-        // 4. BUDGET (15 pts) — strict: 0 se il valore è fuori dal range dell'ente
+        // 4. BUDGET (15 pts)
         if (!$bando->budget_totale) {
-            $punteggio += 8; // budget non dichiarato → beneficio del dubbio
+            $punteggio += 8; $breakdown['budget'] = 8;
         } else {
             [$budgetMin, $budgetMax] = $this->parseBudgetRange($toArray($profilo->importi_interesse));
             if ($budgetMin === null) {
-                $punteggio += 8;
+                $punteggio += 8; $breakdown['budget'] = 8;
             } elseif ($bando->budget_totale >= $budgetMin && ($budgetMax === null || $bando->budget_totale <= $budgetMax)) {
-                $punteggio += 15;
+                $punteggio += 15; $breakdown['budget'] = 15;
                 $puntiForza[] = 'Budget nel range di interesse';
             } else {
-                // Budget fuori range → 0 pts, nessun credito parziale
+                $breakdown['budget'] = 0;
                 $over = $budgetMax && $bando->budget_totale > $budgetMax;
                 $label = $over
                     ? 'Budget troppo alto (' . number_format($bando->budget_totale / 1000, 0) . 'k vs max ' . number_format($budgetMax / 1000, 0) . 'k)'
@@ -225,47 +248,47 @@ class CalculateMatches extends Command
         }
 
         // 5. ESPERIENZA UE (10 pts)
-        // Bando non EU → esperienza non richiesta → punti pieni
-        // Bando EU + ente con esperienza → punti pieni
-        // Bando EU + ente senza esperienza → 0 punti
         $isBandoEU = in_array($livelloBando, ['europeo', 'europe'])
             || in_array($regioneBando, ['europa', 'europe'])
             || str_contains(strtolower($bando->fonte ?? ''), 'eu_funding');
 
         if (!$isBandoEU) {
-            $punteggio += 10;
+            $punteggio += 10; $breakdown['esperienza'] = 10;
             $puntiForza[] = 'Esperienza UE non richiesta';
         } elseif ($profilo->esperienza_fondi_europei) {
-            $punteggio += 10;
+            $punteggio += 10; $breakdown['esperienza'] = 10;
             $puntiForza[] = 'Esperienza pregressa con fondi europei';
         } else {
+            $breakdown['esperienza'] = 0;
             $puntiDebolezza[] = 'Bando europeo, nessuna esperienza UE dichiarata';
             $requisitiMancanti[] = 'Esperienza fondi europei';
         }
 
         // 6. SCADENZA (5 pts)
         if (!$bando->scadenza) {
-            $punteggio += 3;
+            $punteggio += 3; $breakdown['scadenza'] = 3;
         } else {
             $giorniRimasti = now()->diffInDays($bando->scadenza, false);
             if ($giorniRimasti > 90) {
-                $punteggio += 5;
+                $punteggio += 5; $breakdown['scadenza'] = 5;
                 $puntiForza[] = 'Scadenza: tempo abbondante';
             } elseif ($giorniRimasti > 30) {
-                $punteggio += 3;
+                $punteggio += 3; $breakdown['scadenza'] = 3;
             } elseif ($giorniRimasti > 0) {
-                $punteggio += 1;
+                $punteggio += 1; $breakdown['scadenza'] = 1;
                 $puntiDebolezza[] = 'Scadenza imminente';
+            } else {
+                $breakdown['scadenza'] = 0;
             }
-            // scaduto → 0 punti aggiuntivi
         }
 
         return [
-            'punteggio'        => min(round($punteggio, 2), 100),
-            'punti_forza'      => $puntiForza,
-            'punti_debolezza'  => $puntiDebolezza,
+            'punteggio'          => min(round($punteggio, 2), 100),
+            'punti_forza'        => $puntiForza,
+            'punti_debolezza'    => $puntiDebolezza,
             'requisiti_mancanti' => $requisitiMancanti,
             'match_obbligatori'  => empty($requisitiMancanti),
+            'breakdown'          => $breakdown,
         ];
     }
 
