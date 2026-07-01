@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use App\Models\BandoImportato;
-use App\Models\Ente;
 use App\Models\ProfiloEnte;
 use App\Models\BandiMatch;
 
@@ -44,21 +43,17 @@ class CalculateMatches extends Command
         $this->info("📋 {$bandi->count()} bandi da analizzare");
 
         foreach ($profili as $profilo) {
-            $ente = Ente::where('user_id', $profilo->user_id)->first();
+            $nomeEnte = $profilo->nome_ente ?? "ProfiloEnte #{$profilo->id}";
+            $userId   = $profilo->user_id;
 
-            if (!$ente) {
-                $this->warn("⚠️ Nessun Ente trovato per ProfiloEnte ID {$profilo->id}, salto.");
-                continue;
-            }
-
-            $this->info("\n🏛️ Elaborazione: {$ente->nome}");
+            $this->info("\n🏛️ Elaborazione: {$nomeEnte}");
             $matchCount = 0;
             $bar = $this->output->createProgressBar($bandi->count());
             $bar->start();
 
             foreach ($bandi as $bando) {
                 if (!$this->option('force')) {
-                    $esiste = BandiMatch::where('user_id', $ente->id)
+                    $esiste = BandiMatch::where('user_id', $userId)
                                         ->where('bando_id', $bando->id)
                                         ->exists();
                     if ($esiste) {
@@ -72,7 +67,7 @@ class CalculateMatches extends Command
                 // Soglia minima 30%: match sotto soglia non vengono salvati
                 if ($result['punteggio'] >= 30) {
                     BandiMatch::updateOrCreate(
-                        ['bando_id' => $bando->id, 'user_id' => $ente->id],
+                        ['bando_id' => $bando->id, 'user_id' => $userId],
                         [
                             'punteggio_compatibilita' => $result['punteggio'],
                             'punti_forza'             => json_encode($result['punti_forza']),
@@ -90,7 +85,7 @@ class CalculateMatches extends Command
 
             $bar->finish();
             $this->newLine();
-            $this->info("✅ {$ente->nome}: {$matchCount} match salvati");
+            $this->info("✅ {$nomeEnte}: {$matchCount} match salvati");
         }
 
         $this->info("\n✅ Calcolo match completato!");
@@ -101,10 +96,7 @@ class CalculateMatches extends Command
         $query = ProfiloEnte::where('profilo_completo', true);
 
         if ($this->option('ente-id')) {
-            $ente = Ente::find($this->option('ente-id'));
-            if ($ente) {
-                $query->where('user_id', $ente->user_id);
-            }
+            $query->where('user_id', $this->option('ente-id'));
         }
 
         return $query->get();
