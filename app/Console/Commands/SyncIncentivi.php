@@ -22,7 +22,8 @@ class SyncIncentivi extends Command
                             {--url= : URL diretto al file JSON (bypassa auto-discovery)}
                             {--limit=0 : Limite record (0 = tutti)}
                             {--solo-attivi : Importa solo incentivi con data chiusura futura o non specificata}
-                            {--includi-imprese : Importa anche incentivi rivolti solo a imprese private (default: esclusi)}';
+                            {--includi-imprese : Importa anche incentivi rivolti solo a imprese private (default: esclusi)}
+                            {--solo-enti : Importa SOLO incentivi esplicitamente rivolti a enti pubblici}';
 
     protected $description = 'Sincronizza agevolazioni da incentivi.gov.it (MIMIT + Invitalia)';
 
@@ -55,6 +56,7 @@ class SyncIncentivi extends Command
 
         $soloAttivi     = $this->option('solo-attivi');
         $includiImprese = $this->option('includi-imprese');
+        $soloEnti       = $this->option('solo-enti');
         $limit          = (int) $this->option('limit');
         $oggi           = now()->toDateString();
 
@@ -106,7 +108,10 @@ class SyncIncentivi extends Command
 
                 $bando = $this->mapToBando($item);
                 if ($bando) {
-                    if (!$includiImprese && $this->isSoloImprese($bando['target'])) {
+                    if ($soloEnti && !$this->isRivoltoEnte($bando['target'])) {
+                        $skipped++;
+                        continue;
+                    } elseif (!$includiImprese && !$soloEnti && $this->isSoloImprese($bando['target'])) {
                         $skipped++;
                         continue;
                     }
@@ -124,7 +129,8 @@ class SyncIncentivi extends Command
             if (!empty($batch)) $this->insertBatch($batch);
             $this->newLine();
 
-            $this->info("✅ Importati: $imported incentivi" . ($skipped ? ", $skipped saltati (chiusi)" : ''));
+            $filtroLabel = $soloEnti ? ' (solo enti pubblici)' : ($includiImprese ? '' : ' (escluse imprese private)');
+            $this->info("✅ Importati: $imported incentivi{$filtroLabel}" . ($skipped ? ", $skipped saltati" : ''));
             return self::SUCCESS;
 
         } catch (\Exception $e) {
@@ -189,6 +195,29 @@ class SyncIncentivi extends Command
             'stato'              => $this->determinaStato($scadenza),
             'extra_data'         => json_encode($item, JSON_UNESCAPED_UNICODE),
         ];
+    }
+
+    /**
+     * Restituisce true se il bando include esplicitamente enti pubblici tra i destinatari,
+     * oppure se il target non è specificato (beneficio del dubbio).
+     */
+    private function isRivoltoEnte(?string $target): bool
+    {
+        if (empty($target)) return true; // target non specificato → aperto a tutti
+
+        $t = strtolower($target);
+
+        $keywordsEnte = [
+            'ente pubblico', 'ente locale', 'enti locali', 'pubblica amministrazione',
+            'comune', 'provincia', 'regione', 'università', 'ente di ricerca',
+            'no profit', 'non profit', 'cooperativ', 'associaz', 'terzo settore',
+            'fondazione', 'scuola', 'istituto',
+        ];
+        foreach ($keywordsEnte as $kw) {
+            if (str_contains($t, $kw)) return true;
+        }
+
+        return false;
     }
 
     /**
