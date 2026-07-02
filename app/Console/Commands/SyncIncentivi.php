@@ -169,6 +169,8 @@ class SyncIncentivi extends Command
 
         $url = $this->scalar($item['Link_istituzionale'] ?? null);
 
+        [$comuneBando, $provinciaBando] = $this->estraiTerritorioConcedente($gestore);
+
         $descrizioneCompleta = trim(implode("\n\n", array_filter([
             $desc ? strip_tags($desc) : null,
             $obiett ? "Obiettivo: " . (is_array($obiett) ? implode(', ', $obiett) : $obiett) : null,
@@ -185,6 +187,8 @@ class SyncIncentivi extends Command
             'categoria'          => $settore ? mb_substr($settore, 0, 255) : null,
             'livello'            => 'nazionale',
             'regione'            => mb_substr($regione, 0, 255),
+            'provincia'          => $provinciaBando,
+            'comune'             => $comuneBando,
             'target'             => $target ? mb_substr($target, 0, 255) : null,
             'budget_totale'      => $budget,
             'budget_min'         => $this->parseNumber($this->scalar($item['Spesa_Ammessa_min'] ?? null)),
@@ -276,13 +280,37 @@ class SyncIncentivi extends Command
         return null;
     }
 
+    /**
+     * Se il soggetto concedente è un Comune o una Provincia specifica (es. "Comune di Camastra"),
+     * il fondo è amministrato e riservato a quel territorio — non è un bando regionale/nazionale
+     * aperto a tutti gli enti della regione. "Provincia Autonoma di Trento/Bolzano" è esclusa
+     * perché ha un ruolo di governo regionale, non di ente locale singolo.
+     */
+    private function estraiTerritorioConcedente(?string $gestore): array
+    {
+        if (empty($gestore)) return [null, null];
+        $gestore = trim($gestore);
+
+        if (preg_match('/^Comune di (.+)$/ui', $gestore, $m)) {
+            return [trim($m[1]), null];
+        }
+        if (preg_match('/^Provincia di (.+)$/ui', $gestore, $m)) {
+            return [null, trim($m[1])];
+        }
+
+        return [null, null];
+    }
+
+    /**
+     * I campi budget di Solr (zs_field_budget_allocation, zs_field_cost_min/max) sono già
+     * numeri in formato standard (punto decimale, nessun separatore migliaia) — non testo
+     * italiano da normalizzare.
+     */
     private function parseNumber(?string $value): ?float
     {
         if (empty($value)) return null;
-        $v = str_replace(['.', ' ', '€', '£', '$'], ['', '', '', '', ''], trim($value));
-        $v = str_replace(',', '.', $v);
-        $v = preg_replace('/[^0-9.]/', '', $v);
-        return empty($v) ? null : (float) $v;
+        $v = trim($value);
+        return is_numeric($v) ? (float) $v : null;
     }
 
     private function parseDate(?string $value): ?string
@@ -316,8 +344,8 @@ class SyncIncentivi extends Command
             BandoImportato::upsert(
                 $batch,
                 ['codice_esterno', 'fonte'],
-                ['titolo', 'descrizione', 'scadenza', 'stato', 'budget_totale',
-                 'regione', 'target', 'categoria', 'extra_data']
+                ['titolo', 'descrizione', 'scadenza', 'stato', 'budget_totale', 'budget_min', 'budget_max',
+                 'regione', 'provincia', 'comune', 'target', 'categoria', 'extra_data']
             );
         } catch (\Exception $e) {
             $this->warn('⚠️ Batch insert fallito: ' . $e->getMessage());

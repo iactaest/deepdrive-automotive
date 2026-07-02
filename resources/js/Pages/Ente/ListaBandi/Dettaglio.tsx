@@ -85,7 +85,7 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 ${getMatchColor(bando.scadenza, bando.stato)}`}>
                                         📅 Scadenza:{' '}
                                         {bando.scadenza
-                                            ? new Date(bando.scadenza + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                                            ? new Date(bando.scadenza).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
                                             : 'Non specificata'}
                                     </span>
                                     <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 text-slate-300">
@@ -152,7 +152,7 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
                                         <span className="text-slate-400">Scadenza</span>
                                         <span className={`font-medium ${getMatchColor(bando.scadenza, bando.stato)}`}>
                                             {bando.scadenza
-                                                ? new Date(bando.scadenza + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                                                ? new Date(bando.scadenza).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
                                                 : 'Non specificata'}
                                         </span>
                                     </div>

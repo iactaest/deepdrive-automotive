@@ -139,11 +139,15 @@ class CalculateMatches extends Command
         $settori            = array_map('strtolower', $toArray($profilo->settore_prevalente));
         $livelliInteresse   = array_map('strtolower', $toArray($profilo->livelli_interesse));
         $regioneEnte        = strtolower($profilo->regione ?? '');
+        $provinciaEnte      = strtolower($profilo->provincia ?? '');
+        $comuneEnte         = strtolower($profilo->comune ?? '');
         $tipoEnte           = strtolower($profilo->tipo_ente ?? '');
 
         $categoriaBando = strtolower($bando->categoria ?? '');
         $livelloBando   = strtolower($bando->livello ?? '');
         $regioneBando   = strtolower($bando->regione ?? '');
+        $provinciaBando = strtolower($bando->provincia ?? '');
+        $comuneBando    = strtolower($bando->comune ?? '');
         $targetBando    = strtolower($bando->target ?? '');
 
         // GUARD: bandi TED sono gare d'appalto, non finanziamenti/contributi.
@@ -183,11 +187,41 @@ class CalculateMatches extends Command
             $punteggio += 15; $breakdown['tipologia'] = 15; // target non specificato: beneficio del dubbio
         }
 
+        // GUARD: fondo amministrato da un Comune/Provincia specifico (es. "Comune di Camastra").
+        // I beneficiari sono per legge limitati a quel territorio: un ente di un altro comune/
+        // provincia non è idoneo, anche se ricade nella stessa regione.
+        if (!empty($comuneBando) && !empty($comuneEnte) && $comuneBando !== $comuneEnte) {
+            return [
+                'punteggio'          => 0,
+                'punti_forza'        => [],
+                'punti_debolezza'    => ['Fondo specifico del Comune di ' . $bando->comune . ', non applicabile al tuo territorio'],
+                'requisiti_mancanti' => ['Territorio (comune)'],
+                'match_obbligatori'  => false,
+                'breakdown'          => ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0],
+            ];
+        }
+        if (!empty($provinciaBando) && !empty($provinciaEnte) && $provinciaBando !== $provinciaEnte) {
+            return [
+                'punteggio'          => 0,
+                'punti_forza'        => [],
+                'punti_debolezza'    => ['Fondo specifico della Provincia di ' . $bando->provincia . ', non applicabile al tuo territorio'],
+                'requisiti_mancanti' => ['Territorio (provincia)'],
+                'match_obbligatori'  => false,
+                'breakdown'          => ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0],
+            ];
+        }
+
         // 2. TERRITORIO (20 pts)
         $isEuropeo         = in_array('europeo', $livelliInteresse);
         $regioneNazionale  = in_array($regioneBando, ['nazionale', 'italia', 'national', 'italy', 'europeo', 'europe', '']);
 
-        if (empty($regioneBando)) {
+        if (!empty($comuneBando) && $comuneBando === $comuneEnte) {
+            $punteggio += 20; $breakdown['territorio'] = 20;
+            $puntiForza[] = 'Bando specifico per il tuo Comune (' . $bando->comune . ')';
+        } elseif (!empty($provinciaBando) && $provinciaBando === $provinciaEnte) {
+            $punteggio += 20; $breakdown['territorio'] = 20;
+            $puntiForza[] = 'Bando specifico per la tua Provincia (' . $bando->provincia . ')';
+        } elseif (empty($regioneBando)) {
             $punteggio += 5; $breakdown['territorio'] = 5;
         } elseif (in_array($livelloBando, ['europeo', 'europe']) && $isEuropeo) {
             $punteggio += 20; $breakdown['territorio'] = 20;
