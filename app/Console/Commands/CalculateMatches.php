@@ -91,7 +91,9 @@ class CalculateMatches extends Command
                     $bar->advance();
                 }
 
-                // Soglia minima 30%: match sotto soglia non vengono salvati
+                // Soglia minima 30%: match sotto soglia non vengono salvati. Se un match
+                // esisteva già da un calcolo precedente ed è sceso sotto soglia (es. per una
+                // correzione dell'algoritmo), va rimosso: altrimenti resta un record obsoleto.
                 if ($result['punteggio'] >= 30) {
                     BandiMatch::updateOrCreate(
                         ['bando_id' => $bando->id, 'user_id' => $userId],
@@ -105,6 +107,8 @@ class CalculateMatches extends Command
                         ]
                     );
                     $matchCount++;
+                } else {
+                    BandiMatch::where('bando_id', $bando->id)->where('user_id', $userId)->delete();
                 }
             }
 
@@ -163,6 +167,21 @@ class CalculateMatches extends Command
         }
 
         $breakdown = ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0];
+
+        // GUARD: il campo target strutturato include spesso "Ente Pubblico" in modo generico
+        // (tassonomia incentivi.gov.it troppo ampia), ma la sezione "A chi si rivolge" della
+        // descrizione rivela che i beneficiari reali sono imprese/privati. Il target da solo
+        // (guard successivo) non basta a intercettare questi casi.
+        if ($tipoEnte !== '' && $this->descrizioneIndicaSoloImprese($bando->descrizione)) {
+            return [
+                'punteggio'          => 0,
+                'punti_forza'        => [],
+                'punti_debolezza'    => ['La descrizione indica beneficiari imprese/privati, non enti pubblici'],
+                'requisiti_mancanti' => ['Tipologia beneficiario (da descrizione)'],
+                'match_obbligatori'  => false,
+                'breakdown'          => ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0],
+            ];
+        }
 
         // 1. TIPOLOGIA ENTE — guard hard: se target specificato e non include il tipo ente → score 0
         if (!empty($targetBando) && !empty($tipoEnte)) {
@@ -324,6 +343,45 @@ class CalculateMatches extends Command
             'match_obbligatori'  => empty($requisitiMancanti),
             'breakdown'          => $breakdown,
         ];
+    }
+
+    /**
+     * Isola la sezione "A chi si rivolge" (struttura ricorrente nelle descrizioni di
+     * incentivi.gov.it) e verifica se indica beneficiari esclusivamente privati, anche
+     * quando il campo target strutturato include genericamente "Ente Pubblico".
+     * Se la sezione non è individuabile, non applica l'euristica (evita falsi positivi
+     * su testi non strutturati provenienti da altre fonti).
+     */
+    private function descrizioneIndicaSoloImprese(?string $descrizione): bool
+    {
+        if (empty($descrizione)) return false;
+
+        if (!preg_match('/A chi si rivolge\s*(.+?)(?:Cosa prevede|Come funziona|$)/isu', $descrizione, $m)) {
+            return false;
+        }
+        $sezione = strtolower($m[1]);
+
+        // Frasi (non lo stem "pubblic-" da solo: "avviso pubblico"/"bando pubblico" sono
+        // termini generici di procedura, non indicano che il beneficiario sia un ente pubblico)
+        $keywordEnte = [
+            'comuni', 'enti locali', 'ente pubblico', 'enti pubblici', 'enti territoriali',
+            'pubblica amministrazione', 'amministrazioni pubbliche', 'soggetti pubblici',
+            'unione dei comuni', 'unioni di comuni',
+        ];
+        foreach ($keywordEnte as $kw) {
+            if (str_contains($sezione, $kw)) return false;
+        }
+
+        $keywordImprese = [
+            'operatori economici', 'le imprese', 'imprese private', 'imprese di qualsiasi dimensione',
+            'pmi', 'liberi professionisti', 'datori di lavoro privati', 'startup',
+            'lavoratori autonomi', 'micro, piccole e medie imprese',
+        ];
+        foreach ($keywordImprese as $kw) {
+            if (str_contains($sezione, $kw)) return true;
+        }
+
+        return false;
     }
 
     private function tipoEnteKeywords(string $tipoEnte): array
