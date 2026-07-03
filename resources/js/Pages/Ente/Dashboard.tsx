@@ -1,21 +1,58 @@
 import { useEffect, useState } from 'react';
+import { Link } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
-import { TrendingUp, FileText, Calendar, Building2, Eye, ArrowRight, Clock, Award, Zap, Euro, Landmark } from 'lucide-react';
+import { TrendingUp, FileText, Calendar, Building2, Eye, Clock, Euro, Landmark, Archive } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler);
 
-export default function DashboardEnte() {
+interface Scadenza {
+    titolo: string;
+    scadenza: string;
+    giorni: number;
+    budget: number | null;
+}
+
+interface GaraConsigliata {
+    id: number;
+    titolo: string;
+    match: number;
+    budget: number | null;
+}
+
+interface DashboardData {
+    stats: {
+        bandi_attivi: number;
+        budget_mediano: number | null;
+        in_scadenza: number;
+        storico_progetti: number;
+        storico_importo: number;
+    };
+    per_categoria: { labels: string[]; valori: number[] };
+    per_livello: { labels: string[]; valori: number[] };
+    trend_storico: { labels: string[]; valori: number[] };
+    prossime_scadenze: Scadenza[];
+    gare_consigliate: GaraConsigliata[];
+}
+
+const formatEuro = (v: number | null) => {
+    if (!v) return '—';
+    if (v >= 1_000_000) return `€${(v / 1_000_000).toFixed(1)}M`;
+    if (v >= 1_000) return `€${(v / 1_000).toFixed(0)}k`;
+    return `€${v.toFixed(0)}`;
+};
+
+export default function DashboardEnte({ dashboard }: { dashboard: DashboardData }) {
     const [animate, setAnimate] = useState(false);
 
     useEffect(() => { setAnimate(true); }, []);
 
     const lineData = {
-        labels: ['Gen', 'Feb', 'Mar', 'Apr', 'Mag', 'Giu'],
+        labels: dashboard.trend_storico.labels,
         datasets: [{
-            label: 'Gare Pubblicate',
-            data: animate ? [8, 12, 15, 22, 28, 35] : [],
+            label: 'Progetti finanziati (storico)',
+            data: animate ? dashboard.trend_storico.valori : [],
             borderColor: '#10b981',
             backgroundColor: 'rgba(16, 185, 129, 0.1)',
             tension: 0.4,
@@ -27,20 +64,20 @@ export default function DashboardEnte() {
     };
 
     const barData = {
-        labels: ['Lavori', 'Forniture', 'Servizi', 'R&S', 'Sociale'],
+        labels: dashboard.per_categoria.labels,
         datasets: [{
-            label: 'Opportunità',
-            data: animate ? [28, 22, 35, 15, 18] : [],
-            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
+            label: 'Bandi',
+            data: animate ? dashboard.per_categoria.valori : [],
+            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444', '#06b6d4'],
             borderRadius: 8,
         }]
     };
 
     const doughnutData = {
-        labels: ['Comunale (€5M)', 'Regionale (€12M)', 'Nazionale (€25M)', 'Europeo (€40M)'],
+        labels: dashboard.per_livello.labels,
         datasets: [{
-            data: animate ? [5, 12, 25, 40] : [],
-            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'],
+            data: animate ? dashboard.per_livello.valori : [],
+            backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b', '#ef4444'],
             borderWidth: 0,
         }]
     };
@@ -58,22 +95,22 @@ export default function DashboardEnte() {
         }
     };
 
-   const doughnutOptions = {
-    responsive: true,
-    maintainAspectRatio: true,
-    plugins: {
-        legend: { 
-            position: 'bottom' as const,  // ✅ tipo specifico
-            labels: { color: '#94a3b8', font: { size: 11 } }
+    const doughnutOptions = {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+            legend: {
+                position: 'bottom' as const,
+                labels: { color: '#94a3b8', font: { size: 11 } }
+            }
         }
-    }
-};
+    };
 
     const stats = [
-        { title: 'Bandi Attivi', value: '47', icon: FileText, change: '+8', color: 'green' },
-        { title: 'Budget Totale', value: '€82M', icon: Euro, change: '+15%', color: 'blue' },
-        { title: 'In Scadenza (30gg)', value: '12', icon: Calendar, change: '-3', color: 'orange' },
-        { title: 'Gare Assegnate', value: '28', icon: Award, change: '+5', color: 'purple' },
+        { title: 'Bandi Attivi', value: String(dashboard.stats.bandi_attivi), icon: FileText, color: 'green' },
+        { title: 'Budget Mediano (bandi attivi)', value: formatEuro(dashboard.stats.budget_mediano), icon: Euro, color: 'blue' },
+        { title: 'In Scadenza (30gg)', value: String(dashboard.stats.in_scadenza), icon: Calendar, color: 'orange' },
+        { title: 'Progetti Storici nel Territorio', value: String(dashboard.stats.storico_progetti), icon: Archive, color: 'purple' },
     ];
 
     return (
@@ -95,7 +132,6 @@ export default function DashboardEnte() {
                                 <div>
                                     <p className="text-sm text-slate-400">{stat.title}</p>
                                     <p className="text-3xl font-bold text-white mt-1">{stat.value}</p>
-                                    <p className="text-xs text-green-400 mt-2">{stat.change}</p>
                                 </div>
                                 <div className={`w-12 h-12 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center`}>
                                     <stat.icon className={`h-6 w-6 text-${stat.color}-400`} />
@@ -109,16 +145,20 @@ export default function DashboardEnte() {
                     <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <TrendingUp className="h-5 w-5 text-green-400" />
-                            Trend Gare e Appalti
+                            Storico Finanziamenti nel Territorio (OpenCoesione)
                         </h3>
-                        <Line data={lineData} options={chartOptions} />
+                        {dashboard.trend_storico.labels.length > 0
+                            ? <Line data={lineData} options={chartOptions} />
+                            : <p className="text-slate-400 text-sm">Nessun dato storico disponibile per il tuo territorio.</p>}
                     </div>
                     <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <Building2 className="h-5 w-5 text-purple-400" />
-                            Bandi per Settore
+                            Bandi Attivi per Categoria
                         </h3>
-                        <Bar data={barData} options={chartOptions} />
+                        {dashboard.per_categoria.labels.length > 0
+                            ? <Bar data={barData} options={chartOptions} />
+                            : <p className="text-slate-400 text-sm">Nessun bando attivo per categoria.</p>}
                     </div>
                 </div>
 
@@ -126,47 +166,43 @@ export default function DashboardEnte() {
                     <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <Euro className="h-5 w-5 text-blue-400" />
-                            Distribuzione Budget
+                            Budget per Livello
                         </h3>
-                        <Doughnut data={doughnutData} options={doughnutOptions} />
+                        {dashboard.per_livello.labels.length > 0
+                            ? <Doughnut data={doughnutData} options={doughnutOptions} />
+                            : <p className="text-slate-400 text-sm">Nessun budget disponibile.</p>}
                     </div>
                     <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 col-span-2">
                         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                             <Clock className="h-5 w-5 text-orange-400" />
                             Prossime Scadenze
                         </h3>
-                        {[
-                            { name: 'Fondo Sviluppo Comuni', days: 8, budget: '€2.5M' },
-                            { name: 'PNRR Infrastrutture', days: 15, budget: '€15M' },
-                            { name: 'Europa Horizon', days: 25, budget: '€40M' }
-                        ].map((item) => (
-                            <div key={item.name} className="flex justify-between p-4 rounded-lg bg-slate-900/50 mb-2">
-                                <div><p className="text-white font-medium">{item.name}</p><p className="text-xs text-slate-400">Budget: {item.budget}</p></div>
-                                <div className="text-right"><p className="text-orange-400 font-semibold">{item.days} giorni</p><p className="text-xs text-slate-500">alla scadenza</p></div>
+                        {dashboard.prossime_scadenze.length > 0 ? dashboard.prossime_scadenze.map((item) => (
+                            <div key={item.titolo} className="flex justify-between p-4 rounded-lg bg-slate-900/50 mb-2">
+                                <div><p className="text-white font-medium">{item.titolo}</p><p className="text-xs text-slate-400">Budget: {formatEuro(item.budget)}</p></div>
+                                <div className="text-right"><p className="text-orange-400 font-semibold">{item.giorni} giorni</p><p className="text-xs text-slate-500">alla scadenza</p></div>
                             </div>
-                        ))}
+                        )) : <p className="text-slate-400 text-sm">Nessuna scadenza imminente.</p>}
                     </div>
                 </div>
 
                 <div className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50">
                     <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
                         <Eye className="h-5 w-5 text-cyan-400" />
-                        Gare Consigliate
+                        Bandi Consigliati
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {[
-                            { title: 'Fornitura IT per Comuni', match: 92, budget: '€500k' },
-                            { title: 'Manutenzione Stradale', match: 88, budget: '€2M' },
-                            { title: 'Servizi Sociali', match: 85, budget: '€800k' }
-                        ].map((gara) => (
-                            <div key={gara.title} className="rounded-xl bg-slate-900/50 p-4 border border-slate-700/50">
-                                <div className="text-right"><span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">Match {gara.match}%</span></div>
-                                <h4 className="text-white font-semibold mt-2">{gara.title}</h4>
-                                <p className="text-xs text-slate-400">Budget: {gara.budget}</p>
-                                <button className="mt-3 text-sm text-green-400">Dettagli →</button>
-                            </div>
-                        ))}
-                    </div>
+                    {dashboard.gare_consigliate.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            {dashboard.gare_consigliate.map((gara) => (
+                                <Link key={gara.id} href={`/ente/lista-bandi/${gara.id}`} className="rounded-xl bg-slate-900/50 p-4 border border-slate-700/50 block hover:border-cyan-500/50 transition">
+                                    <div className="text-right"><span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">Match {gara.match}%</span></div>
+                                    <h4 className="text-white font-semibold mt-2">{gara.titolo}</h4>
+                                    <p className="text-xs text-slate-400">Budget: {formatEuro(gara.budget)}</p>
+                                    <span className="mt-3 text-sm text-green-400 inline-block">Dettagli →</span>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : <p className="text-slate-400 text-sm">Nessun bando compatibile al momento.</p>}
                 </div>
             </div>
         </LayoutEnte>

@@ -30,10 +30,6 @@ Route::middleware(['auth'])->group(function () {
         return Inertia::render('Impresa/Dashboard');
     })->name('impresa.dashboard');
     
-    Route::get('/dashboard/ente', function () {
-        return Inertia::render('Ente/Dashboard');
-    })->name('ente.dashboard');
-    
     Route::get('/dashboard/associazione', function () {
         return Inertia::render('Associazione/Dashboard');
     })->name('associazione.dashboard');
