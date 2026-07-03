@@ -253,9 +253,16 @@ class CalculateMatches extends Command
             $punteggio += 10; $breakdown['territorio'] = 10;
             $puntiDebolezza[] = 'Bando nazionale (non specifico per la tua regione)';
         } else {
-            $breakdown['territorio'] = 0;
-            $puntiDebolezza[] = 'Territorio non corrispondente (' . $bando->regione . ')';
-            $requisitiMancanti[] = 'Territorio';
+            // GUARD: bando vincolato a una regione specifica diversa dalla propria — non è
+            // una semplice debolezza, è un requisito geografico che non può essere soddisfatto.
+            return [
+                'punteggio'          => 0,
+                'punti_forza'        => [],
+                'punti_debolezza'    => ['Territorio non corrispondente (' . $bando->regione . ' vs ' . $profilo->regione . ')'],
+                'requisiti_mancanti' => ['Territorio'],
+                'match_obbligatori'  => false,
+                'breakdown'          => ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0],
+            ];
         }
 
         // 3. SETTORI / CATEGORIA (25 pts)

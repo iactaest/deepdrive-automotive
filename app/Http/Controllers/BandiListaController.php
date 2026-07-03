@@ -248,7 +248,13 @@ class BandiListaController extends Controller
             $punteggio += 10;
             $puntiDebolezza[] = 'Bando nazionale (non specifico per la tua regione)';
         } else {
-            $puntiDebolezza[] = 'Territorio non corrispondente (' . $bando->regione . ' vs ' . $profilo->regione . ')';
+            // GUARD: bando vincolato a una regione specifica diversa dalla propria — non è
+            // una semplice debolezza, è un requisito geografico che non può essere soddisfatto.
+            return [
+                'punteggio'       => 0,
+                'punti_forza'     => [],
+                'punti_debolezza' => ['Territorio non corrispondente (' . $bando->regione . ' vs ' . $profilo->regione . ')'],
+            ];
         }
 
         // 4. LIVELLO INTERESSE (15 pts)
