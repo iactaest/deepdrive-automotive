@@ -39,7 +39,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
     }, []);
 
     const navigation = [
-        { name: 'Dashboard', href: '/dashboard/ente', icon: LayoutDashboard },
+        { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
          { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },
           { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },  // ← NUOVA VOCE
         { name: 'Assistente AI', href: '/assistente', icon: Bot },
@@ -67,7 +67,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
             <aside className={`fixed lg:relative z-50 w-64 bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50 h-full transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
                 <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
-                        <Link href="/dashboard/ente" className="flex items-center gap-2 group">
+                        <Link href="/ente/dashboard" className="flex items-center gap-2 group">
                             <Landmark className="h-8 w-8 text-green-500 group-hover:scale-110 transition-transform" />
                             <span className="text-lg font-bold bg-gradient-to-r from-white to-green-400 bg-clip-text text-transparent">DeepBandi</span>
                         </Link>

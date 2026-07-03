@@ -86,7 +86,7 @@ export default function ProfiloShow({ profilo }: any) {
                     
                     {/* Header */}
                     <div className="mb-5">
-                        <button onClick={() => router.visit('/dashboard/ente')} className="text-slate-400 hover:text-white mb-2 flex items-center gap-1.5 text-xs">
+                        <button onClick={() => router.visit('/ente/dashboard')} className="text-slate-400 hover:text-white mb-2 flex items-center gap-1.5 text-xs">
                             <ArrowLeft className="h-3 w-3" /> Torna alla Dashboard
                         </button>
                         <div className="flex justify-between items-center flex-wrap gap-3">
