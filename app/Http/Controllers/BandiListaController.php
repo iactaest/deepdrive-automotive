@@ -145,13 +145,46 @@ class BandiListaController extends Controller
         $settori            = array_map('strtolower', $toArray($profilo->settore_prevalente));
         $livelliInteresse   = array_map('strtolower', $toArray($profilo->livelli_interesse));
         $regioneEnte        = strtolower($profilo->regione ?? '');
+        $provinciaEnte      = strtolower($profilo->provincia ?? '');
+        $comuneEnte         = strtolower($profilo->comune ?? '');
         $tipoEnte           = strtolower($profilo->tipo_ente ?? '');
         $importiInteresse   = $toArray($profilo->importi_interesse);
 
         $categoriaBando = strtolower($bando->categoria ?? '');
         $livelloBando   = strtolower($bando->livello ?? '');
         $regioneBando   = strtolower($bando->regione ?? '');
+        $provinciaBando = strtolower($bando->provincia ?? '');
+        $comuneBando    = strtolower($bando->comune ?? '');
         $targetBando    = strtolower($bando->target ?? '');
+
+        // GUARD: il target strutturato include spesso "Ente Pubblico" in modo generico, ma la
+        // sezione "A chi si rivolge" della descrizione rivela che i beneficiari reali sono
+        // imprese/privati (es. fondi comunali per commercianti/artigiani locali).
+        if ($tipoEnte !== '' && $this->descrizioneIndicaSoloImprese($bando->descrizione)) {
+            return [
+                'punteggio'       => 0,
+                'punti_forza'     => [],
+                'punti_debolezza' => ['La descrizione indica beneficiari imprese/privati, non enti pubblici'],
+            ];
+        }
+
+        // GUARD: fondo amministrato da un Comune/Provincia specifico diverso dal profilo
+        // (es. "Comune di Camastra" per un ente registrato a Ragusa) — non applicabile anche
+        // se ricade nella stessa regione.
+        if (!empty($comuneBando) && !empty($comuneEnte) && $comuneBando !== $comuneEnte) {
+            return [
+                'punteggio'       => 0,
+                'punti_forza'     => [],
+                'punti_debolezza' => ['Fondo specifico del Comune di ' . $bando->comune . ', non applicabile al tuo territorio'],
+            ];
+        }
+        if (!empty($provinciaBando) && !empty($provinciaEnte) && $provinciaBando !== $provinciaEnte) {
+            return [
+                'punteggio'       => 0,
+                'punti_forza'     => [],
+                'punti_debolezza' => ['Fondo specifico della Provincia di ' . $bando->provincia . ', non applicabile al tuo territorio'],
+            ];
+        }
 
         // 1. TIPOLOGIA ENTE — guard hard: se target specificato e non include il tipo ente → score 0
         if (!empty($targetBando) && !empty($tipoEnte)) {
@@ -197,7 +230,13 @@ class BandiListaController extends Controller
         $isEuropeo        = in_array('europeo', $livelliInteresse);
         $regioneNazionale = in_array($regioneBando, ['nazionale', 'italia', 'national', 'italy', 'europeo', 'europe', '']);
 
-        if (empty($regioneBando)) {
+        if (!empty($comuneBando) && $comuneBando === $comuneEnte) {
+            $punteggio += 20;
+            $puntiForza[] = 'Bando specifico per il tuo Comune (' . $bando->comune . ')';
+        } elseif (!empty($provinciaBando) && $provinciaBando === $provinciaEnte) {
+            $punteggio += 20;
+            $puntiForza[] = 'Bando specifico per la tua Provincia (' . $bando->provincia . ')';
+        } elseif (empty($regioneBando)) {
             $punteggio += 5;
         } elseif (in_array($livelloBando, ['europeo', 'europe']) && $isEuropeo) {
             $punteggio += 20;
@@ -264,6 +303,41 @@ class BandiListaController extends Controller
             'punti_forza'    => $puntiForza,
             'punti_debolezza' => $puntiDebolezza,
         ];
+    }
+
+    /**
+     * Isola la sezione "A chi si rivolge" (struttura ricorrente nelle descrizioni di
+     * incentivi.gov.it) e verifica se indica beneficiari esclusivamente privati, anche
+     * quando il campo target strutturato include genericamente "Ente Pubblico".
+     */
+    private function descrizioneIndicaSoloImprese(?string $descrizione): bool
+    {
+        if (empty($descrizione)) return false;
+
+        if (!preg_match('/A chi si rivolge\s*(.+?)(?:Cosa prevede|Come funziona|$)/isu', $descrizione, $m)) {
+            return false;
+        }
+        $sezione = strtolower($m[1]);
+
+        $keywordEnte = [
+            'comuni', 'enti locali', 'ente pubblico', 'enti pubblici', 'enti territoriali',
+            'pubblica amministrazione', 'amministrazioni pubbliche', 'soggetti pubblici',
+            'unione dei comuni', 'unioni di comuni',
+        ];
+        foreach ($keywordEnte as $kw) {
+            if (str_contains($sezione, $kw)) return false;
+        }
+
+        $keywordImprese = [
+            'operatori economici', 'le imprese', 'imprese private', 'imprese di qualsiasi dimensione',
+            'pmi', 'liberi professionisti', 'datori di lavoro privati', 'startup',
+            'lavoratori autonomi', 'micro, piccole e medie imprese',
+        ];
+        foreach ($keywordImprese as $kw) {
+            if (str_contains($sezione, $kw)) return true;
+        }
+
+        return false;
     }
 
     private function tipoEnteKeywords(string $tipoEnte): array
