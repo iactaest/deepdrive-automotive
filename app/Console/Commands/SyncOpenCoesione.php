@@ -11,23 +11,42 @@ use App\Models\ProgettoOpenCoesione;
 class SyncOpenCoesione extends Command
 {
     protected $signature = 'bandi:sync-opencoesione
-                            {--aggregato : Usa il dataset aggregato (42 MB invece di 252 MB)}';
-    
-    protected $description = 'Scarica e importa bandi da OpenCoesione (dataset pubblico)';
+                            {--regione= : Scarica solo il dataset di una regione (es. Sicilia) invece del dataset nazionale completo}
+                            {--nazionale : Usa il dataset nazionale completo (252,6 MB) invece del default regionale}';
+
+    protected $description = 'Scarica e importa progetti storici finanziati da OpenCoesione (dataset pubblico, per contesto statistico enti)';
+
+    // Sigle regione usate nei nomi file OpenCoesione (https://opencoesione.gov.it/it/opendata/)
+    private const SIGLE_REGIONE = [
+        'valle d\'aosta'  => 'VDA', 'piemonte'        => 'PIE', 'lombardia'  => 'LOM',
+        'trentino-alto adige' => 'TN_BZ', 'veneto'    => 'VEN', 'friuli-venezia giulia' => 'FVG',
+        'liguria'         => 'LIG', 'emilia-romagna'  => 'EMR', 'toscana'    => 'TOS',
+        'umbria'          => 'UMB', 'marche'          => 'MAR', 'lazio'      => 'LAZ',
+        'abruzzo'         => 'ABR', 'campania'        => 'CAM', 'molise'     => 'MOL',
+        'puglia'          => 'PUG', 'calabria'        => 'CAL', 'basilicata' => 'BAS',
+        'sicilia'         => 'SIC', 'sardegna'        => 'SAR',
+    ];
 
     public function handle()
     {
         $this->info('🔄 Avvio sincronizzazione OpenCoesione...');
-        
-        // Scegli il dataset in base all'opzione
-        if ($this->option('aggregato')) {
-            $url = 'https://opencoesione.gov.it/media/datasets/Progetti_esteso_aggregati_csv.zip';
-            $this->info('📦 Usando dataset AGGREGATO (42 MB)');
+
+        // Il dataset nazionale (252,6 MB) è sovradimensionato per un ente che opera su una sola
+        // regione: di default si scarica il dataset regionale (~10-80 MB a seconda della regione).
+        if ($this->option('nazionale')) {
+            $url = 'https://opencoesione.gov.it/it/opendata/progetti_esteso.zip';
+            $this->info('📦 Usando dataset NAZIONALE (252,6 MB)');
         } else {
-            $url = 'https://opencoesione.gov.it/media/datasets/Progetti_esteso_csv.zip';
-            $this->info('📦 Usando dataset COMPLETO (252 MB)');
+            $regione = $this->option('regione') ?: 'Sicilia';
+            $sigla   = self::SIGLE_REGIONE[strtolower($regione)] ?? null;
+            if (!$sigla) {
+                $this->error("❌ Regione non riconosciuta: $regione");
+                return self::FAILURE;
+            }
+            $url = "https://opencoesione.gov.it/it/opendata/regioni/progetti_esteso_{$sigla}.zip";
+            $this->info("📦 Usando dataset REGIONALE ($regione)");
         }
-        
+
         $this->info("📥 Download dataset da: $url");
         
         try {
@@ -77,7 +96,6 @@ class SyncOpenCoesione extends Command
                 }
             } else {
                 $this->error("❌ Download fallito (status: " . $response->status() . ")");
-                $this->info('💡 Suggerimento: usa l\'opzione --aggregato per il dataset più leggero');
             }
         } catch (\Exception $e) {
             $this->error("❌ Errore: " . $e->getMessage());
@@ -215,31 +233,38 @@ class SyncOpenCoesione extends Command
     }
 
     /**
-     * Mappa i dati dal CSV ai campi del database
+     * Mappa i dati dal CSV ai campi del database. Nomi colonna aggiornati al tracciato
+     * record corrente di OpenCoesione (verificato scaricando il dataset reale) — i nomi
+     * originali (OC_CODICE_PROGETTO, OC_REGIONE, OC_IMPORTO, ecc.) non esistono più.
      */
     private function mapCsvToDatabase($data)
     {
+        $dataFine = $data['OC_DATA_FINE_PROGETTO_EFFETTIVA'] ?? null;
+        if (empty($dataFine)) {
+            $dataFine = $data['OC_DATA_FINE_PROGETTO_PREVISTA'] ?? null;
+        }
+
         return [
             'oc_titolo_progetto' => $this->cleanString($data['OC_TITOLO_PROGETTO'] ?? null),
-            'oc_codice_progetto' => $this->cleanString($data['OC_CODICE_PROGETTO'] ?? null),
-            'oc_regione' => $this->cleanString($data['OC_REGIONE'] ?? null),
-            'oc_provincia' => $this->cleanString($data['OC_PROVINCIA'] ?? null),
-            'oc_comune' => $this->cleanString($data['OC_COMUNE'] ?? null),
-            'oc_importo' => $this->parseNumber($data['OC_IMPORTO'] ?? null),
-            'oc_importo_fesr' => $this->parseNumber($data['OC_IMPORTO_FESR'] ?? null),
-            'oc_importo_fse' => $this->parseNumber($data['OC_IMPORTO_FSE'] ?? null),
-            'oc_importo_fsc' => $this->parseNumber($data['OC_IMPORTO_FSC'] ?? null),
-            'oc_tema' => $this->cleanString($data['OC_TEMA'] ?? null),
-            'oc_sottotema' => $this->cleanString($data['OC_SOTTOTEMA'] ?? null),
-            'oc_data_inizio' => $this->parseDate($data['OC_DATA_INIZIO'] ?? null),
-            'oc_data_fine' => $this->parseDate($data['OC_DATA_FINE'] ?? null),
-            'oc_soggetto' => $this->cleanString($data['OC_SOGGETTO'] ?? null),
-            'oc_cup' => $this->cleanString($data['OC_CUP'] ?? null),
-            'oc_categoria' => $this->cleanString($data['OC_CATEGORIA'] ?? null),
-            'oc_stato' => $this->cleanString($data['OC_STATO'] ?? null),
-            'anno_inizio' => $this->extractYear($data['OC_DATA_INIZIO'] ?? null),
-            'anno_fine' => $this->extractYear($data['OC_DATA_FINE'] ?? null),
-            'ciclo_programmazione' => $this->cleanString($data['OC_CICLO'] ?? null),
+            'oc_codice_progetto' => $this->cleanString($data['COD_LOCALE_PROGETTO'] ?? null),
+            'oc_regione' => $this->cleanString($data['DEN_REGIONE'] ?? null),
+            'oc_provincia' => $this->cleanString($data['DEN_PROVINCIA'] ?? null),
+            'oc_comune' => $this->cleanString($data['DEN_COMUNE'] ?? null),
+            'oc_importo' => $this->parseNumber($data['FINANZ_TOTALE_PUBBLICO'] ?? null),
+            'oc_importo_fesr' => $this->parseNumber($data['FINANZ_UE_FESR'] ?? null),
+            'oc_importo_fse' => $this->parseNumber($data['FINANZ_UE_FSE'] ?? null),
+            'oc_importo_fsc' => $this->parseNumber($data['FINANZ_STATO_FSC'] ?? null),
+            'oc_tema' => $this->cleanString($data['OC_TEMA_SINTETICO'] ?? null),
+            'oc_sottotema' => $this->cleanString($data['DESCR_OB_TEMATICO'] ?? null),
+            'oc_data_inizio' => $this->parseDate($data['OC_DATA_INIZIO_PROGETTO'] ?? null),
+            'oc_data_fine' => $this->parseDate($dataFine),
+            'oc_soggetto' => $this->cleanString($data['OC_DENOM_BENEFICIARIO'] ?? null),
+            'oc_cup' => $this->cleanString($data['CUP'] ?? null),
+            'oc_categoria' => $this->cleanString($data['OC_DESCR_CATEGORIA_SPESA'] ?? null),
+            'oc_stato' => $this->cleanString($data['OC_STATO_PROGETTO'] ?? null),
+            'anno_inizio' => $this->extractYear($data['OC_DATA_INIZIO_PROGETTO'] ?? null),
+            'anno_fine' => $this->extractYear($dataFine),
+            'ciclo_programmazione' => $this->cleanString($data['OC_DESCR_CICLO'] ?? null),
         ];
     }
 
@@ -254,10 +279,15 @@ class SyncOpenCoesione extends Command
         
         // Rimuovi caratteri di controllo
         $value = preg_replace('/[\x00-\x1F\x7F]/', '', $value);
-        
+
         // Trim
         $value = trim($value);
-        
+
+        // Tutte le colonne stringa della tabella sono varchar(255): senza troncare qui,
+        // MySQL in strict mode rifiuta l'intera riga (causava ~36k righe perse su 121k,
+        // soprattutto su oc_categoria che può contenere descrizioni molto lunghe)
+        $value = mb_substr($value, 0, 255);
+
         return $value !== '' ? $value : null;
     }
 
@@ -297,8 +327,9 @@ class SyncOpenCoesione extends Command
         $value = trim($value);
         
         try {
-            // Prova diversi formati
-            $formats = ['Y-m-d', 'd/m/Y', 'm/d/Y', 'Y/m/d', 'd-m-Y', 'm-d-Y'];
+            // Prova diversi formati — 'Ymd' (es. 20111027) è il formato usato dal
+            // tracciato record OpenCoesione corrente per OC_DATA_INIZIO/FINE_PROGETTO
+            $formats = ['Ymd', 'Y-m-d', 'd/m/Y', 'm/d/Y', 'Y/m/d', 'd-m-Y', 'm-d-Y'];
             foreach ($formats as $format) {
                 $date = \DateTime::createFromFormat($format, $value);
                 if ($date !== false) {
