@@ -96,25 +96,14 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
 
                             {/* Button link bando — sempre visibile */}
                             <div className="shrink-0 flex flex-col gap-2">
-                                {bando.url ? (
-                                    <a
-                                        href={bando.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm font-medium transition"
-                                    >
-                                        🔗 Vai al bando originale
-                                    </a>
-                                ) : (
-                                    <a
-                                        href={`https://www.google.com/search?q=${encodeURIComponent(bando.titolo + ' bando sito:gov.it OR sito:regione.sicilia.it OR sito:europa.eu')}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-medium transition border border-slate-600/60"
-                                    >
-                                        🔍 Cerca il bando online
-                                    </a>
-                                )}
+                                <a
+                                    href={`https://www.google.com/search?q=${encodeURIComponent(bando.titolo + ' bando sito:gov.it OR sito:regione.sicilia.it OR sito:europa.eu')}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-medium transition border border-slate-600/60"
+                                >
+                                    🔍 Cerca il bando online
+                                </a>
                             </div>
                         </div>
 
