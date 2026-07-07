@@ -349,9 +349,9 @@ class BandiListaController extends Controller
     private function tipoEnteKeywords(string $tipoEnte): array
     {
         return match ($tipoEnte) {
-            'comune'         => ['comune', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'pa '],
-            'provincia'      => ['provincia', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico'],
-            'regione'        => ['regione', 'pubblica amministrazione', 'ente pubblico'],
+            'comune'         => ['comune', 'comuni', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici', 'pa '],
+            'provincia'      => ['provincia', 'province', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici'],
+            'regione'        => ['regione', 'regioni', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici'],
             'associazione'   => ['associaz', 'no profit', 'non profit', 'terzo settore', 'cooperativ', 'ente del terzo'],
             'professionista' => ['professionista', 'libero professionista'],
             default          => [$tipoEnte],
