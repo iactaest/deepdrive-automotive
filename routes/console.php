@@ -30,6 +30,13 @@ Schedule::command('bandi:sync-incentivi --solo-enti --solo-attivi')
 Schedule::command('bandi:sync-ted --paese=ITA --pagine=3 --giorni=30')
     ->daily()->at('04:00')->withoutOverlapping();
 
+// politichecoesione.governo.it — scraping + AI (Gemini), niente CKAN/API su questa fonte.
+// --limit=15 per restare sotto la quota free tier di Gemini (20 richieste/giorno); i bandi
+// già importati vengono saltati prima di chiamare l'AI, quindi il limite copre comodamente
+// anche i nuovi bandi pubblicati nel frattempo.
+Schedule::command('bandi:sync-coesione-ai --limit=15')
+    ->daily()->at('04:30')->withoutOverlapping();
+
 // Calcolo match (dopo tutte le sincronizzazioni)
 Schedule::command('bandi:calculate-matches')
     ->daily()->at('05:00')->withoutOverlapping();
