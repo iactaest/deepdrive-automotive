@@ -168,6 +168,20 @@ class CalculateMatches extends Command
 
         $breakdown = ['tipologia' => 0, 'settori' => 0, 'territorio' => 0, 'livello' => 0, 'budget' => 0, 'esperienza' => 0, 'scadenza' => 0];
 
+        // GUARD: titolo con codice progetto stile CUP (es. "2014.IT.05.SFOP.014/1/8.1/7.3.2/0446")
+        // sono righe di trasparenza L.190 su erogazioni già chiuse (elenco beneficiari di un
+        // decreto passato), non bandi aperti a cui candidarsi.
+        if (preg_match('/^\d{4}\.[A-Z]{2}\.\d/i', trim($bando->titolo ?? ''))) {
+            return [
+                'punteggio'          => 0,
+                'punti_forza'        => [],
+                'punti_debolezza'    => ['Codice progetto di trasparenza storica (non un bando aperto)'],
+                'requisiti_mancanti' => ['Non è un bando attivo'],
+                'match_obbligatori'  => false,
+                'breakdown'          => $breakdown,
+            ];
+        }
+
         // GUARD: il campo target strutturato include spesso "Ente Pubblico" in modo generico
         // (tassonomia incentivi.gov.it troppo ampia), ma la sezione "A chi si rivolge" della
         // descrizione rivela che i beneficiari reali sono imprese/privati. Il target da solo
@@ -186,9 +200,16 @@ class CalculateMatches extends Command
         // 1. TIPOLOGIA ENTE — guard hard: se target specificato e non include il tipo ente → score 0
         if (!empty($targetBando) && !empty($tipoEnte)) {
             $keywords  = $this->tipoEnteKeywords($tipoEnte);
+            // Stem intenzionalmente parziali (associazione/associazioni/associativo, cooperativa/e):
+            // solo confine di parola iniziale, non finale.
+            $stemParziali = ['associaz', 'cooperativ'];
             $matchTipo = false;
             foreach ($keywords as $kw) {
-                if (str_contains($targetBando, $kw)) { $matchTipo = true; break; }
+                $pattern = in_array($kw, $stemParziali, true)
+                    ? '/\b' . preg_quote($kw, '/') . '/ui'
+                    : '/\b' . preg_quote($kw, '/') . '\b/ui';
+                // \b evita falsi positivi tipo "comuni" dentro "comunicazione"
+                if (preg_match($pattern, $targetBando)) { $matchTipo = true; break; }
             }
             if (!$matchTipo) {
                 return [
@@ -394,7 +415,7 @@ class CalculateMatches extends Command
     private function tipoEnteKeywords(string $tipoEnte): array
     {
         return match ($tipoEnte) {
-            'comune'         => ['comune', 'comuni', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici', 'pa '],
+            'comune'         => ['comune', 'comuni', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici', 'pa'],
             'provincia'      => ['provincia', 'province', 'ente locale', 'enti locali', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici'],
             'regione'        => ['regione', 'regioni', 'pubblica amministrazione', 'ente pubblico', 'enti pubblici'],
             'associazione'   => ['associaz', 'no profit', 'non profit', 'terzo settore', 'cooperativ', 'ente del terzo'],
