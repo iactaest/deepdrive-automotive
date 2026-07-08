@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\BandoImportato;
+use App\Models\BandoPreferito;
 use App\Models\Ente;
 use App\Models\ProfiloEnte;
 use Illuminate\Support\Facades\Auth;
@@ -469,6 +470,7 @@ class BandiListaController extends Controller
                 'url'          => $bando->url,
                 'descrizione'  => $bando->descrizione,
             ],
+            'isSalvato' => BandoPreferito::where('user_id', $userId)->where('bando_id', $bando->id)->exists(),
             'match' => [
                 'punteggio'      => $risultato['punteggio'],
                 'punti_forza'    => $risultato['punti_forza'],

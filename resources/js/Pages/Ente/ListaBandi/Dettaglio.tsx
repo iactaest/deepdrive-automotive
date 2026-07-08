@@ -26,6 +26,7 @@ interface Props {
     bando: Bando;
     match: Match;
     ente: any;
+    isSalvato: boolean;
 }
 
 const getMatchColor = (scadenza: string | null, stato: string): string => {
@@ -51,8 +52,16 @@ const statoLabel = (stato: string) =>
 
 const MAX_RIGHE = 20;
 
-export default function ListaBandiDettaglio({ bando, match }: Props) {
+export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) {
     const [descAperta, setDescAperta] = useState(false);
+
+    const toggleSalva = () => {
+        if (isSalvato) {
+            router.delete(`/bandi-salvati/${bando.id}`, { preserveScroll: true });
+        } else {
+            router.post('/bandi-salvati', { bando_id: bando.id }, { preserveScroll: true });
+        }
+    };
 
     const righe = (bando.descrizione ?? '').split('\n');
     const descrizioneBreve = righe.slice(0, MAX_RIGHE).join('\n');
@@ -96,6 +105,16 @@ export default function ListaBandiDettaglio({ bando, match }: Props) {
 
                             {/* Button link bando — sempre visibile */}
                             <div className="shrink-0 flex flex-col gap-2">
+                                <button
+                                    onClick={toggleSalva}
+                                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition border ${
+                                        isSalvato
+                                            ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border-yellow-500/40'
+                                            : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600/60'
+                                    }`}
+                                >
+                                    {isSalvato ? '⭐ Salvato' : '☆ Salva'}
+                                </button>
                                 <a
                                     href={`https://www.google.com/search?q=${encodeURIComponent(bando.titolo + ' bando sito:gov.it OR sito:regione.sicilia.it OR sito:europa.eu')}`}
                                     target="_blank"

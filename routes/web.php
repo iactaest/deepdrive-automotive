@@ -8,6 +8,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfiloImpresaController;
 use App\Http\Controllers\ProfiloEnteController;
 use App\Http\Controllers\BandiListaController;
+use App\Http\Controllers\BandiSalvatiController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -71,6 +72,13 @@ Route::middleware('auth')->group(function () {
     // ============================================================
    Route::get('/ente/lista-bandi', [BandiListaController::class, 'index'])->name('lista.bandi');
 Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->name('lista.bandi.dettaglio');
+
+    // ============================================================
+    // ✅ BANDI SALVATI
+    // ============================================================
+    Route::get('/bandi-salvati', [BandiSalvatiController::class, 'index'])->name('bandi.salvati');
+    Route::post('/bandi-salvati', [BandiSalvatiController::class, 'store'])->name('bandi.salvati.store');
+    Route::delete('/bandi-salvati/{bandoId}', [BandiSalvatiController::class, 'destroy'])->name('bandi.salvati.destroy');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');
