@@ -158,7 +158,7 @@ class SyncEuroinfosicilia extends Command
             'codice_esterno'     => 'eis_' . $id,
             'fonte'              => self::FONTE,
             'titolo'             => mb_substr($titolo, 0, 255),
-            'descrizione'        => mb_substr($descrizione, 0, 2000) ?: null,
+            'descrizione'        => $this->truncaConEllissi($descrizione),
             'url'                => $link,
             'categoria'          => $categoria,
             'livello'            => 'regionale',
@@ -249,6 +249,23 @@ class SyncEuroinfosicilia extends Command
         if ($diff < 0)   return 'chiuso';
         if ($diff <= 30) return 'in_scadenza';
         return 'aperto';
+    }
+
+    /**
+     * Tronca a $max caratteri sull'ultimo confine di parola invece di tagliare a metà
+     * e aggiunge "…".
+     */
+    private function truncaConEllissi(?string $testo, int $max = 2000): ?string
+    {
+        if (empty($testo)) return null;
+        if (mb_strlen($testo) <= $max) return $testo;
+
+        $tagliato = mb_substr($testo, 0, $max);
+        $ultimoSpazio = mb_strrpos($tagliato, ' ');
+        if ($ultimoSpazio !== false) {
+            $tagliato = mb_substr($tagliato, 0, $ultimoSpazio);
+        }
+        return rtrim($tagliato, ".,;: \t\n") . '…';
     }
 
     private function parseDate(?string $value): ?string

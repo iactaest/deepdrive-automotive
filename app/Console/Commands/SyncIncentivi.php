@@ -182,7 +182,7 @@ class SyncIncentivi extends Command
             'codice_esterno'     => $codice,
             'fonte'              => self::FONTE,
             'titolo'             => mb_substr($titolo, 0, 255),
-            'descrizione'        => mb_substr($descrizioneCompleta, 0, 2000) ?: null,
+            'descrizione'        => $this->truncaConEllissi($descrizioneCompleta),
             'url'                => $url ? mb_substr($url, 0, 255) : null,
             'categoria'          => $settore ? mb_substr($settore, 0, 255) : null,
             'livello'            => 'nazionale',
@@ -311,6 +311,23 @@ class SyncIncentivi extends Command
         if (empty($value)) return null;
         $v = trim($value);
         return is_numeric($v) ? (float) $v : null;
+    }
+
+    /**
+     * Tronca a $max caratteri sull'ultimo confine di parola invece di tagliare a metà
+     * (mb_substr secco lasciava frasi mozzate tipo "...gli interventi p") e aggiunge "…".
+     */
+    private function truncaConEllissi(?string $testo, int $max = 2000): ?string
+    {
+        if (empty($testo)) return null;
+        if (mb_strlen($testo) <= $max) return $testo;
+
+        $tagliato = mb_substr($testo, 0, $max);
+        $ultimoSpazio = mb_strrpos($tagliato, ' ');
+        if ($ultimoSpazio !== false) {
+            $tagliato = mb_substr($tagliato, 0, $ultimoSpazio);
+        }
+        return rtrim($tagliato, ".,;: \t\n") . '…';
     }
 
     private function parseDate(?string $value): ?string

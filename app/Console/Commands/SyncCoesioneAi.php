@@ -100,7 +100,7 @@ class SyncCoesioneAi extends Command
                 'codice_esterno'     => $codiceEsterno,
                 'fonte'              => self::FONTE,
                 'titolo'             => mb_substr($item['titolo'], 0, 255),
-                'descrizione'        => mb_substr($campi['descrizione'] ?? '', 0, 2000) ?: null,
+                'descrizione'        => $this->truncaConEllissi($campi['descrizione'] ?? null),
                 'url'                => $item['url'],
                 'categoria'          => $campi['categoria'] ?? null,
                 'livello'            => 'statale',
@@ -278,6 +278,23 @@ PROMPT;
         if (is_numeric($valore)) return (float) $valore;
         $pulito = preg_replace('/[^\d.]/', '', (string) $valore);
         return is_numeric($pulito) ? (float) $pulito : null;
+    }
+
+    /**
+     * Tronca a $max caratteri sull'ultimo confine di parola invece di tagliare a metà
+     * e aggiunge "…".
+     */
+    private function truncaConEllissi(?string $testo, int $max = 2000): ?string
+    {
+        if (empty($testo)) return null;
+        if (mb_strlen($testo) <= $max) return $testo;
+
+        $tagliato = mb_substr($testo, 0, $max);
+        $ultimoSpazio = mb_strrpos($tagliato, ' ');
+        if ($ultimoSpazio !== false) {
+            $tagliato = mb_substr($tagliato, 0, $ultimoSpazio);
+        }
+        return rtrim($tagliato, ".,;: \t\n") . '…';
     }
 
     private function parseData(?string $valore): ?string

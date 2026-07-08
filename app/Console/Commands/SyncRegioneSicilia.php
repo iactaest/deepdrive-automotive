@@ -310,7 +310,7 @@ class SyncRegioneSicilia extends Command
             'codice_esterno'     => $codice,
             'fonte'              => 'regione_sicilia',
             'titolo'             => mb_substr($titolo, 0, 255),
-            'descrizione'        => $ufficio ? mb_substr($ufficio, 0, 2000) : null,
+            'descrizione'        => $this->truncaConEllissi($ufficio),
             'url'                => $url ? mb_substr($url, 0, 255) : null,
             'categoria'          => $tema ? mb_substr($tema, 0, 255) : null,
             'livello'            => 'regionale',
@@ -352,6 +352,23 @@ class SyncRegioneSicilia extends Command
         $value = str_replace(',', '.', $value);
         $value = preg_replace('/[^0-9.]/', '', $value);
         return empty($value) ? null : (float) $value;
+    }
+
+    /**
+     * Tronca a $max caratteri sull'ultimo confine di parola invece di tagliare a metà
+     * e aggiunge "…".
+     */
+    private function truncaConEllissi(?string $testo, int $max = 2000): ?string
+    {
+        if (empty($testo)) return null;
+        if (mb_strlen($testo) <= $max) return $testo;
+
+        $tagliato = mb_substr($testo, 0, $max);
+        $ultimoSpazio = mb_strrpos($tagliato, ' ');
+        if ($ultimoSpazio !== false) {
+            $tagliato = mb_substr($tagliato, 0, $ultimoSpazio);
+        }
+        return rtrim($tagliato, ".,;: \t\n") . '…';
     }
 
     private function parseDate(?string $value): ?string

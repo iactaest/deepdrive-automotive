@@ -174,7 +174,7 @@ class SyncEuFundingTenders extends Command
                 ['codice_esterno' => $id, 'fonte' => 'eu_funding_' . strtolower(str_replace(' ', '_', $programmaNome))],
                 [
                     'titolo' => mb_substr($this->sanitizeString($titolo), 0, 255),
-                    'descrizione' => $descrizione ? mb_substr($this->sanitizeString($descrizione), 0, 2000) : null,
+                    'descrizione' => $this->truncaConEllissi($descrizione ? $this->sanitizeString($descrizione) : null),
                     'url' => $url,
                     'categoria' => $categoria,
                     'livello' => 'europeo',
@@ -259,5 +259,22 @@ class SyncEuFundingTenders extends Command
         // Rimuove caratteri di controllo eccetto tab/newline/carriage return
         $value = preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/u', '', $value);
         return $value ?? '';
+    }
+
+    /**
+     * Tronca a $max caratteri sull'ultimo confine di parola invece di tagliare a metà
+     * e aggiunge "…".
+     */
+    private function truncaConEllissi(?string $testo, int $max = 2000): ?string
+    {
+        if (empty($testo)) return null;
+        if (mb_strlen($testo) <= $max) return $testo;
+
+        $tagliato = mb_substr($testo, 0, $max);
+        $ultimoSpazio = mb_strrpos($tagliato, ' ');
+        if ($ultimoSpazio !== false) {
+            $tagliato = mb_substr($tagliato, 0, $ultimoSpazio);
+        }
+        return rtrim($tagliato, ".,;: \t\n") . '…';
     }
 }
