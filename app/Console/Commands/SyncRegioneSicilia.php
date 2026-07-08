@@ -263,28 +263,18 @@ class SyncRegioneSicilia extends Command
 
     private function mapToBando(array $data, string $source): ?array
     {
-        // — Formato "contributi e sussidi" (trasparenza L.124/2017) —
-        // Ogni riga è un pagamento. Teniamo solo quelli derivanti da "Avviso pubblico"
-        // e scartiamo i pagamenti a persone fisiche (DATI_FISCALI = codice fiscale personale).
-        $individuazione = strtolower($this->findField($data, ['INDIVIDUAZIONE', 'individuazione']) ?? '');
-        $datiFiscali    = $this->findField($data, ['DATI_FISCALI', 'dati_fiscali']) ?? '';
-
-        $isFormatoTrasparenza = array_key_exists('NORMA', $data)
-            || array_key_exists('INDIVIDUAZIONE', $data)
-            || array_key_exists('BENEFICIARIO', $data);
-
-        if ($isFormatoTrasparenza) {
-            // Scarta pagamenti a persone fisiche (CF ha 16 caratteri alfanumerici)
-            if (preg_match('/^[A-Z]{6}[0-9]{2}[A-Z][0-9]{2}[A-Z][0-9]{3}[A-Z]$/i', trim($datiFiscali))) {
-                return null;
-            }
-            // Scarta se non è un avviso/bando pubblico
-            if ($individuazione && !str_contains($individuazione, 'avviso')
-                && !str_contains($individuazione, 'bando')
-                && !str_contains($individuazione, 'concorso')
-                && !str_contains($individuazione, 'manifestazione')) {
-                return null;
-            }
+        // — Righe di trasparenza L.190/monitoraggio progetti (registro erogazioni già
+        // effettuate, non bandi) — Diversi schemi osservati sul portale CKAN: "Amministrazione
+        // Trasparente" (NORMA/INDIVIDUAZIONE/BENEFICIARIO/DATI_FISCALI) e "monitoraggio
+        // unitario progetti" (Cup/CodiceLocaleIntervento/DenominazioneBeneficiario). In
+        // entrambi i casi la riga descrive un pagamento già avvenuto a un beneficiario
+        // specifico, non un'opportunità a cui candidarsi — va scartata a prescindere da cosa
+        // cita come base legale: quasi sempre citano proprio "Avviso pubblico ..." come atto
+        // che ha originato il pagamento, quindi un filtro sul contenuto di quel campo non basta.
+        $chiaviTrasparenza = ['norma', 'individuazione', 'beneficiario', 'dati_fiscali', 'cup', 'codicelocaleintervento', 'denominazionebeneficiario'];
+        $chiaviPresenti    = array_map('strtolower', array_keys($data));
+        if (array_intersect($chiaviTrasparenza, $chiaviPresenti)) {
+            return null;
         }
 
         // Cerca il titolo con supporto per formati CKAN siciliani
@@ -292,13 +282,6 @@ class SyncRegioneSicilia extends Command
             'titolo', 'nome', 'denominazione', 'oggetto', 'title', 'name',
             'Titolo', 'Nome', 'sovvenzione', 'bando',
         ]);
-
-        // Fallback per formato trasparenza: combina NORMA + INDIVIDUAZIONE
-        if (empty($titolo)) {
-            $norma         = $this->findField($data, ['NORMA', 'norma']);
-            $tipoAvviso    = $this->findField($data, ['INDIVIDUAZIONE', 'individuazione']);
-            $titolo = trim(implode(' — ', array_filter([$tipoAvviso, $norma])));
-        }
 
         if (empty($titolo)) return null;
 
@@ -312,16 +295,13 @@ class SyncRegioneSicilia extends Command
             'IMPORTO_N', 'IMPORTO',
         ]));
 
-        // Per formato trasparenza usa NUMPROVVEDIMENTO come codice, altrimenti il solito
-        $codice = $this->findField($data, ['NUMPROVVEDIMENTO', 'id', 'codice', 'code', 'ID']);
+        $codice = $this->findField($data, ['id', 'codice', 'code', 'ID']);
         // Se non c'è codice univoco, crea uno slug dal titolo (evita duplicati su re-sync)
         if (empty($codice)) {
             $codice = 'rs_' . substr(md5($titolo), 0, 12);
         }
 
-        $tema   = $this->findField($data, ['NORMA', 'tema', 'categoria', 'settore', 'area_tematica', 'tipo']);
-        // BENEFICIARIO = nome specifico del soggetto che ha ricevuto il contributo (non la categoria ammissibile).
-        // Non lo usiamo come target per non bloccare il matching: lasciamo null (beneficio del dubbio).
+        $tema   = $this->findField($data, ['tema', 'categoria', 'settore', 'area_tematica', 'tipo']);
         $target = $this->findField($data, ['destinatari', 'soggetto_ammissibile', 'beneficiari_ammissibili']);
         $url    = $this->findField($data, ['url', 'link', 'sito', 'fonte', 'URL']);
         $ufficio = $this->findField($data, ['UFFICIO', 'ufficio', 'descrizione', 'description', 'Descrizione']);
