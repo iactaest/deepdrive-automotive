@@ -408,6 +408,15 @@ class CalculateMatches extends Command
         }
         $sezione = strtolower($m[1]);
 
+        // "enti pubblici diversi dagli enti territoriali" esclude esplicitamente Comuni/
+        // Province/Regioni (gli "enti territoriali"), anche se la frase contiene le parole
+        // "ente pubblico"/"enti territoriali" che il controllo generico sotto leggerebbe
+        // come segnale positivo. Va controllato PRIMA, altrimenti la negazione si perde.
+        if (preg_match('/enti?\s+pubblic[ei]\s+divers[eio]\s+(?:da|dagli?|dall[e\']?)/ui', $sezione)
+            || preg_match('/(?:esclus[eio]|ad esclusione)\s+(?:degli|dell[e\']?)\s*enti?\s+territorial[ei]/ui', $sezione)) {
+            return true;
+        }
+
         // Frasi (non lo stem "pubblic-" da solo: "avviso pubblico"/"bando pubblico" sono
         // termini generici di procedura, non indicano che il beneficiario sia un ente pubblico)
         $keywordEnte = [
