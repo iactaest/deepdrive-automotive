@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { router } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
+import { FileText } from 'lucide-react';
 
 interface Bando {
     id: number;
@@ -202,7 +203,9 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) 
                         {/* Descrizione — larghezza piena, sotto entrambe le colonne */}
                         {bando.descrizione && (
                             <div className="mt-6 pt-4 border-t border-slate-700/50">
-                                <h3 className="text-sm font-semibold text-slate-400 mb-2">📝 Descrizione</h3>
+                                <h3 className="text-sm font-semibold text-slate-400 mb-2 flex items-center gap-2">
+                                    <FileText className="h-4 w-4" /> Descrizione
+                                </h3>
                                 <p className="text-slate-300 text-sm leading-relaxed whitespace-pre-wrap">
                                     {descAperta ? bando.descrizione : descrizioneBreve}
                                 </p>
