@@ -42,12 +42,12 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
         { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
          { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },
           { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },  // ← NUOVA VOCE
+        { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
         { name: 'Assistente AI', href: '/assistente', icon: Bot },
         { name: 'Bandi Finder', href: '/bandi', icon: Search },
         { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
         { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
         { name: 'Performance', href: '/ente/performance', icon: BarChart3 },
-        { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
         { name: 'Notifiche', href: '/notifiche', icon: Bell },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
     ];
