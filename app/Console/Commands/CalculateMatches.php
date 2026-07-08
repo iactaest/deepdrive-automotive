@@ -182,16 +182,19 @@ class CalculateMatches extends Command
             ];
         }
 
-        // GUARD: extra_data con schema "Amministrazione Trasparente" ex L.190 (BENEFICIARIO,
-        // DATI_FISCALI, IMPORTO, NORMA...) — registro di erogazioni già effettuate, non un bando.
-        // Segnale molto più affidabile di un pattern sul titolo (98% dei record regione_sicilia
-        // con questa chiave sono di questo tipo, non bandi aperti).
+        // GUARD: extra_data con chiavi tipiche di registri di trasparenza/monitoraggio progetti
+        // già finanziati (schema L.190 "Amministrazione Trasparente" con BENEFICIARIO/NORMA, o
+        // schema monitoraggio unitario con Cup/CodiceLocaleIntervento/DenominazioneBeneficiario)
+        // — non sono bandi aperti. Un CUP esiste solo per un progetto già assegnato, mai per un
+        // bando ancora da candidare. Segnale sullo schema dati, non su un pattern di testo.
         $extraData = is_array($bando->extra_data) ? $bando->extra_data : (json_decode($bando->extra_data ?? '', true) ?: []);
-        if (isset($extraData['BENEFICIARIO'])) {
+        $chiaviTrasparenza = ['beneficiario', 'denominazionebeneficiario', 'cup', 'codicelocaleintervento'];
+        $chiaviPresenti = array_map('strtolower', array_keys($extraData));
+        if (array_intersect($chiaviTrasparenza, $chiaviPresenti)) {
             return [
                 'punteggio'          => 0,
                 'punti_forza'        => [],
-                'punti_debolezza'    => ['Registro trasparenza erogazioni (non un bando aperto)'],
+                'punti_debolezza'    => ['Registro trasparenza/monitoraggio progetti già finanziati (non un bando aperto)'],
                 'requisiti_mancanti' => ['Non è un bando attivo'],
                 'match_obbligatori'  => false,
                 'breakdown'          => $breakdown,
