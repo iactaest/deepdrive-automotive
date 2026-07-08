@@ -146,6 +146,19 @@ class BandiListaController extends Controller
             ];
         }
 
+        // GUARD: extra_data con schema "Amministrazione Trasparente" ex L.190 (BENEFICIARIO,
+        // DATI_FISCALI, IMPORTO, NORMA...) — registro di erogazioni già effettuate, non un bando.
+        // Segnale molto più affidabile di un pattern sul titolo (98% dei record regione_sicilia
+        // con questa chiave sono di questo tipo, non bandi aperti).
+        $extraData = is_array($bando->extra_data) ? $bando->extra_data : (json_decode($bando->extra_data ?? '', true) ?: []);
+        if (isset($extraData['BENEFICIARIO'])) {
+            return [
+                'punteggio'       => 0,
+                'punti_forza'     => [],
+                'punti_debolezza' => ['Registro trasparenza erogazioni (non un bando aperto)'],
+            ];
+        }
+
         $punteggio      = 0;
         $puntiForza     = [];
         $puntiDebolezza = [];

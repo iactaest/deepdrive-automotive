@@ -182,6 +182,22 @@ class CalculateMatches extends Command
             ];
         }
 
+        // GUARD: extra_data con schema "Amministrazione Trasparente" ex L.190 (BENEFICIARIO,
+        // DATI_FISCALI, IMPORTO, NORMA...) — registro di erogazioni già effettuate, non un bando.
+        // Segnale molto più affidabile di un pattern sul titolo (98% dei record regione_sicilia
+        // con questa chiave sono di questo tipo, non bandi aperti).
+        $extraData = is_array($bando->extra_data) ? $bando->extra_data : (json_decode($bando->extra_data ?? '', true) ?: []);
+        if (isset($extraData['BENEFICIARIO'])) {
+            return [
+                'punteggio'          => 0,
+                'punti_forza'        => [],
+                'punti_debolezza'    => ['Registro trasparenza erogazioni (non un bando aperto)'],
+                'requisiti_mancanti' => ['Non è un bando attivo'],
+                'match_obbligatori'  => false,
+                'breakdown'          => $breakdown,
+            ];
+        }
+
         // GUARD: il campo target strutturato include spesso "Ente Pubblico" in modo generico
         // (tassonomia incentivi.gov.it troppo ampia), ma la sezione "A chi si rivolge" della
         // descrizione rivela che i beneficiari reali sono imprese/privati. Il target da solo
