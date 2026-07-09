@@ -9,6 +9,7 @@ use App\Http\Controllers\ProfiloImpresaController;
 use App\Http\Controllers\ProfiloEnteController;
 use App\Http\Controllers\BandiListaController;
 use App\Http\Controllers\BandiSalvatiController;
+use App\Http\Controllers\BandoDocumentiController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -79,6 +80,16 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::get('/bandi-salvati', [BandiSalvatiController::class, 'index'])->name('bandi.salvati');
     Route::post('/bandi-salvati', [BandiSalvatiController::class, 'store'])->name('bandi.salvati.store');
     Route::delete('/bandi-salvati/{bandoId}', [BandiSalvatiController::class, 'destroy'])->name('bandi.salvati.destroy');
+
+    // ============================================================
+    // ✅ ASSISTENTE AI DOCUMENTI BANDO
+    // ============================================================
+    Route::post('/bandi/{id}/analizza-documenti', [BandoDocumentiController::class, 'analizza'])->name('bando.documenti.analizza');
+    Route::get('/bandi/{id}/documenti', [BandoDocumentiController::class, 'index'])->name('bando.documenti.index');
+    Route::post('/bandi/{id}/documenti', [BandoDocumentiController::class, 'store'])->name('bando.documenti.store');
+    Route::delete('/bandi/{id}/documenti/{docId}', [BandoDocumentiController::class, 'destroy'])->name('bando.documenti.destroy');
+    Route::get('/bandi/{id}/documenti/{docId}/download', [BandoDocumentiController::class, 'download'])->name('bando.documenti.download');
+    Route::get('/ente/lista-bandi/{id}/cassetto', [BandoDocumentiController::class, 'pagina'])->name('bando.documenti.pagina');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');

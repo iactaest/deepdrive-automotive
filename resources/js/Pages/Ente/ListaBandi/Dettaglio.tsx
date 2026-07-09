@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
-import { FileText } from 'lucide-react';
+import { FileText, Bot, Upload, CheckCircle2, Circle, Loader2, ExternalLink, X } from 'lucide-react';
 
 interface Bando {
     id: number;
@@ -53,8 +53,87 @@ const statoLabel = (stato: string) =>
 
 const MAX_RIGHE = 20;
 
+interface DocumentoBando {
+    id: number;
+    nome_documento: string;
+    descrizione: string | null;
+    link_ufficiale: string | null;
+    obbligatorio: boolean;
+    categoria: 'basilare' | 'specifico';
+    stato: 'da_caricare' | 'caricato';
+    path_file: string | null;
+}
+
+const csrfToken = () =>
+    document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+
 export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) {
     const [descAperta, setDescAperta] = useState(false);
+
+    const [documenti, setDocumenti] = useState<DocumentoBando[]>([]);
+    const [completamento, setCompletamento] = useState(0);
+    const [caricamentoLista, setCaricamentoLista] = useState(true);
+    const [analizzando, setAnalizzando] = useState(false);
+    const [erroreAnalisi, setErroreAnalisi] = useState<string | null>(null);
+    const [uploadInCorso, setUploadInCorso] = useState<number | null>(null);
+
+    const caricaDocumenti = async () => {
+        const res = await fetch(`/bandi/${bando.id}/documenti`);
+        const data = await res.json();
+        setDocumenti(data.documenti ?? []);
+        setCompletamento(data.completamento ?? 0);
+        setCaricamentoLista(false);
+    };
+
+    useEffect(() => {
+        caricaDocumenti();
+    }, [bando.id]);
+
+    const avviaAssistente = async () => {
+        setAnalizzando(true);
+        setErroreAnalisi(null);
+        try {
+            const res = await fetch(`/bandi/${bando.id}/analizza-documenti`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken() },
+            });
+            if (!res.ok) throw new Error();
+            const data = await res.json();
+            setDocumenti(data.documenti ?? []);
+            setCompletamento(data.completamento ?? 0);
+        } catch {
+            setErroreAnalisi("Analisi AI non riuscita, riprova tra poco.");
+        } finally {
+            setAnalizzando(false);
+        }
+    };
+
+    const caricaFile = async (documentoId: number, file: File) => {
+        setUploadInCorso(documentoId);
+        const form = new FormData();
+        form.append('documento_id', String(documentoId));
+        form.append('file', file);
+        await fetch(`/bandi/${bando.id}/documenti`, {
+            method: 'POST',
+            body: form,
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        });
+        await caricaDocumenti();
+        setUploadInCorso(null);
+    };
+
+    const rimuoviFile = async (documentoId: number) => {
+        setUploadInCorso(documentoId);
+        await fetch(`/bandi/${bando.id}/documenti/${documentoId}`, {
+            method: 'DELETE',
+            headers: { 'X-CSRF-TOKEN': csrfToken() },
+        });
+        await caricaDocumenti();
+        setUploadInCorso(null);
+    };
+
+    const documentiBasilari = documenti.filter(d => d.categoria === 'basilare');
+    const documentiSpecifici = documenti.filter(d => d.categoria === 'specifico');
 
     const toggleSalva = () => {
         if (isSalvato) {
@@ -220,6 +299,88 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) 
                             </div>
                         )}
 
+                        {/* Assistente AI Documenti */}
+                        <div className="mt-6 pt-4 border-t border-slate-700/50">
+                            <h3 className="text-sm font-semibold text-slate-400 mb-3 flex items-center gap-2">
+                                <Bot className="h-4 w-4" /> Assistente AI Documenti
+                            </h3>
+
+                            {caricamentoLista ? (
+                                <p className="text-sm text-slate-500">Caricamento...</p>
+                            ) : documenti.length === 0 ? (
+                                <div>
+                                    <p className="text-sm text-slate-400 mb-3">
+                                        Fai analizzare il bando dall'AI per ottenere l'elenco dei documenti necessari a partecipare.
+                                    </p>
+                                    <button
+                                        onClick={avviaAssistente}
+                                        disabled={analizzando}
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-purple-600 hover:bg-purple-500 disabled:opacity-60 rounded-lg text-white text-sm font-medium transition"
+                                    >
+                                        {analizzando ? <Loader2 className="h-4 w-4 animate-spin" /> : <Bot className="h-4 w-4" />}
+                                        {analizzando ? 'Analisi in corso...' : 'Avvia Assistente AI'}
+                                    </button>
+                                    {erroreAnalisi && <p className="text-xs text-red-400 mt-2">{erroreAnalisi}</p>}
+                                </div>
+                            ) : (
+                                <div>
+                                    {/* Barra di completamento */}
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                            <div
+                                                className="h-full bg-green-500 transition-all"
+                                                style={{ width: `${completamento}%` }}
+                                            />
+                                        </div>
+                                        <span className="text-xs text-slate-400 shrink-0">
+                                            {documenti.filter(d => d.stato === 'caricato').length}/{documenti.length} caricati ({completamento}%)
+                                        </span>
+                                    </div>
+
+                                    <button
+                                        onClick={() => router.get(`/ente/lista-bandi/${bando.id}/cassetto`)}
+                                        className="mb-4 text-xs text-purple-400 hover:text-purple-300 transition"
+                                    >
+                                        📂 Apri Cassetto Documenti →
+                                    </button>
+
+                                    {documentiBasilari.length > 0 && (
+                                        <div className="mb-4">
+                                            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Documenti basilari</h4>
+                                            <div className="space-y-2">
+                                                {documentiBasilari.map(doc => (
+                                                    <DocumentoRow
+                                                        key={doc.id}
+                                                        doc={doc}
+                                                        uploading={uploadInCorso === doc.id}
+                                                        onUpload={(f) => caricaFile(doc.id, f)}
+                                                        onRemove={() => rimuoviFile(doc.id)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {documentiSpecifici.length > 0 && (
+                                        <div>
+                                            <h4 className="text-xs font-semibold text-slate-500 uppercase mb-2">Documenti specifici per questo bando</h4>
+                                            <div className="space-y-2">
+                                                {documentiSpecifici.map(doc => (
+                                                    <DocumentoRow
+                                                        key={doc.id}
+                                                        doc={doc}
+                                                        uploading={uploadInCorso === doc.id}
+                                                        onUpload={(f) => caricaFile(doc.id, f)}
+                                                        onRemove={() => rimuoviFile(doc.id)}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+
                         {/* Footer: URL per esteso se disponibile */}
                         {bando.url && (
                             <div className="mt-6 pt-4 border-t border-slate-700/50">
@@ -230,5 +391,76 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) 
                 </div>
             </div>
         </LayoutEnte>
+    );
+}
+
+function DocumentoRow({
+    doc, uploading, onUpload, onRemove,
+}: {
+    doc: DocumentoBando;
+    uploading: boolean;
+    onUpload: (file: File) => void;
+    onRemove: () => void;
+}) {
+    const inputId = `upload-doc-${doc.id}`;
+
+    return (
+        <div className="flex items-start justify-between gap-3 p-3 rounded-lg bg-slate-900/50 border border-slate-700/50">
+            <div className="flex items-start gap-2 min-w-0">
+                {doc.stato === 'caricato'
+                    ? <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
+                    : <Circle className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />}
+                <div className="min-w-0">
+                    <p className="text-sm text-white font-medium flex items-center gap-2 flex-wrap">
+                        {doc.nome_documento}
+                        {doc.obbligatorio && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">obbligatorio</span>
+                        )}
+                    </p>
+                    {doc.descrizione && <p className="text-xs text-slate-400 mt-0.5">{doc.descrizione}</p>}
+                    {doc.link_ufficiale && (
+                        <a
+                            href={doc.link_ufficiale}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1"
+                        >
+                            <ExternalLink className="h-3 w-3" /> Dove trovarlo
+                        </a>
+                    )}
+                </div>
+            </div>
+
+            <div className="shrink-0 flex items-center gap-2">
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                    doc.stato === 'caricato' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'
+                }`}>
+                    {doc.stato === 'caricato' ? 'Caricato' : 'Da caricare'}
+                </span>
+
+                {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                ) : doc.stato === 'caricato' ? (
+                    <button onClick={onRemove} title="Rimuovi file" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition">
+                        <X className="h-4 w-4" />
+                    </button>
+                ) : (
+                    <>
+                        <input
+                            id={inputId}
+                            type="file"
+                            className="hidden"
+                            onChange={(e) => e.target.files?.[0] && onUpload(e.target.files[0])}
+                        />
+                        <label
+                            htmlFor={inputId}
+                            className="cursor-pointer inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-medium transition"
+                        >
+                            <Upload className="h-3.5 w-3.5" /> Carica
+                        </label>
+                    </>
+                )}
+            </div>
+        </div>
     );
 }
