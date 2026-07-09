@@ -90,6 +90,7 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::delete('/bandi/{id}/documenti/{docId}', [BandoDocumentiController::class, 'destroy'])->name('bando.documenti.destroy');
     Route::get('/bandi/{id}/documenti/{docId}/download', [BandoDocumentiController::class, 'download'])->name('bando.documenti.download');
     Route::get('/ente/lista-bandi/{id}/cassetto', [BandoDocumentiController::class, 'pagina'])->name('bando.documenti.pagina');
+    Route::get('/cassetto-documenti', [BandoDocumentiController::class, 'cassettoGlobale'])->name('cassetto.documenti');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');

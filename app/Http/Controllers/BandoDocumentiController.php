@@ -15,6 +15,39 @@ class BandoDocumentiController extends Controller
     private const GEMINI_MODEL = 'gemini-2.5-flash';
 
     /**
+     * Vista globale "Cassetto Documenti": tutti i bandi per cui l'utente ha una lista
+     * documenti (avviata dall'Assistente AI nel dettaglio), con lo stesso elenco/layout
+     * del dettaglio bando, per completare da qui eventuali documenti mancanti.
+     */
+    public function cassettoGlobale()
+    {
+        $documenti = BandoDocumento::where('user_id', Auth::id())
+            ->with('bando:id,titolo')
+            ->orderByDesc('obbligatorio')
+            ->orderBy('categoria')
+            ->get()
+            ->filter(fn ($d) => $d->bando !== null);
+
+        $perBando = $documenti->groupBy('bando_id')->map(function ($docs) {
+            $totale   = $docs->count();
+            $caricati = $docs->where('stato', 'caricato')->count();
+
+            return [
+                'bando_id'      => $docs->first()->bando_id,
+                'bando_titolo'  => $docs->first()->bando->titolo,
+                'documenti'     => $docs->values(),
+                'totale'        => $totale,
+                'caricati'      => $caricati,
+                'completamento' => $totale > 0 ? round($caricati / $totale * 100) : 0,
+            ];
+        })->sortBy('bando_titolo')->values();
+
+        return Inertia::render('Ente/CassettoDocumenti/Index', [
+            'bandi' => $perBando,
+        ]);
+    }
+
+    /**
      * Vista "Cassetto Bando": elenco completo documenti con stato e download.
      */
     public function pagina(int $bandoId)

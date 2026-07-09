@@ -1,23 +1,17 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { 
-    LayoutDashboard, 
-    Bot, 
-    Search, 
-    Landmark, 
-    Star, 
-    Settings, 
-    LogOut, 
-    Menu, 
+import {
+    LayoutDashboard,
+    Landmark,
+    Star,
+    Settings,
+    LogOut,
+    Menu,
     X,
-    Calendar, 
-    FileText, 
-    Building2, 
-    Bell, 
-    HelpCircle, 
-    TrendingUp, 
-    BarChart3, 
-    Award,
+    Calendar,
+    Building2,
+    TrendingUp,
+    Archive,
     ListChecks  // ← Icona per Lista Bandi
 } from 'lucide-react';
 
@@ -40,15 +34,12 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
     const navigation = [
         { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
-         { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },
-          { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },  // ← NUOVA VOCE
+        { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },
+        { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },
         { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
-        { name: 'Assistente AI', href: '/assistente', icon: Bot },
-        { name: 'Bandi Finder', href: '/bandi', icon: Search },
-        { name: 'Gare e Appalti', href: '/bandi/gare', icon: FileText },
-        { name: 'In Scadenza', href: '/bandi/scadenza', icon: Calendar },
-        { name: 'Performance', href: '/ente/performance', icon: BarChart3 },
-        { name: 'Notifiche', href: '/notifiche', icon: Bell },
+        { name: 'Cassetto Documenti', href: '/cassetto-documenti', icon: Archive },
+        { name: 'Storico finanziamenti', href: '/ente/dashboard', icon: TrendingUp },
+        { name: 'Calendario Scadenze', href: '/ente/dashboard', icon: Calendar },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
     ];
 
