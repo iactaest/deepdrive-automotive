@@ -14,10 +14,12 @@ class BandoDocumento extends Model
     protected $fillable = [
         'user_id', 'bando_id', 'nome_documento', 'descrizione',
         'link_ufficiale', 'obbligatorio', 'categoria', 'path_file', 'stato',
+        'nota', 'nota_autore', 'nota_data',
     ];
 
     protected $casts = [
         'obbligatorio' => 'boolean',
+        'nota_data' => 'datetime',
     ];
 
     public function user()

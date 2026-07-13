@@ -88,6 +88,7 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::get('/bandi/{id}/documenti', [BandoDocumentiController::class, 'index'])->name('bando.documenti.index');
     Route::post('/bandi/{id}/documenti', [BandoDocumentiController::class, 'store'])->name('bando.documenti.store');
     Route::delete('/bandi/{id}/documenti/{docId}', [BandoDocumentiController::class, 'destroy'])->name('bando.documenti.destroy');
+    Route::put('/bandi/{id}/documenti/{docId}/nota', [BandoDocumentiController::class, 'salvaNota'])->name('bando.documenti.nota');
     Route::get('/bandi/{id}/documenti/{docId}/download', [BandoDocumentiController::class, 'download'])->name('bando.documenti.download');
     Route::get('/ente/lista-bandi/{id}/cassetto', [BandoDocumentiController::class, 'pagina'])->name('bando.documenti.pagina');
     Route::get('/cassetto-documenti', [BandoDocumentiController::class, 'cassettoGlobale'])->name('cassetto.documenti');

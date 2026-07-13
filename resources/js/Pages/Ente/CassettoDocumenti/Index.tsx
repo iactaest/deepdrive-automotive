@@ -58,6 +58,15 @@ export default function CassettoDocumentiIndex({ bandi }: Props) {
         ricarica();
     };
 
+    const salvaNota = async (bandoId: number, documentoId: number, nota: string, autore: string) => {
+        await fetch(`/bandi/${bandoId}/documenti/${documentoId}/nota`, {
+            method: 'PUT',
+            headers: { 'X-CSRF-TOKEN': csrfToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nota, autore }),
+        });
+        ricarica();
+    };
+
     return (
         <LayoutEnte>
             <div className="space-y-6 animate-fade-in">
@@ -122,6 +131,7 @@ export default function CassettoDocumentiIndex({ bandi }: Props) {
                                                                 uploading={uploadInCorso === doc.id}
                                                                 onUpload={(f) => caricaFile(b.bando_id, doc.id, f)}
                                                                 onRemove={() => rimuoviFile(b.bando_id, doc.id)}
+                                                                onSaveNota={(nota, autore) => salvaNota(b.bando_id, doc.id, nota, autore)}
                                                             />
                                                         ))}
                                                     </div>
@@ -140,6 +150,7 @@ export default function CassettoDocumentiIndex({ bandi }: Props) {
                                                                 uploading={uploadInCorso === doc.id}
                                                                 onUpload={(f) => caricaFile(b.bando_id, doc.id, f)}
                                                                 onRemove={() => rimuoviFile(b.bando_id, doc.id)}
+                                                                onSaveNota={(nota, autore) => salvaNota(b.bando_id, doc.id, nota, autore)}
                                                             />
                                                         ))}
                                                     </div>

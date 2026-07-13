@@ -202,6 +202,37 @@ class BandoDocumentiController extends Controller
         return response()->json(['documento' => $documento]);
     }
 
+    /**
+     * Salva (o cancella, se il testo è vuoto) la nota su un documento, con autore e data.
+     */
+    public function salvaNota(Request $request, int $bandoId, int $docId)
+    {
+        $request->validate([
+            'nota'   => 'nullable|string|max:5000',
+            'autore' => 'nullable|string|max:255',
+        ]);
+
+        $documento = BandoDocumento::where('id', $docId)
+            ->where('user_id', Auth::id())
+            ->where('bando_id', $bandoId)
+            ->firstOrFail();
+
+        $nota = trim((string) $request->input('nota', ''));
+
+        if ($nota === '') {
+            $documento->update(['nota' => null, 'nota_autore' => null, 'nota_data' => null]);
+        } else {
+            $request->validate(['autore' => 'required|string|max:255']);
+            $documento->update([
+                'nota'        => $nota,
+                'nota_autore' => trim((string) $request->input('autore')),
+                'nota_data'   => now(),
+            ]);
+        }
+
+        return response()->json(['documento' => $documento]);
+    }
+
     private function chiamaGemini(string $apiKey, BandoImportato $bando): ?array
     {
         $prompt = <<<PROMPT

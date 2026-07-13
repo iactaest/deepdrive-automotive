@@ -45,6 +45,15 @@ export default function CassettoBando({ bando, documenti: documentiIniziali, tot
         ricarica();
     };
 
+    const salvaNota = async (documentoId: number, nota: string, autore: string) => {
+        await fetch(`/bandi/${bando.id}/documenti/${documentoId}/nota`, {
+            method: 'PUT',
+            headers: { 'X-CSRF-TOKEN': csrfToken(), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nota, autore }),
+        });
+        ricarica();
+    };
+
     const documentiBasilari = documenti.filter(d => d.categoria === 'basilare');
     const documentiSpecifici = documenti.filter(d => d.categoria === 'specifico');
 
@@ -99,6 +108,7 @@ export default function CassettoBando({ bando, documenti: documentiIniziali, tot
                                                     uploading={uploadInCorso === doc.id}
                                                     onUpload={(f) => caricaFile(doc.id, f)}
                                                     onRemove={() => rimuoviFile(doc.id)}
+                                                    onSaveNota={(nota, autore) => salvaNota(doc.id, nota, autore)}
                                                 />
                                             ))}
                                         </div>
@@ -117,6 +127,7 @@ export default function CassettoBando({ bando, documenti: documentiIniziali, tot
                                                     uploading={uploadInCorso === doc.id}
                                                     onUpload={(f) => caricaFile(doc.id, f)}
                                                     onRemove={() => rimuoviFile(doc.id)}
+                                                    onSaveNota={(nota, autore) => salvaNota(doc.id, nota, autore)}
                                                 />
                                             ))}
                                         </div>
