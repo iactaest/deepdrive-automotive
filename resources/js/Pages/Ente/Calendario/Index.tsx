@@ -1,16 +1,17 @@
 import { useState } from 'react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
 import { CalendarDays, Plus, X, Loader2 } from 'lucide-react';
-import CalendarioView from '@/Components/Calendario/CalendarioView';
+import CalendarioView, { EventoGiorno } from '@/Components/Calendario/CalendarioView';
 import PannelloDettaglioEvento from '@/Components/Calendario/PannelloDettaglioEvento';
+import PannelloGiorno from '@/Components/Calendario/PannelloGiorno';
 
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-function NuovoEventoModal({ onClose, onCreato }: { onClose: () => void; onCreato: () => void }) {
+function NuovoEventoModal({ dataIniziale, onClose, onCreato }: { dataIniziale?: string; onClose: () => void; onCreato: () => void }) {
     const [titolo, setTitolo] = useState('');
     const [descrizione, setDescrizione] = useState('');
-    const [dataScadenza, setDataScadenza] = useState('');
+    const [dataScadenza, setDataScadenza] = useState(dataIniziale ?? '');
     const [salvando, setSalvando] = useState(false);
 
     const salva = async () => {
@@ -29,7 +30,7 @@ function NuovoEventoModal({ onClose, onCreato }: { onClose: () => void; onCreato
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative w-full max-w-sm bg-slate-900 border border-slate-700/50 rounded-xl p-5">
+            <div className="relative w-full max-w-sm bg-slate-900 border border-slate-700/50 rounded-2xl p-5 shadow-2xl">
                 <div className="flex items-center justify-between mb-4">
                     <h3 className="text-white font-semibold">Nuovo evento</h3>
                     <button onClick={onClose} className="text-slate-400 hover:text-white"><X className="h-4 w-4" /></button>
@@ -70,10 +71,23 @@ function NuovoEventoModal({ onClose, onCreato }: { onClose: () => void; onCreato
 
 export default function CalendarioIndex() {
     const [eventoSelezionatoId, setEventoSelezionatoId] = useState<number | null>(null);
+    const [giornoSelezionato, setGiornoSelezionato] = useState<{ data: string; eventi: EventoGiorno[] } | null>(null);
+    const [nuovoEventoData, setNuovoEventoData] = useState<string | null>(null);
     const [modaleAperto, setModaleAperto] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
     const aggiorna = () => setRefreshKey((k) => k + 1);
+
+    const handleGiornoClick = (data: string, eventi: EventoGiorno[]) => {
+        if (eventi.length === 0) {
+            setNuovoEventoData(data);
+            setModaleAperto(true);
+        } else if (eventi.length === 1) {
+            setEventoSelezionatoId(eventi[0].eventoId);
+        } else {
+            setGiornoSelezionato({ data, eventi });
+        }
+    };
 
     return (
         <LayoutEnte>
@@ -85,25 +99,25 @@ export default function CalendarioIndex() {
                             Calendario Scadenze
                         </h1>
                         <p className="text-slate-400 mt-1">
-                            Scadenze dei bandi salvati e in match, con task interni collegati.
+                            Scadenze dei bandi salvati e in match, con task interni collegati. Clicca su un giorno per il dettaglio.
                         </p>
                     </div>
                     <button
-                        onClick={() => setModaleAperto(true)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-medium transition"
+                        onClick={() => { setNuovoEventoData(null); setModaleAperto(true); }}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white text-sm font-medium shadow-lg shadow-green-500/20 transition"
                     >
                         <Plus className="h-4 w-4" /> Nuovo evento
                     </button>
                 </div>
 
-                <div className="flex items-center gap-4 flex-wrap text-xs text-slate-400">
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500" /> Scadenza bando</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500" /> Evento manuale</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500" /> Task in scadenza</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500" /> Task completato</span>
+                <div className="flex items-center gap-4 flex-wrap text-xs text-slate-400 bg-slate-800/40 border border-slate-700/50 rounded-xl px-4 py-2.5">
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.7)]" /> Scadenza bando</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)]" /> Evento manuale</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.7)]" /> Task in scadenza</span>
+                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.7)]" /> Task completato</span>
                 </div>
 
-                <CalendarioView key={refreshKey} onEventoClick={setEventoSelezionatoId} />
+                <CalendarioView key={refreshKey} onEventoClick={setEventoSelezionatoId} onGiornoClick={handleGiornoClick} />
 
                 {eventoSelezionatoId && (
                     <PannelloDettaglioEvento
@@ -113,8 +127,21 @@ export default function CalendarioIndex() {
                     />
                 )}
 
+                {giornoSelezionato && (
+                    <PannelloGiorno
+                        data={giornoSelezionato.data}
+                        eventi={giornoSelezionato.eventi}
+                        onSeleziona={(eventoId) => { setGiornoSelezionato(null); setEventoSelezionatoId(eventoId); }}
+                        onClose={() => setGiornoSelezionato(null)}
+                    />
+                )}
+
                 {modaleAperto && (
-                    <NuovoEventoModal onClose={() => setModaleAperto(false)} onCreato={aggiorna} />
+                    <NuovoEventoModal
+                        dataIniziale={nuovoEventoData ?? undefined}
+                        onClose={() => setModaleAperto(false)}
+                        onCreato={aggiorna}
+                    />
                 )}
             </div>
         </LayoutEnte>

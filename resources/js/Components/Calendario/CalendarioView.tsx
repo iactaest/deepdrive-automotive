@@ -1,14 +1,29 @@
+import { useRef } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
-import interactionPlugin from '@fullcalendar/interaction';
+import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import { EventClickArg, EventDropArg, EventSourceFuncArg } from '@fullcalendar/core';
+
+export interface EventoGiorno {
+    eventoId: number;
+    title: string;
+    color: string;
+    kind: 'evento' | 'task';
+}
 
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-export default function CalendarioView({ onEventoClick }: { onEventoClick: (eventoId: number) => void }) {
+export default function CalendarioView({
+    onEventoClick, onGiornoClick,
+}: {
+    onEventoClick: (eventoId: number) => void;
+    onGiornoClick: (data: string, eventi: EventoGiorno[]) => void;
+}) {
+    const calendarRef = useRef<FullCalendar>(null);
+
     const caricaEventi = (_info: EventSourceFuncArg, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
         fetch('/ente/calendario/eventi')
             .then((r) => r.json())
@@ -34,9 +49,26 @@ export default function CalendarioView({ onEventoClick }: { onEventoClick: (even
         if (!res.ok) info.revert();
     };
 
+    const handleDateClick = (info: DateClickArg) => {
+        const api = calendarRef.current?.getApi();
+        if (!api) return;
+
+        const eventiDelGiorno = api.getEvents()
+            .filter((e) => e.startStr === info.dateStr)
+            .map((e) => ({
+                eventoId: Number(e.extendedProps.evento_id),
+                title: e.title,
+                color: e.backgroundColor || '#64748b',
+                kind: e.extendedProps.kind as 'evento' | 'task',
+            }));
+
+        onGiornoClick(info.dateStr, eventiDelGiorno);
+    };
+
     return (
-        <div className="rounded-xl bg-slate-800/50 border border-slate-700/50 p-4 calendario-scadenze-wrapper">
+        <div className="rounded-2xl bg-gradient-to-br from-slate-800/60 to-slate-900/60 border border-slate-700/50 p-5 shadow-xl shadow-black/20 calendario-scadenze-wrapper">
             <FullCalendar
+                ref={calendarRef}
                 plugins={[dayGridPlugin, timeGridPlugin, listPlugin, interactionPlugin]}
                 initialView="dayGridMonth"
                 headerToolbar={{
@@ -47,10 +79,13 @@ export default function CalendarioView({ onEventoClick }: { onEventoClick: (even
                 buttonText={{ today: 'Oggi', month: 'Mensile', week: 'Settimanale', list: 'Agenda' }}
                 locale="it"
                 height="auto"
+                dayMaxEvents={3}
+                moreLinkText={(n) => `+${n} altri`}
                 editable={true}
                 events={caricaEventi}
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
+                dateClick={handleDateClick}
             />
         </div>
     );

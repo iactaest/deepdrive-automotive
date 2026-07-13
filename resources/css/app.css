@@ -48,3 +48,132 @@
 }
 .animate-pulse-slow { animation: pulse-slow 4s ease-in-out infinite; }
 .delay-1000 { animation-delay: 1s; }
+
+/* ─── Calendario Scadenze: tema dark coerente col resto dell'app ─────────── */
+.calendario-scadenze-wrapper {
+    --fc-page-bg-color: transparent;
+    --fc-neutral-bg-color: rgba(30, 41, 59, 0.5);
+    --fc-border-color: rgba(51, 65, 85, 0.6);
+    --fc-button-text-color: #e2e8f0;
+    --fc-button-bg-color: rgba(51, 65, 85, 0.6);
+    --fc-button-border-color: transparent;
+    --fc-button-hover-bg-color: rgba(71, 85, 105, 0.8);
+    --fc-button-hover-border-color: transparent;
+    --fc-button-active-bg-color: #16a34a;
+    --fc-button-active-border-color: #16a34a;
+    --fc-today-bg-color: rgba(34, 197, 94, 0.07);
+    --fc-list-event-hover-bg-color: rgba(51, 65, 85, 0.6);
+    --fc-more-link-bg-color: rgba(71, 85, 105, 0.6);
+    --fc-more-link-text-color: #cbd5e1;
+    --fc-neutral-text-color: #94a3b8;
+}
+
+.calendario-scadenze-wrapper .fc-scrollgrid {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.calendario-scadenze-wrapper .fc-toolbar-title {
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 1.15rem;
+}
+
+.calendario-scadenze-wrapper .fc-button {
+    border-radius: 0.6rem !important;
+    padding: 0.4rem 0.85rem !important;
+    font-size: 0.8rem !important;
+    text-transform: capitalize;
+    box-shadow: none !important;
+    transition: transform 0.15s, background-color 0.15s;
+}
+
+.calendario-scadenze-wrapper .fc-button:hover {
+    transform: translateY(-1px);
+}
+
+.calendario-scadenze-wrapper .fc-col-header-cell-cushion {
+    color: #94a3b8;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.7rem;
+    letter-spacing: 0.03em;
+    padding: 0.5rem 0;
+}
+
+.calendario-scadenze-wrapper .fc-daygrid-day-number {
+    color: #cbd5e1;
+    font-size: 0.8rem;
+    padding: 0.35rem;
+}
+
+.calendario-scadenze-wrapper .fc-day-other .fc-daygrid-day-number {
+    color: #475569;
+}
+
+.calendario-scadenze-wrapper .fc-day-today .fc-daygrid-day-number {
+    background: linear-gradient(135deg, #16a34a, #059669);
+    color: #ffffff;
+    border-radius: 9999px;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    margin: 0.2rem;
+}
+
+.calendario-scadenze-wrapper .fc-daygrid-event {
+    border-radius: 9999px !important;
+    padding: 1px 9px !important;
+    font-size: 0.7rem !important;
+    font-weight: 600;
+    border: none !important;
+    margin-top: 3px !important;
+    cursor: pointer;
+    transition: transform 0.15s;
+}
+
+.calendario-scadenze-wrapper .fc-daygrid-event:hover {
+    transform: translateY(-1px) scale(1.02);
+    filter: brightness(1.1);
+}
+
+.calendario-scadenze-wrapper .fc-daygrid-more-link {
+    border-radius: 9999px;
+    padding: 1px 8px;
+    font-size: 0.68rem;
+    font-weight: 600;
+}
+
+.calendario-scadenze-wrapper .fc-list {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.calendario-scadenze-wrapper .fc-list-day-cushion {
+    background: rgba(51, 65, 85, 0.4) !important;
+    color: #e2e8f0 !important;
+    font-weight: 600;
+}
+
+.calendario-scadenze-wrapper .fc-list-event-title {
+    color: #e2e8f0;
+}
+
+.calendario-scadenze-wrapper .fc-list-event:hover td {
+    background: rgba(51, 65, 85, 0.5) !important;
+    cursor: pointer;
+}
+
+.calendario-scadenze-wrapper .fc-daygrid-day:hover {
+    background: rgba(51, 65, 85, 0.25);
+    cursor: pointer;
+}
+
+.calendario-scadenze-wrapper .fc-timegrid-slot-label,
+.calendario-scadenze-wrapper .fc-timegrid-axis {
+    color: #64748b;
+    font-size: 0.7rem;
+}
