@@ -10,6 +10,7 @@ use App\Http\Controllers\ProfiloEnteController;
 use App\Http\Controllers\BandiListaController;
 use App\Http\Controllers\BandiSalvatiController;
 use App\Http\Controllers\BandoDocumentiController;
+use App\Http\Controllers\CalendarioController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -92,6 +93,21 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::get('/bandi/{id}/documenti/{docId}/download', [BandoDocumentiController::class, 'download'])->name('bando.documenti.download');
     Route::get('/ente/lista-bandi/{id}/cassetto', [BandoDocumentiController::class, 'pagina'])->name('bando.documenti.pagina');
     Route::get('/cassetto-documenti', [BandoDocumentiController::class, 'cassettoGlobale'])->name('cassetto.documenti');
+
+    // ============================================================
+    // ✅ CALENDARIO SCADENZE COLLABORATIVO
+    // ============================================================
+    Route::get('/ente/calendario', [CalendarioController::class, 'index'])->name('calendario.index');
+    Route::get('/ente/calendario/eventi', [CalendarioController::class, 'eventi'])->name('calendario.eventi');
+    Route::get('/ente/calendario/eventi/{id}', [CalendarioController::class, 'show'])->name('calendario.eventi.show');
+    Route::post('/ente/calendario/eventi', [CalendarioController::class, 'store'])->name('calendario.eventi.store');
+    Route::put('/ente/calendario/eventi/{id}', [CalendarioController::class, 'update'])->name('calendario.eventi.update');
+    Route::put('/ente/calendario/eventi/{id}/nota', [CalendarioController::class, 'salvaNota'])->name('calendario.eventi.nota');
+    Route::delete('/ente/calendario/eventi/{id}', [CalendarioController::class, 'destroy'])->name('calendario.eventi.destroy');
+    Route::post('/ente/calendario/eventi/{eventoId}/task', [CalendarioController::class, 'taskStore'])->name('calendario.task.store');
+    Route::put('/ente/calendario/task/{taskId}', [CalendarioController::class, 'taskUpdate'])->name('calendario.task.update');
+    Route::patch('/ente/calendario/task/{taskId}/stato', [CalendarioController::class, 'taskCambiaStato'])->name('calendario.task.stato');
+    Route::delete('/ente/calendario/task/{taskId}', [CalendarioController::class, 'taskDestroy'])->name('calendario.task.destroy');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');

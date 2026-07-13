@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use App\Models\BandoImportato;
 use App\Models\ProfiloEnte;
 use App\Models\BandiMatch;
+use App\Models\CalendarioEvento;
 
 class CalculateMatches extends Command
 {
@@ -13,6 +14,9 @@ class CalculateMatches extends Command
                             {--ente-id= : Calcola match solo per un ente specifico (ID Ente)}
                             {--force : Ricalcola anche i match già esistenti}
                             {--debug : Mostra il dettaglio del punteggio per ogni bando}';
+
+    /** Soglia di punteggio oltre la quale un bando entra automaticamente nel Calendario Scadenze. */
+    private const SOGLIA_MATCH_CALENDARIO = 50;
 
     protected $description = 'Calcola il match tra BandoImportato e ProfiloEnte, salva in bandi_match';
 
@@ -107,6 +111,10 @@ class CalculateMatches extends Command
                         ]
                     );
                     $matchCount++;
+
+                    if ($result['punteggio'] >= self::SOGLIA_MATCH_CALENDARIO) {
+                        CalendarioEvento::sincronizzaDaBando($userId, $bando->id, 'match');
+                    }
                 } else {
                     BandiMatch::where('bando_id', $bando->id)->where('user_id', $userId)->delete();
                 }

@@ -38,8 +38,8 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
         { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },
         { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
         { name: 'Cassetto Documenti', href: '/cassetto-documenti', icon: Archive },
+        { name: 'Calendario Bandi', href: '/ente/calendario', icon: Calendar },
         { name: 'Storico finanziamenti', href: '/ente/dashboard', icon: TrendingUp },
-        { name: 'Calendario Scadenze', href: '/ente/dashboard', icon: Calendar },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
     ];
 

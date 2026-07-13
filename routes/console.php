@@ -40,3 +40,9 @@ Schedule::command('bandi:sync-coesione-ai --limit=15')
 // Calcolo match (dopo tutte le sincronizzazioni)
 Schedule::command('bandi:calculate-matches')
     ->daily()->at('05:00')->withoutOverlapping();
+
+// ─── Calendario Scadenze ───────────────────────────────────────────────────
+
+// Reminder scadenze (dopo sync+match delle 02:00-05:00, così vede dati aggiornati)
+Schedule::command('calendario:invia-reminder')
+    ->daily()->at('08:00')->withoutOverlapping();

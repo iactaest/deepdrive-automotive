@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BandoPreferito;
 use App\Models\BandiMatch;
+use App\Models\CalendarioEvento;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
@@ -52,6 +53,8 @@ class BandiSalvatiController extends Controller
             'user_id'  => Auth::id(),
             'bando_id' => $request->bando_id,
         ]);
+
+        CalendarioEvento::sincronizzaDaBando(Auth::id(), $request->bando_id, 'preferito');
 
         return back();
     }
