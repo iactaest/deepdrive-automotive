@@ -89,7 +89,11 @@ class BandoDocumentiController extends Controller
             abort(404);
         }
 
-        return Storage::disk('local')->download($documento->path_file, $documento->nome_documento);
+        $estensione = pathinfo($documento->path_file, PATHINFO_EXTENSION);
+        $nomeSicuro = str_replace(['/', '\\'], '-', $documento->nome_documento);
+        $nomeFile   = $estensione ? "{$nomeSicuro}.{$estensione}" : $nomeSicuro;
+
+        return Storage::disk('local')->download($documento->path_file, $nomeFile);
     }
 
     /**
