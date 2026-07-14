@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { CheckCircle2, Circle, Upload, Download, X, Loader2, ExternalLink, StickyNote } from 'lucide-react';
+import { CheckCircle2, Circle, Upload, Download, X, Loader2, ExternalLink, StickyNote, Search } from 'lucide-react';
 
 export interface DocumentoBando {
     id: number;
@@ -36,6 +36,7 @@ export default function DocumentoRiga({
     const [testoNota, setTestoNota] = useState(doc.nota ?? '');
     const [autore, setAutore] = useState(() => localStorage.getItem(AUTORE_STORAGE_KEY) ?? doc.nota_autore ?? '');
     const [salvandoNota, setSalvandoNota] = useState(false);
+    const [queryRicerca, setQueryRicerca] = useState(doc.nome_documento);
 
     useEffect(() => {
         setTestoNota(doc.nota ?? '');
@@ -80,12 +81,30 @@ export default function DocumentoRiga({
                     </div>
                 </div>
 
-                <div className="shrink-0 flex items-center gap-2">
+                <div className="shrink-0 flex items-center gap-2 flex-wrap justify-end">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         doc.stato === 'caricato' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'
                     }`}>
                         {doc.stato === 'caricato' ? 'Caricato' : 'Da caricare'}
                     </span>
+
+                    <div className="flex items-center gap-1">
+                        <input
+                            type="text"
+                            value={queryRicerca}
+                            onChange={(e) => setQueryRicerca(e.target.value)}
+                            className="w-28 sm:w-40 text-xs rounded-lg bg-slate-800 border border-slate-700 text-slate-300 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        />
+                        <a
+                            href={`https://www.google.com/search?q=${encodeURIComponent(queryRicerca)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            title="Cerca nel web"
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition shrink-0"
+                        >
+                            <Search className="h-4 w-4" />
+                        </a>
+                    </div>
 
                     <button
                         onClick={() => setNotaAperta(v => !v)}
