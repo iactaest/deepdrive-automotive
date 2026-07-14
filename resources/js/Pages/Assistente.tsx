@@ -53,9 +53,9 @@ export default function Assistente({ conversazioni }: AssistenteProps) {
                             <div className="flex items-center gap-3">
                                 <Bot className="h-10 w-10 text-purple-400" />
                                 <div>
-                                    <h1 className="text-3xl font-bold text-white">Assistente Virtuale</h1>
+                                    <h1 className="text-3xl font-bold text-white">Assistente Virtuale Bandi</h1>
                                     <p className="text-slate-400 mt-1">
-                                        Chiedimi tutto sui veicoli, manutenzione, prezzi e molto altro!
+                                        Chiedimi tutto su bandi, finanziamenti, requisiti e scadenze per la tua PA
                                     </p>
                                 </div>
                             </div>
@@ -77,7 +77,7 @@ export default function Assistente({ conversazioni }: AssistenteProps) {
                                             rows={5}
                                             required
                                             disabled={isSubmitting}
-                                            placeholder="Es: Quali sono i migliori SUV elettrici del 2024?"
+                                            placeholder="Es: Quali documenti servono di solito per partecipare a un bando PNRR?"
                                             className="w-full px-4 py-3 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
                                         />
                                         
