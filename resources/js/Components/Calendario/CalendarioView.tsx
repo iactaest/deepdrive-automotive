@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
-import { EventClickArg, EventDropArg, EventSourceFuncArg } from '@fullcalendar/core';
+import { EventClickArg, EventDropArg } from '@fullcalendar/core';
 
 export interface EventoGiorno {
     eventoId: number;
@@ -13,23 +13,32 @@ export interface EventoGiorno {
     kind: 'evento' | 'task';
 }
 
+export interface EventoCalendario {
+    id: string;
+    title: string;
+    start: string;
+    allDay: boolean;
+    editable: boolean;
+    color: string;
+    extendedProps: {
+        kind: 'evento' | 'task';
+        evento_id: number;
+        tipo?: 'bando' | 'manuale';
+        [key: string]: unknown;
+    };
+}
+
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 export default function CalendarioView({
-    onEventoClick, onGiornoClick,
+    eventi, onEventoClick, onGiornoClick,
 }: {
+    eventi: EventoCalendario[];
     onEventoClick: (eventoId: number) => void;
     onGiornoClick: (data: string, eventi: EventoGiorno[]) => void;
 }) {
     const calendarRef = useRef<FullCalendar>(null);
-
-    const caricaEventi = (_info: EventSourceFuncArg, successCallback: (events: any[]) => void, failureCallback: (error: Error) => void) => {
-        fetch('/ente/calendario/eventi')
-            .then((r) => r.json())
-            .then(successCallback)
-            .catch(failureCallback);
-    };
 
     const handleEventClick = (info: EventClickArg) => {
         const eventoId = info.event.extendedProps.evento_id;
@@ -82,7 +91,7 @@ export default function CalendarioView({
                 dayMaxEvents={3}
                 moreLinkText={(n) => `+${n} altri`}
                 editable={true}
-                events={caricaEventi}
+                events={eventi}
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
                 dateClick={handleDateClick}

@@ -1,9 +1,26 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
-import { CalendarDays, Plus, X, Loader2 } from 'lucide-react';
-import CalendarioView, { EventoGiorno } from '@/Components/Calendario/CalendarioView';
+import { CalendarDays, Plus, X, Loader2, AlarmClock } from 'lucide-react';
+import CalendarioView, { EventoCalendario, EventoGiorno } from '@/Components/Calendario/CalendarioView';
 import PannelloDettaglioEvento from '@/Components/Calendario/PannelloDettaglioEvento';
 import PannelloGiorno from '@/Components/Calendario/PannelloGiorno';
+
+const GIORNI_FINESTRA_PROSSIME_SCADENZE = 60; // 2 mesi
+
+function calcolaProssimeScadenze(eventi: EventoCalendario[]) {
+    const oggi = new Date();
+    oggi.setHours(0, 0, 0, 0);
+    const limite = new Date(oggi);
+    limite.setDate(limite.getDate() + GIORNI_FINESTRA_PROSSIME_SCADENZE);
+
+    return eventi
+        .filter((e) => e.extendedProps.kind === 'evento' && e.start)
+        .filter((e) => {
+            const data = new Date(e.start + 'T00:00:00');
+            return data >= oggi && data <= limite;
+        })
+        .sort((a, b) => a.start.localeCompare(b.start));
+}
 
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
@@ -70,13 +87,21 @@ function NuovoEventoModal({ dataIniziale, onClose, onCreato }: { dataIniziale?: 
 }
 
 export default function CalendarioIndex() {
+    const [eventi, setEventi] = useState<EventoCalendario[]>([]);
     const [eventoSelezionatoId, setEventoSelezionatoId] = useState<number | null>(null);
     const [giornoSelezionato, setGiornoSelezionato] = useState<{ data: string; eventi: EventoGiorno[] } | null>(null);
     const [nuovoEventoData, setNuovoEventoData] = useState<string | null>(null);
     const [modaleAperto, setModaleAperto] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
 
+    useEffect(() => {
+        fetch('/ente/calendario/eventi')
+            .then((r) => r.json())
+            .then(setEventi);
+    }, [refreshKey]);
+
     const aggiorna = () => setRefreshKey((k) => k + 1);
+    const prossimeScadenze = calcolaProssimeScadenze(eventi);
 
     const handleGiornoClick = (data: string, eventi: EventoGiorno[]) => {
         if (eventi.length === 0) {
@@ -117,7 +142,29 @@ export default function CalendarioIndex() {
                     <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.7)]" /> Task completato</span>
                 </div>
 
-                <CalendarioView key={refreshKey} onEventoClick={setEventoSelezionatoId} onGiornoClick={handleGiornoClick} />
+                {prossimeScadenze.length > 0 && (
+                    <div>
+                        <h2 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
+                            <AlarmClock className="h-3.5 w-3.5" /> Prossime scadenze (entro 2 mesi)
+                        </h2>
+                        <div className="flex items-center gap-2 flex-wrap">
+                            {prossimeScadenze.map((e) => (
+                                <button
+                                    key={e.id}
+                                    onClick={() => setEventoSelezionatoId(e.extendedProps.evento_id)}
+                                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-xs transition"
+                                >
+                                    <span className="text-amber-300 font-medium truncate max-w-[220px]">{e.title}</span>
+                                    <span className="text-amber-500/80 shrink-0">
+                                        {new Date(e.start + 'T00:00:00').toLocaleDateString('it-IT', { day: '2-digit', month: '2-digit', year: 'numeric' })}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                <CalendarioView eventi={eventi} onEventoClick={setEventoSelezionatoId} onGiornoClick={handleGiornoClick} />
 
                 {eventoSelezionatoId && (
                     <PannelloDettaglioEvento
