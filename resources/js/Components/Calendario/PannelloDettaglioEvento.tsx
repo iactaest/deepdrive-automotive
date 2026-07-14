@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, ExternalLink, Loader2, Trash2 } from 'lucide-react';
+import { X, ExternalLink, Loader2, Trash2, Archive } from 'lucide-react';
 import TaskCard, { CalendarioTask } from './TaskCard';
 import FormTask, { NuovoTaskInput } from './FormTask';
 
@@ -151,6 +151,14 @@ export default function PannelloDettaglioEvento({
                                     {evento.scadenza_effettiva ? new Date(evento.scadenza_effettiva).toLocaleDateString('it-IT') : '—'}
                                 </span>
                             </p>
+                            {evento.bando_id && (
+                                <a
+                                    href={`/cassetto-documenti?bando=${evento.bando_id}`}
+                                    className="inline-flex items-center gap-1.5 mt-2 text-xs text-purple-400 hover:text-purple-300 transition"
+                                >
+                                    <Archive className="h-3.5 w-3.5" /> Cassetto Documenti
+                                </a>
+                            )}
                         </div>
 
                         <div>

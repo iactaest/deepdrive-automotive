@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { router } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
 import { Archive, ChevronDown, ChevronUp, AlertTriangle } from 'lucide-react';
@@ -21,8 +21,16 @@ const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 export default function CassettoDocumentiIndex({ bandi }: Props) {
-    const [aperti, setAperti] = useState<Set<number>>(new Set());
+    const bandoDaAprire = Number(new URLSearchParams(window.location.search).get('bando')) || null;
+
+    const [aperti, setAperti] = useState<Set<number>>(() => bandoDaAprire ? new Set([bandoDaAprire]) : new Set());
     const [uploadInCorso, setUploadInCorso] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (bandoDaAprire) {
+            document.getElementById(`bando-${bandoDaAprire}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    }, []);
 
     const toggleAperto = (bandoId: number) => {
         setAperti(prev => {
@@ -93,7 +101,7 @@ export default function CassettoDocumentiIndex({ bandi }: Props) {
                             const documentiSpecifici = b.documenti.filter(d => d.categoria === 'specifico');
 
                             return (
-                                <div key={b.bando_id} className="rounded-xl bg-slate-800/50 border border-slate-700/50 overflow-hidden">
+                                <div key={b.bando_id} id={`bando-${b.bando_id}`} className="rounded-xl bg-slate-800/50 border border-slate-700/50 overflow-hidden">
                                     <button
                                         onClick={() => toggleAperto(b.bando_id)}
                                         className="w-full flex items-center justify-between gap-4 p-5 text-left hover:bg-slate-800/80 transition"

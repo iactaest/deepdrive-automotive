@@ -5,7 +5,7 @@ import CalendarioView, { EventoCalendario, EventoGiorno } from '@/Components/Cal
 import PannelloDettaglioEvento from '@/Components/Calendario/PannelloDettaglioEvento';
 import PannelloGiorno from '@/Components/Calendario/PannelloGiorno';
 
-const GIORNI_FINESTRA_PROSSIME_SCADENZE = 60; // 2 mesi
+const GIORNI_FINESTRA_PROSSIME_SCADENZE = 180; // 6 mesi
 
 function calcolaProssimeScadenze(eventi: EventoCalendario[]) {
     const oggi = new Date();
@@ -145,7 +145,7 @@ export default function CalendarioIndex() {
                 {prossimeScadenze.length > 0 && (
                     <div>
                         <h2 className="text-xs font-semibold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
-                            <AlarmClock className="h-3.5 w-3.5" /> Prossime scadenze (entro 2 mesi)
+                            <AlarmClock className="h-3.5 w-3.5" /> Prossime scadenze (entro 6 mesi)
                         </h2>
                         <div className="flex items-center gap-2 flex-wrap">
                             {prossimeScadenze.map((e) => (
