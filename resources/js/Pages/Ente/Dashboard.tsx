@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from '@inertiajs/react';
+import { Link, usePage } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
@@ -43,7 +43,8 @@ const formatEuro = (v: number | null) => {
     return `€${v.toFixed(0)}`;
 };
 
-export default function DashboardEnte({ dashboard }: { dashboard: DashboardData }) {
+export default function DashboardEnte({ dashboard, profilo }: { dashboard: DashboardData; profilo?: { nome_ente?: string | null } }) {
+    const { user } = usePage().props.auth;
     const [animate, setAnimate] = useState(false);
 
     useEffect(() => { setAnimate(true); }, []);
@@ -120,9 +121,11 @@ export default function DashboardEnte({ dashboard }: { dashboard: DashboardData 
                     <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl" />
                     <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                         <Landmark className="h-8 w-8 text-green-400" />
-                        Dashboard Ente Pubblico
+                        Bentornato, {user?.name}!
                     </h1>
-                    <p className="text-slate-400 mt-2">Gestisci bandi, gare e appalti pubblici in modo efficiente</p>
+                    <p className="text-slate-400 mt-2">
+                        {profilo?.nome_ente ? `${profilo.nome_ente} — ` : ''}Gestisci bandi, gare e appalti pubblici in modo efficiente
+                    </p>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

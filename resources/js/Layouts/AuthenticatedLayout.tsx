@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Car, Bot, Users, TrendingUp, Settings, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Landmark, Bot, Settings, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { user } = usePage().props.auth;
@@ -23,11 +23,8 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
     }, []);
 
    const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { name: 'Assistente', href: '/assistente', icon: Bot },  // ← Aggiungi questa
-    { name: 'Veicoli', href: '/vehicles', icon: Car },
-    { name: 'Clienti', href: '/customers', icon: Users },
-    { name: 'Report', href: '/reports', icon: TrendingUp },
+    { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
+    { name: 'Assistente', href: '/assistente', icon: Bot },
     { name: 'Impostazioni', href: '/settings', icon: Settings },
 ];
 
@@ -53,9 +50,9 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                 <div className="flex flex-col h-full">
                     {/* Logo */}
                     <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
-                        <Link href="/dashboard" className="flex items-center gap-2">
-                            <Car className="h-8 w-8 text-blue-500" />
-                            <span className="text-lg font-bold text-white">DeepDrive Auto</span>
+                        <Link href="/ente/dashboard" className="flex items-center gap-2">
+                            <Landmark className="h-8 w-8 text-green-500" />
+                            <span className="text-lg font-bold text-white">DeepBandi</span>
                         </Link>
                         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400">
                             <X className="h-5 w-5" />
@@ -112,7 +109,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                             <Menu className="h-6 w-6" />
                         </button>
                         <div className="flex-1 text-center">
-                            <span className="text-white font-bold">DeepDrive Auto</span>
+                            <span className="text-white font-bold">DeepBandi</span>
                         </div>
                         <div className="w-6" />
                     </div>
