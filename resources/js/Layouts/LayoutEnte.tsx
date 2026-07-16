@@ -12,8 +12,11 @@ import {
     Building2,
     TrendingUp,
     Archive,
-    ListChecks  // ← Icona per Lista Bandi
+    ListChecks,  // ← Icona per Lista Bandi
+    Users,
+    Bot
 } from 'lucide-react';
+import CampanellaNotifiche from '@/Components/Notifiche/CampanellaNotifiche';
 
 export default function LayoutEnte({ children }: { children: React.ReactNode }) {
     const { user } = usePage().props.auth;
@@ -39,6 +42,8 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
         { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
         { name: 'Cassetto Documenti', href: '/cassetto-documenti', icon: Archive },
         { name: 'Calendario Bandi', href: '/ente/calendario', icon: Calendar },
+        { name: 'Gestione Team', href: '/ente/team', icon: Users },
+        { name: 'Assistente', href: '/assistente', icon: Bot },
         { name: 'Storico finanziamenti', href: '/ente/dashboard', icon: TrendingUp },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
     ];
@@ -106,15 +111,15 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
             </aside>
 
             <main className="flex-1 min-w-0 overflow-auto">
-                <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50 lg:hidden">
-                    <div className="flex items-center p-3">
-                        <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-white">
-                            <Menu className="h-6 w-6" />
-                        </button>
-                        <div className="flex-1 text-center">
-                            <span className="text-white font-bold">DeepBandi - Ente</span>
+                <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
+                    <div className="flex items-center justify-between p-3">
+                        <div className="flex items-center gap-3">
+                            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white">
+                                <Menu className="h-6 w-6" />
+                            </button>
+                            <span className="text-white font-bold lg:hidden">DeepBandi - Ente</span>
                         </div>
-                        <div className="w-6" />
+                        <CampanellaNotifiche />
                     </div>
                 </div>
                 <div className="p-4 md:p-6 animate-fade-in">{children}</div>

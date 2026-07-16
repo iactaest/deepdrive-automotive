@@ -4,8 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\CalendarioEvento;
 use App\Models\CalendarioTask;
+use App\Models\Notifica;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class CalendarioController extends Controller
@@ -16,13 +19,14 @@ class CalendarioController extends Controller
     }
 
     /**
-     * Elenco eventi dell'utente in formato compatibile FullCalendar. La scadenza
-     * è sempre quella "effettiva" (live dal bando per tipo=bando, salvata per tipo=manuale).
+     * Elenco eventi del gruppo ente (titolare + dipendenti invitati) in formato compatibile
+     * FullCalendar. La scadenza è sempre quella "effettiva" (live dal bando per tipo=bando,
+     * salvata per tipo=manuale).
      */
     public function eventi()
     {
-        $eventi = CalendarioEvento::where('user_id', Auth::id())
-            ->with(['bando:id,titolo,scadenza,categoria,fonte', 'tasks'])
+        $eventi = CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())
+            ->with(['bando:id,titolo,scadenza,categoria,fonte', 'tasks.assegnatoUtente:id,name'])
             ->get();
 
         $risultato = collect();
@@ -77,12 +81,13 @@ class CalendarioController extends Controller
     }
 
     /**
-     * Dettaglio di un evento (per il pannello laterale), con i task collegati.
+     * Dettaglio di un evento (per il pannello laterale), con i task collegati. Visibile a
+     * chiunque appartenga al gruppo ente, non solo a chi l'ha creato.
      */
     public function show(int $id)
     {
-        $evento = CalendarioEvento::where('user_id', Auth::id())
-            ->with(['bando', 'tasks' => fn ($q) => $q->orderBy('created_at')])
+        $evento = CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())
+            ->with(['bando', 'tasks' => fn ($q) => $q->orderBy('created_at'), 'tasks.assegnatoUtente:id,name'])
             ->findOrFail($id);
 
         return response()->json([
@@ -101,7 +106,7 @@ class CalendarioController extends Controller
         ]);
 
         $evento = CalendarioEvento::create([
-            'user_id'       => Auth::id(),
+            'user_id'       => Auth::id(), // creatore, non più confine di autorizzazione
             'tipo'          => 'manuale',
             'titolo'        => $data['titolo'],
             'descrizione'   => $data['descrizione'] ?? null,
@@ -113,7 +118,7 @@ class CalendarioController extends Controller
 
     public function update(Request $request, int $id)
     {
-        $evento = CalendarioEvento::where('user_id', Auth::id())->findOrFail($id);
+        $evento = CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())->findOrFail($id);
 
         if ($evento->tipo !== 'manuale') {
             return response()->json(['error' => 'La scadenza di un evento bando non è modificabile.'], 422);
@@ -132,7 +137,7 @@ class CalendarioController extends Controller
 
     public function salvaNota(Request $request, int $id)
     {
-        $evento = CalendarioEvento::where('user_id', Auth::id())->findOrFail($id);
+        $evento = CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())->findOrFail($id);
 
         $data = $request->validate(['note' => 'nullable|string|max:5000']);
 
@@ -143,21 +148,68 @@ class CalendarioController extends Controller
 
     public function destroy(int $id)
     {
-        CalendarioEvento::where('user_id', Auth::id())->where('id', $id)->delete();
+        CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())->where('id', $id)->delete();
 
         return response()->json(['ok' => true]);
     }
 
+    /**
+     * Membri del gruppo ente (titolare + dipendenti), per il dropdown di assegnazione task.
+     */
+    public function membri()
+    {
+        return response()->json(
+            User::whereIn('id', Auth::user()->gruppoEnteIds())->select('id', 'name')->get()
+        );
+    }
+
+    /**
+     * Tutti i task del gruppo ente per la vista Kanban, con il titolo dell'evento/bando
+     * associato come contesto e l'assegnatario reale.
+     */
+    public function task()
+    {
+        $gruppoIds = Auth::user()->gruppoEnteIds();
+
+        $task = CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
+            ->with(['evento.bando:id,titolo', 'assegnatoUtente:id,name'])
+            ->orderBy('stato')
+            ->orderBy('ordine')
+            ->get()
+            ->map(function (CalendarioTask $t) {
+                $arr = $t->toArray();
+                $arr['evento_titolo'] = $t->evento->tipo === 'bando' ? $t->evento->bando?->titolo : $t->evento->titolo;
+
+                return $arr;
+            });
+
+        return response()->json($task);
+    }
+
+    public function taskRiordina(Request $request, int $taskId)
+    {
+        $gruppoIds = Auth::user()->gruppoEnteIds();
+        $task = CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
+            ->findOrFail($taskId);
+
+        $data = $request->validate(['ordine' => 'required|integer']);
+
+        $task->update(['ordine' => $data['ordine']]);
+
+        return response()->json(['task' => $task]);
+    }
+
     public function taskStore(Request $request, int $eventoId)
     {
-        $evento = CalendarioEvento::where('user_id', Auth::id())->findOrFail($eventoId);
+        $gruppoIds = Auth::user()->gruppoEnteIds();
+        $evento = CalendarioEvento::whereIn('user_id', $gruppoIds)->findOrFail($eventoId);
 
         $data = $request->validate([
-            'titolo'      => 'required|string|max:255',
-            'descrizione' => 'nullable|string',
-            'assegnato_a' => 'nullable|string|max:255',
-            'priorita'    => 'required|in:bassa,media,alta',
-            'scadenza'    => 'nullable|date',
+            'titolo'             => 'required|string|max:255',
+            'descrizione'        => 'nullable|string',
+            'assegnato_user_id'  => ['nullable', 'integer', Rule::in($gruppoIds)],
+            'priorita'           => 'required|in:bassa,media,alta',
+            'scadenza'           => 'nullable|date',
         ]);
 
         $task = CalendarioTask::create(array_merge($data, [
@@ -165,29 +217,47 @@ class CalendarioController extends Controller
             'user_id'              => Auth::id(),
         ]));
 
-        return response()->json(['task' => $task]);
+        if ($task->assegnato_user_id && $task->assegnato_user_id !== Auth::id()) {
+            Notifica::taskAssegnato($task, $task->assegnato_user_id);
+        }
+
+        return response()->json(['task' => $task->load('assegnatoUtente:id,name')]);
     }
 
     public function taskUpdate(Request $request, int $taskId)
     {
-        $task = CalendarioTask::where('user_id', Auth::id())->findOrFail($taskId);
+        $gruppoIds = Auth::user()->gruppoEnteIds();
+        $task = CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
+            ->findOrFail($taskId);
 
         $data = $request->validate([
-            'titolo'      => 'sometimes|required|string|max:255',
-            'descrizione' => 'nullable|string',
-            'assegnato_a' => 'nullable|string|max:255',
-            'priorita'    => 'sometimes|required|in:bassa,media,alta',
-            'scadenza'    => 'nullable|date',
+            'titolo'             => 'sometimes|required|string|max:255',
+            'descrizione'        => 'nullable|string',
+            'assegnato_user_id'  => ['nullable', 'integer', Rule::in($gruppoIds)],
+            'priorita'           => 'sometimes|required|in:bassa,media,alta',
+            'scadenza'           => 'nullable|date',
         ]);
 
+        $assegnatoPrima = $task->assegnato_user_id;
         $task->update($data);
 
-        return response()->json(['task' => $task]);
+        if (
+            array_key_exists('assegnato_user_id', $data)
+            && $task->assegnato_user_id
+            && $task->assegnato_user_id !== $assegnatoPrima
+            && $task->assegnato_user_id !== Auth::id()
+        ) {
+            Notifica::taskAssegnato($task, $task->assegnato_user_id);
+        }
+
+        return response()->json(['task' => $task->load('assegnatoUtente:id,name')]);
     }
 
     public function taskCambiaStato(Request $request, int $taskId)
     {
-        $task = CalendarioTask::where('user_id', Auth::id())->findOrFail($taskId);
+        $gruppoIds = Auth::user()->gruppoEnteIds();
+        $task = CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
+            ->findOrFail($taskId);
 
         $data = $request->validate(['stato' => 'required|in:da_fare,in_corso,completato']);
 
@@ -201,7 +271,10 @@ class CalendarioController extends Controller
 
     public function taskDestroy(int $taskId)
     {
-        CalendarioTask::where('user_id', Auth::id())->where('id', $taskId)->delete();
+        $gruppoIds = Auth::user()->gruppoEnteIds();
+        CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
+            ->where('id', $taskId)
+            ->delete();
 
         return response()->json(['ok' => true]);
     }

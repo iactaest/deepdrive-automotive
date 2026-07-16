@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
-import { CalendarDays, Plus, X, Loader2, AlarmClock } from 'lucide-react';
+import { CalendarDays, Plus, X, Loader2, AlarmClock, LayoutGrid, Kanban as KanbanIcon } from 'lucide-react';
 import CalendarioView, { EventoCalendario, EventoGiorno } from '@/Components/Calendario/CalendarioView';
 import PannelloDettaglioEvento from '@/Components/Calendario/PannelloDettaglioEvento';
 import PannelloGiorno from '@/Components/Calendario/PannelloGiorno';
+import KanbanBoard from '@/Components/Calendario/KanbanBoard';
+import { MembroGruppo } from '@/Components/Calendario/FormTask';
 
 const GIORNI_FINESTRA_PROSSIME_SCADENZE = 180; // 6 mesi
 
@@ -93,12 +95,20 @@ export default function CalendarioIndex() {
     const [nuovoEventoData, setNuovoEventoData] = useState<string | null>(null);
     const [modaleAperto, setModaleAperto] = useState(false);
     const [refreshKey, setRefreshKey] = useState(0);
+    const [membriGruppo, setMembriGruppo] = useState<MembroGruppo[]>([]);
+    const [vista, setVista] = useState<'calendario' | 'kanban'>('calendario');
 
     useEffect(() => {
         fetch('/ente/calendario/eventi')
             .then((r) => r.json())
             .then(setEventi);
     }, [refreshKey]);
+
+    useEffect(() => {
+        fetch('/ente/calendario/membri')
+            .then((r) => r.json())
+            .then(setMembriGruppo);
+    }, []);
 
     const aggiorna = () => setRefreshKey((k) => k + 1);
     const prossimeScadenze = calcolaProssimeScadenze(eventi);
@@ -127,20 +137,42 @@ export default function CalendarioIndex() {
                             Scadenze dei bandi salvati e in match, con task interni collegati. Clicca su un giorno per il dettaglio.
                         </p>
                     </div>
-                    <button
-                        onClick={() => { setNuovoEventoData(null); setModaleAperto(true); }}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white text-sm font-medium shadow-lg shadow-green-500/20 transition"
-                    >
-                        <Plus className="h-4 w-4" /> Nuovo evento
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <div className="inline-flex items-center rounded-lg bg-slate-800/60 border border-slate-700/50 p-1">
+                            <button
+                                onClick={() => setVista('calendario')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
+                                    vista === 'calendario' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                            >
+                                <LayoutGrid className="h-3.5 w-3.5" /> Calendario
+                            </button>
+                            <button
+                                onClick={() => setVista('kanban')}
+                                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition ${
+                                    vista === 'kanban' ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-slate-200'
+                                }`}
+                            >
+                                <KanbanIcon className="h-3.5 w-3.5" /> Kanban
+                            </button>
+                        </div>
+                        <button
+                            onClick={() => { setNuovoEventoData(null); setModaleAperto(true); }}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white text-sm font-medium shadow-lg shadow-green-500/20 transition"
+                        >
+                            <Plus className="h-4 w-4" /> Nuovo evento
+                        </button>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-4 flex-wrap text-xs text-slate-400 bg-slate-800/40 border border-slate-700/50 rounded-xl px-4 py-2.5">
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.7)]" /> Scadenza bando</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)]" /> Evento manuale</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.7)]" /> Task in scadenza</span>
-                    <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.7)]" /> Task completato</span>
-                </div>
+                {vista === 'calendario' && (
+                    <div className="flex items-center gap-4 flex-wrap text-xs text-slate-400 bg-slate-800/40 border border-slate-700/50 rounded-xl px-4 py-2.5">
+                        <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_6px_rgba(239,68,68,0.7)]" /> Scadenza bando</span>
+                        <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.7)]" /> Evento manuale</span>
+                        <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-[0_0_6px_rgba(249,115,22,0.7)]" /> Task in scadenza</span>
+                        <span className="inline-flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-green-500 shadow-[0_0_6px_rgba(34,197,94,0.7)]" /> Task completato</span>
+                    </div>
+                )}
 
                 {prossimeScadenze.length > 0 && (
                     <div>
@@ -164,11 +196,16 @@ export default function CalendarioIndex() {
                     </div>
                 )}
 
-                <CalendarioView eventi={eventi} onEventoClick={setEventoSelezionatoId} onGiornoClick={handleGiornoClick} />
+                {vista === 'calendario' ? (
+                    <CalendarioView eventi={eventi} onEventoClick={setEventoSelezionatoId} onGiornoClick={handleGiornoClick} />
+                ) : (
+                    <KanbanBoard />
+                )}
 
                 {eventoSelezionatoId && (
                     <PannelloDettaglioEvento
                         eventoId={eventoSelezionatoId}
+                        membriGruppo={membriGruppo}
                         onClose={() => setEventoSelezionatoId(null)}
                         onCambiato={aggiorna}
                     />

@@ -1,10 +1,15 @@
 import { useState } from 'react';
 import { Loader2, Plus } from 'lucide-react';
 
+export interface MembroGruppo {
+    id: number;
+    name: string;
+}
+
 export interface NuovoTaskInput {
     titolo: string;
     descrizione: string;
-    assegnato_a: string;
+    assegnato_user_id: number | null;
     priorita: 'bassa' | 'media' | 'alta';
     scadenza: string;
 }
@@ -16,21 +21,33 @@ const TASK_SUGGERITI = [
     'Firma digitale RUP',
 ];
 
-export default function FormTask({ salvando, onSubmit }: { salvando: boolean; onSubmit: (input: NuovoTaskInput) => void }) {
+export default function FormTask({
+    salvando, membriGruppo, onSubmit,
+}: {
+    salvando: boolean;
+    membriGruppo: MembroGruppo[];
+    onSubmit: (input: NuovoTaskInput) => void;
+}) {
     const [aperto, setAperto] = useState(false);
     const [titolo, setTitolo] = useState('');
     const [descrizione, setDescrizione] = useState('');
-    const [assegnatoA, setAssegnatoA] = useState('');
+    const [assegnatoUserId, setAssegnatoUserId] = useState<string>('');
     const [priorita, setPriorita] = useState<NuovoTaskInput['priorita']>('media');
     const [scadenza, setScadenza] = useState('');
 
     const reset = () => {
-        setTitolo(''); setDescrizione(''); setAssegnatoA(''); setPriorita('media'); setScadenza('');
+        setTitolo(''); setDescrizione(''); setAssegnatoUserId(''); setPriorita('media'); setScadenza('');
     };
 
     const submit = () => {
         if (!titolo.trim()) return;
-        onSubmit({ titolo: titolo.trim(), descrizione: descrizione.trim(), assegnato_a: assegnatoA.trim(), priorita, scadenza });
+        onSubmit({
+            titolo: titolo.trim(),
+            descrizione: descrizione.trim(),
+            assegnato_user_id: assegnatoUserId ? Number(assegnatoUserId) : null,
+            priorita,
+            scadenza,
+        });
         reset();
         setAperto(false);
     };
@@ -69,13 +86,16 @@ export default function FormTask({ salvando, onSubmit }: { salvando: boolean; on
             />
 
             <div className="grid grid-cols-2 gap-2">
-                <input
-                    type="text"
-                    value={assegnatoA}
-                    onChange={(e) => setAssegnatoA(e.target.value)}
-                    placeholder="Assegna a"
+                <select
+                    value={assegnatoUserId}
+                    onChange={(e) => setAssegnatoUserId(e.target.value)}
                     className="text-xs rounded-lg bg-slate-800 border border-slate-700 text-slate-200 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-purple-500"
-                />
+                >
+                    <option value="">Non assegnato</option>
+                    {membriGruppo.map((m) => (
+                        <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                </select>
                 <select
                     value={priorita}
                     onChange={(e) => setPriorita(e.target.value as NuovoTaskInput['priorita'])}

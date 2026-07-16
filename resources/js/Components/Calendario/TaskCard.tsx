@@ -5,7 +5,8 @@ export interface CalendarioTask {
     calendario_evento_id: number;
     titolo: string;
     descrizione: string | null;
-    assegnato_a: string | null;
+    assegnato_user_id: number | null;
+    assegnato_utente: { id: number; name: string } | null;
     priorita: 'bassa' | 'media' | 'alta';
     stato: 'da_fare' | 'in_corso' | 'completato';
     scadenza: string | null;
@@ -44,9 +45,9 @@ export default function TaskCard({
                         <span className={`text-[10px] px-1.5 py-0.5 rounded font-medium ${PRIORITA_STILE[task.priorita]}`}>
                             {task.priorita}
                         </span>
-                        {task.assegnato_a && (
+                        {task.assegnato_utente && (
                             <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
-                                <User className="h-3 w-3" /> {task.assegnato_a}
+                                <User className="h-3 w-3" /> {task.assegnato_utente.name}
                             </span>
                         )}
                         {task.scadenza && (

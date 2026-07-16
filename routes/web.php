@@ -2,7 +2,6 @@
 
 use App\Http\Controllers\AssistenteController;
 use App\Http\Controllers\BandiController;
-use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\EnteController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\ProfiloImpresaController;
@@ -11,6 +10,8 @@ use App\Http\Controllers\BandiListaController;
 use App\Http\Controllers\BandiSalvatiController;
 use App\Http\Controllers\BandoDocumentiController;
 use App\Http\Controllers\CalendarioController;
+use App\Http\Controllers\GestioneTeamController;
+use App\Http\Controllers\NotificheController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,10 +24,6 @@ Route::get('/', function () {
         'phpVersion' => PHP_VERSION,
     ]);
 });
-
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
 
 Route::middleware(['auth'])->group(function () {
     Route::get('/dashboard/impresa', function () {
@@ -100,6 +97,9 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::get('/ente/calendario', [CalendarioController::class, 'index'])->name('calendario.index');
     Route::get('/ente/calendario/eventi', [CalendarioController::class, 'eventi'])->name('calendario.eventi');
     Route::get('/ente/calendario/eventi/{id}', [CalendarioController::class, 'show'])->name('calendario.eventi.show');
+    Route::get('/ente/calendario/membri', [CalendarioController::class, 'membri'])->name('calendario.membri');
+    Route::get('/ente/calendario/task', [CalendarioController::class, 'task'])->name('calendario.task.lista');
+    Route::patch('/ente/calendario/task/{taskId}/ordine', [CalendarioController::class, 'taskRiordina'])->name('calendario.task.ordine');
     Route::post('/ente/calendario/eventi', [CalendarioController::class, 'store'])->name('calendario.eventi.store');
     Route::put('/ente/calendario/eventi/{id}', [CalendarioController::class, 'update'])->name('calendario.eventi.update');
     Route::put('/ente/calendario/eventi/{id}/nota', [CalendarioController::class, 'salvaNota'])->name('calendario.eventi.nota');
@@ -108,6 +108,21 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::put('/ente/calendario/task/{taskId}', [CalendarioController::class, 'taskUpdate'])->name('calendario.task.update');
     Route::patch('/ente/calendario/task/{taskId}/stato', [CalendarioController::class, 'taskCambiaStato'])->name('calendario.task.stato');
     Route::delete('/ente/calendario/task/{taskId}', [CalendarioController::class, 'taskDestroy'])->name('calendario.task.destroy');
+
+    // ============================================================
+    // ✅ GESTIONE TEAM (inviti dipendenti stesso ente)
+    // ============================================================
+    Route::get('/ente/team', [GestioneTeamController::class, 'index'])->name('team.index');
+    Route::post('/ente/team/invita', [GestioneTeamController::class, 'invita'])->name('team.invita');
+    Route::delete('/ente/team/inviti/{invito}', [GestioneTeamController::class, 'revoca'])->name('team.invito.revoca');
+
+    // ============================================================
+    // ✅ NOTIFICHE IN-APP
+    // ============================================================
+    Route::get('/notifiche', [NotificheController::class, 'index'])->name('notifiche.index');
+    Route::get('/notifiche/non-lette-count', [NotificheController::class, 'nonLetteCount'])->name('notifiche.non-lette-count');
+    Route::post('/notifiche/{id}/letta', [NotificheController::class, 'segnaLetta'])->name('notifiche.letta');
+    Route::post('/notifiche/segna-tutte-lette', [NotificheController::class, 'segnaTutteLette'])->name('notifiche.segna-tutte-lette');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');

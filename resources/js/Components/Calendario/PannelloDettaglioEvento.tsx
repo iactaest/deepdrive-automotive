@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { X, ExternalLink, Loader2, Trash2, Archive } from 'lucide-react';
 import TaskCard, { CalendarioTask } from './TaskCard';
-import FormTask, { NuovoTaskInput } from './FormTask';
+import FormTask, { NuovoTaskInput, MembroGruppo } from './FormTask';
 
 interface BandoInfo {
     id: number;
@@ -28,9 +28,10 @@ const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
 export default function PannelloDettaglioEvento({
-    eventoId, onClose, onCambiato,
+    eventoId, membriGruppo, onClose, onCambiato,
 }: {
     eventoId: number;
+    membriGruppo: MembroGruppo[];
     onClose: () => void;
     onCambiato: () => void;
 }) {
@@ -195,7 +196,7 @@ export default function PannelloDettaglioEvento({
                                 ))}
                             </div>
                             <div className="mt-2">
-                                <FormTask salvando={salvandoTask} onSubmit={aggiungiTask} />
+                                <FormTask salvando={salvandoTask} membriGruppo={membriGruppo} onSubmit={aggiungiTask} />
                             </div>
                         </div>
 

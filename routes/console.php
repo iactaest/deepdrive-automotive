@@ -46,3 +46,7 @@ Schedule::command('bandi:calculate-matches')
 // Reminder scadenze (dopo sync+match delle 02:00-05:00, così vede dati aggiornati)
 Schedule::command('calendario:invia-reminder')
     ->daily()->at('08:00')->withoutOverlapping();
+
+// Reminder task assegnati (stessa fascia oraria, soglie 30/15/7gg sulla scadenza del task)
+Schedule::command('calendario:invia-reminder-task')
+    ->daily()->at('08:00')->withoutOverlapping();
