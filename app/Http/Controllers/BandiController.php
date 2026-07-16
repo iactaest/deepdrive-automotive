@@ -19,7 +19,7 @@ class BandiController extends Controller
     // Pagina ricerca ente
     public function ricercaEnte()
     {
-        $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
         
         return Inertia::render('Bandi/RicercaEnte', [
             'profilo' => $profilo
@@ -29,7 +29,7 @@ class BandiController extends Controller
     // API ricerca bandi con filtri avanzati
     public function cerca(Request $request)
     {
-        $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
         
         if (!$profilo) {
             return response()->json([

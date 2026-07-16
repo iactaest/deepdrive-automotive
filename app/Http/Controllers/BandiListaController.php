@@ -14,9 +14,9 @@ class BandiListaController extends Controller
 {
     public function index(Request $request)
     {
-        $userId = Auth::id();
-        $ente = Ente::where('user_id', $userId)->first();
-        $profilo = ProfiloEnte::where('user_id', $userId)->first();
+        $profiloUserId = Auth::user()->enteEffettivoUserId(); // condiviso: profilo/match dell'ente
+        $ente = Ente::where('user_id', $profiloUserId)->first();
+        $profilo = ProfiloEnte::where('user_id', $profiloUserId)->first();
 
         $minMatch   = $request->has('min_match') ? (int) $request->get('min_match') : 0;
         $maxMatch   = $request->filled('max_match') ? (int) $request->get('max_match') : null;
@@ -448,9 +448,10 @@ class BandiListaController extends Controller
     public function show($id)
     {
         $bando   = BandoImportato::findOrFail($id);
-        $userId  = Auth::id();
-        $ente    = Ente::where('user_id', $userId)->first();
-        $profilo = ProfiloEnte::where('user_id', $userId)->first();
+        $userId  = Auth::id(); // personale: preferiti, ecc. — non cambia per un dipendente
+        $profiloUserId = Auth::user()->enteEffettivoUserId(); // condiviso: profilo/match dell'ente
+        $ente    = Ente::where('user_id', $profiloUserId)->first();
+        $profilo = ProfiloEnte::where('user_id', $profiloUserId)->first();
 
         $oggiStr    = now()->startOfDay()->toDateString();
         $statoReale = $this->statoReale($bando->scadenza, $oggiStr);

@@ -12,7 +12,9 @@ class EnteController extends Controller
 {
    public function index()
 {
-    $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+    // enteEffettivoUserId(): un dipendente invitato non ha un proprio ProfiloEnte, condivide
+    // quello del titolare — altrimenti finirebbe sempre reindirizzato al wizard.
+    $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
 
     // Se il profilo non esiste o non è completo, reindirizza al wizard
     if (!$profilo || !$profilo->profilo_completo) {
@@ -125,7 +127,7 @@ class EnteController extends Controller
 
     public function profilo()
     {
-        $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
         
         return Inertia::render('Bandi/Ente/Profilo', [
             'profilo' => $profilo,

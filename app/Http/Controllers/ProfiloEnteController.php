@@ -12,12 +12,14 @@ class ProfiloEnteController extends Controller
 {
     public function create()
     {
-        $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
         return Inertia::render('Ente/ProfiloWizard', ['profilo' => $profilo]);
     }
 
     public function store(Request $request)
     {
+        abort_unless(auth()->user()->isTitolare(), 403, 'Solo il titolare dell\'ente può modificare il profilo.');
+
         try {
             Log::info('=== STORE CHIAMATO ===');
             Log::info('Dati ricevuti:', $request->all());
@@ -113,7 +115,7 @@ class ProfiloEnteController extends Controller
 
     public function show()
     {
-        $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
         
         if (!$profilo) {
             return redirect()->route('ente.profilo.create');
@@ -135,6 +137,8 @@ class ProfiloEnteController extends Controller
 
     public function edit()
     {
+        abort_unless(auth()->user()->isTitolare(), 403, 'Solo il titolare dell\'ente può modificare il profilo.');
+
         $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
         if (!$profilo) return redirect()->route('ente.profilo.create');
         
@@ -153,6 +157,8 @@ class ProfiloEnteController extends Controller
 
     public function update(Request $request)
     {
+        abort_unless(auth()->user()->isTitolare(), 403, 'Solo il titolare dell\'ente può modificare il profilo.');
+
         $data = [
             'nome_ente' => $request->nome_ente,
             'tipo_ente' => $request->tipo_ente,
@@ -206,6 +212,8 @@ class ProfiloEnteController extends Controller
 
     public function destroy()
     {
+        abort_unless(auth()->user()->isTitolare(), 403, 'Solo il titolare dell\'ente può eliminare il profilo.');
+
         $profilo = ProfiloEnte::where('user_id', auth()->id())->first();
         if ($profilo) $profilo->delete();
         return redirect()->route('ente.profilo.create')->with('success', 'Profilo cancellato.');

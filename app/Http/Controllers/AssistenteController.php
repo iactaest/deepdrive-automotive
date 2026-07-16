@@ -56,7 +56,7 @@ class AssistenteController extends Controller
             return null;
         }
 
-        $profilo = ProfiloEnte::where('user_id', Auth::id())->first();
+        $profilo = ProfiloEnte::where('user_id', Auth::user()->enteEffettivoUserId())->first();
         $contestoProfilo = $this->costruisciContestoProfilo($profilo);
 
         $prompt = <<<PROMPT
