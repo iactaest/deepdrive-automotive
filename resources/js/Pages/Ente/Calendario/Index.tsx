@@ -27,20 +27,44 @@ function calcolaProssimeScadenze(eventi: EventoCalendario[]) {
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-function NuovoEventoModal({ dataIniziale, onClose, onCreato }: { dataIniziale?: string; onClose: () => void; onCreato: () => void }) {
+function NuovoEventoModal({
+    dataIniziale, membriGruppo, onClose, onCreato,
+}: {
+    dataIniziale?: string;
+    membriGruppo: MembroGruppo[];
+    onClose: () => void;
+    onCreato: () => void;
+}) {
     const [titolo, setTitolo] = useState('');
     const [descrizione, setDescrizione] = useState('');
     const [dataScadenza, setDataScadenza] = useState(dataIniziale ?? '');
+    const [assegnatoUserId, setAssegnatoUserId] = useState('');
     const [salvando, setSalvando] = useState(false);
 
     const salva = async () => {
         if (!titolo.trim() || !dataScadenza) return;
         setSalvando(true);
-        await fetch('/ente/calendario/eventi', {
+
+        const res = await fetch('/ente/calendario/eventi', {
             method: 'POST',
             headers: { 'X-CSRF-TOKEN': csrfToken(), 'Content-Type': 'application/json' },
             body: JSON.stringify({ titolo: titolo.trim(), descrizione: descrizione.trim(), data_scadenza: dataScadenza }),
         });
+
+        if (assegnatoUserId) {
+            const { evento } = await res.json();
+            await fetch(`/ente/calendario/eventi/${evento.id}/task`, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken(), 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    titolo: titolo.trim(),
+                    assegnato_user_id: Number(assegnatoUserId),
+                    priorita: 'media',
+                    scadenza: dataScadenza,
+                }),
+            });
+        }
+
         setSalvando(false);
         onCreato();
         onClose();
@@ -75,6 +99,23 @@ function NuovoEventoModal({ dataIniziale, onClose, onCreato }: { dataIniziale?: 
                         onChange={(e) => setDataScadenza(e.target.value)}
                         className="w-full text-sm rounded-lg bg-slate-800 border border-slate-700 text-slate-200 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500"
                     />
+                    <div>
+                        <select
+                            value={assegnatoUserId}
+                            onChange={(e) => setAssegnatoUserId(e.target.value)}
+                            className="w-full text-sm rounded-lg bg-slate-800 border border-slate-700 text-slate-200 px-3 py-2 focus:outline-none focus:ring-1 focus:ring-purple-500"
+                        >
+                            <option value="">Assegna a (opzionale)</option>
+                            {membriGruppo.map((m) => (
+                                <option key={m.id} value={m.id}>{m.name}</option>
+                            ))}
+                        </select>
+                        {assegnatoUserId && (
+                            <p className="text-[11px] text-slate-500 mt-1">
+                                Verrà creato anche un task collegato assegnato a questa persona.
+                            </p>
+                        )}
+                    </div>
                     <button
                         onClick={salva}
                         disabled={salvando || !titolo.trim() || !dataScadenza}
@@ -223,6 +264,7 @@ export default function CalendarioIndex() {
                 {modaleAperto && (
                     <NuovoEventoModal
                         dataIniziale={nuovoEventoData ?? undefined}
+                        membriGruppo={membriGruppo}
                         onClose={() => setModaleAperto(false)}
                         onCreato={aggiorna}
                     />
