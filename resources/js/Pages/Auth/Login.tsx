@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
-import { ChevronRight, Lock, Mail, Eye, EyeOff } from 'lucide-react';
+import { ChevronRight, Lock, Mail, Eye, EyeOff, Landmark } from 'lucide-react';
 
 export default function Login({ status, canResetPassword }: any) {
     const [showPassword, setShowPassword] = useState(false);
@@ -20,18 +20,18 @@ export default function Login({ status, canResetPassword }: any) {
             
             {/* Luce fioca al centro */}
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-blue-500/10 blur-3xl animate-pulse" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse" />
             </div>
 
             <div className="relative z-10 w-full max-w-md px-4">
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-8 shadow-2xl">
-                    
+
                     {/* Logo */}
                     <div className="flex items-center justify-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <span className="text-white font-bold text-xl">D</span>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <Landmark className="h-5 w-5 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-white tracking-tight">Deep<span className="text-blue-400">Bandi</span></span>
+                        <span className="text-2xl font-bold text-white tracking-tight">Deep<span className="text-emerald-400">Bandi</span></span>
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Benvenuto</h2>
@@ -52,7 +52,7 @@ export default function Login({ status, canResetPassword }: any) {
                                     type="email"
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                                     placeholder="nome@ente.it"
                                     required
                                 />
@@ -68,7 +68,7 @@ export default function Login({ status, canResetPassword }: any) {
                                     type={showPassword ? 'text' : 'password'}
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    className="w-full pl-10 pr-12 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                    className="w-full pl-10 pr-12 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -89,12 +89,12 @@ export default function Login({ status, canResetPassword }: any) {
                                     type="checkbox"
                                     checked={data.remember}
                                     onChange={(e) => setData('remember', e.target.checked)}
-                                    className="w-4 h-4 rounded border-slate-700 bg-slate-900/50 text-blue-600 focus:ring-blue-500"
+                                    className="w-4 h-4 rounded border-slate-700 bg-slate-900/50 text-emerald-600 focus:ring-emerald-500"
                                 />
                                 <span className="text-sm text-slate-400">Ricordami</span>
                             </label>
                             {canResetPassword && (
-                                <Link href="/forgot-password" className="text-sm text-blue-400 hover:text-blue-300 transition">
+                                <Link href="/forgot-password" className="text-sm text-emerald-400 hover:text-emerald-300 transition">
                                     Password dimenticata?
                                 </Link>
                             )}
@@ -103,7 +103,7 @@ export default function Login({ status, canResetPassword }: any) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-2.5 rounded-lg font-medium transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white py-2.5 rounded-lg font-medium transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                         >
                             {processing ? 'Caricamento...' : 'Accedi'}
                             <ChevronRight className="h-4 w-4" />
@@ -112,7 +112,7 @@ export default function Login({ status, canResetPassword }: any) {
 
                     <p className="text-center text-slate-400 text-sm mt-6">
                         Non hai un account?{' '}
-                        <Link href="/register" className="text-blue-400 hover:text-blue-300 transition">
+                        <Link href="/register" className="text-emerald-400 hover:text-emerald-300 transition">
                             Registrati
                         </Link>
                     </p>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
-import { ChevronRight, Mail, Lock, User, Eye, EyeOff } from 'lucide-react';
+import { ChevronRight, Mail, Lock, User, Eye, EyeOff, Landmark } from 'lucide-react';
 
 export default function Register() {
     const [showPassword, setShowPassword] = useState(false);
@@ -19,19 +19,19 @@ export default function Register() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center">
-            
+
             <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-blue-500/10 blur-3xl animate-pulse" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse" />
             </div>
 
             <div className="relative z-10 w-full max-w-md px-4">
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-8 shadow-2xl">
-                    
+
                     <div className="flex items-center justify-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                            <span className="text-white font-bold text-xl">D</span>
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                            <Landmark className="h-5 w-5 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-white tracking-tight">Deep<span className="text-blue-400">Bandi</span></span>
+                        <span className="text-2xl font-bold text-white tracking-tight">Deep<span className="text-emerald-400">Bandi</span></span>
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Crea un Account</h2>
@@ -46,7 +46,7 @@ export default function Register() {
                                     type="text"
                                     value={data.name}
                                     onChange={(e) => setData('name', e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                                     placeholder="Nome del tuo ente"
                                     required
                                 />
@@ -62,7 +62,7 @@ export default function Register() {
                                     type="email"
                                     value={data.email}
                                     onChange={(e) => setData('email', e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                                     placeholder="nome@ente.it"
                                     required
                                 />
@@ -78,7 +78,7 @@ export default function Register() {
                                     type={showPassword ? 'text' : 'password'}
                                     value={data.password}
                                     onChange={(e) => setData('password', e.target.value)}
-                                    className="w-full pl-10 pr-12 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                    className="w-full pl-10 pr-12 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -101,7 +101,7 @@ export default function Register() {
                                     type="password"
                                     value={data.password_confirmation}
                                     onChange={(e) => setData('password_confirmation', e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                    className="w-full pl-10 pr-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                                     placeholder="••••••••"
                                     required
                                 />
@@ -113,7 +113,7 @@ export default function Register() {
                             <select
                                 value={data.tipo_utente}
                                 onChange={(e) => setData('tipo_utente', e.target.value)}
-                                className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition outline-none"
+                                className="w-full px-4 py-2.5 bg-slate-900/50 border border-slate-700 rounded-lg text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition outline-none"
                             >
                                 <option value="ente">Ente Pubblico</option>
                                 <option value="impresa">Impresa Privata</option>
@@ -125,7 +125,7 @@ export default function Register() {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white py-2.5 rounded-lg font-medium transition shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white py-2.5 rounded-lg font-medium transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
                         >
                             {processing ? 'Caricamento...' : 'Registrati'}
                             <ChevronRight className="h-4 w-4" />
@@ -134,7 +134,7 @@ export default function Register() {
 
                     <p className="text-center text-slate-400 text-sm mt-6">
                         Hai già un account?{' '}
-                        <Link href="/login" className="text-blue-400 hover:text-blue-300 transition">
+                        <Link href="/login" className="text-emerald-400 hover:text-emerald-300 transition">
                             Accedi
                         </Link>
                     </p>
