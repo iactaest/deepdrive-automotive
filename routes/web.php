@@ -115,6 +115,7 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::get('/ente/team', [GestioneTeamController::class, 'index'])->name('team.index');
     Route::post('/ente/team/invita', [GestioneTeamController::class, 'invita'])->name('team.invita');
     Route::delete('/ente/team/inviti/{invito}', [GestioneTeamController::class, 'revoca'])->name('team.invito.revoca');
+    Route::delete('/ente/team/membri/{userId}', [GestioneTeamController::class, 'rimuoviMembro'])->name('team.membro.rimuovi');
 
     // ============================================================
     // ✅ NOTIFICHE IN-APP

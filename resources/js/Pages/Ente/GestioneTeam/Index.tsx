@@ -48,6 +48,11 @@ export default function GestioneTeamIndex({ membri, inviti, puoInvitare }: Props
         router.delete(`/ente/team/inviti/${invitoId}`);
     };
 
+    const rimuovi = (membro: Membro) => {
+        if (!confirm(`Rimuovere ${membro.name} dal team? Non potrà più accedere al calendario condiviso dell'ente.`)) return;
+        router.delete(`/ente/team/membri/${membro.id}`);
+    };
+
     return (
         <LayoutEnte>
             <div className="space-y-6 animate-fade-in">
@@ -99,11 +104,18 @@ export default function GestioneTeamIndex({ membri, inviti, puoInvitare }: Props
                                     <p className="text-sm text-white font-medium truncate">{m.name}</p>
                                     <p className="text-xs text-slate-400 truncate">{m.email}</p>
                                 </div>
-                                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                                    m.ruolo === 'Titolare' ? 'bg-purple-500/20 text-purple-400' : 'bg-blue-500/20 text-blue-400'
-                                }`}>
-                                    {m.ruolo}
-                                </span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                                        m.ruolo === 'Titolare' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-teal-500/20 text-teal-400'
+                                    }`}>
+                                        {m.ruolo}
+                                    </span>
+                                    {puoInvitare && m.ruolo === 'Dipendente' && (
+                                        <button onClick={() => rimuovi(m)} title="Rimuovi dal team" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition">
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>

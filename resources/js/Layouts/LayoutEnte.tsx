@@ -20,6 +20,7 @@ import CampanellaNotifiche from '@/Components/Notifiche/CampanellaNotifiche';
 
 export default function LayoutEnte({ children }: { children: React.ReactNode }) {
     const { user } = usePage().props.auth;
+    const isTitolare = !user?.ente_titolare_id;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
 
@@ -37,12 +38,12 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
     const navigation = [
         { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
-        { name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 },
+        ...(isTitolare ? [{ name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 }] : []),
         { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },
         { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
         { name: 'Cassetto Documenti', href: '/cassetto-documenti', icon: Archive },
         { name: 'Calendario Bandi', href: '/ente/calendario', icon: Calendar },
-        { name: 'Gestione Team', href: '/ente/team', icon: Users },
+        ...(isTitolare ? [{ name: 'Gestione Team', href: '/ente/team', icon: Users }] : []),
         { name: 'Assistente', href: '/assistente', icon: Bot },
         { name: 'Storico finanziamenti', href: '/ente/dashboard', icon: TrendingUp },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
