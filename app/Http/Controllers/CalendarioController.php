@@ -22,12 +22,24 @@ class CalendarioController extends Controller
      * Elenco eventi del gruppo ente (titolare + dipendenti invitati) in formato compatibile
      * FullCalendar. La scadenza è sempre quella "effettiva" (live dal bando per tipo=bando,
      * salvata per tipo=manuale).
+     *
+     * Il titolare vede tutto il calendario condiviso. Un dipendente vede solo gli eventi che
+     * ha creato lui o su cui ha almeno un task assegnato — non l'intero calendario del team.
      */
     public function eventi()
     {
-        $eventi = CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())
+        $user = Auth::user();
+
+        $eventi = CalendarioEvento::whereIn('user_id', $user->gruppoEnteIds())
             ->with(['bando:id,titolo,scadenza,categoria,fonte', 'tasks.assegnatoUtente:id,name'])
             ->get();
+
+        if (!$user->isTitolare()) {
+            $eventi = $eventi->filter(
+                fn (CalendarioEvento $e) => $e->user_id === $user->id
+                    || $e->tasks->contains('assegnato_user_id', $user->id)
+            );
+        }
 
         $risultato = collect();
 
@@ -58,20 +70,33 @@ class CalendarioController extends Controller
                 ],
             ]);
 
-            // Un evento per ogni task con scadenza propria: arancio se ancora aperto, verde se completato
-            foreach ($evento->tasks->whereNotNull('scadenza') as $task) {
+            // Un evento per ogni task con scadenza propria: arancio se ancora aperto, verde se completato.
+            // Un dipendente vede solo i propri task, il titolare li vede tutti.
+            $taskConScadenza = $evento->tasks->whereNotNull('scadenza');
+            if (!$user->isTitolare()) {
+                $taskConScadenza = $taskConScadenza->where('assegnato_user_id', $user->id);
+            }
+            foreach ($taskConScadenza as $task) {
+                $progresso = match ($task->stato) {
+                    'da_fare'    => 0,
+                    'in_corso'   => 50,
+                    'completato' => 100,
+                };
+
                 $risultato->push([
                     'id'       => "task-{$task->id}",
-                    'title'    => '📋 ' . $task->titolo,
+                    'title'    => $task->titolo,
                     'start'    => $task->scadenza->toDateString(),
                     'allDay'   => true,
                     'editable' => false,
                     'color'    => $task->stato === 'completato' ? '#22c55e' : '#f97316',
                     'extendedProps' => [
-                        'kind'      => 'task',
-                        'evento_id' => $evento->id,
-                        'task_id'   => $task->id,
-                        'stato'     => $task->stato,
+                        'kind'           => 'task',
+                        'evento_id'      => $evento->id,
+                        'task_id'        => $task->id,
+                        'stato'          => $task->stato,
+                        'assegnato_nome' => $task->assegnatoUtente?->name,
+                        'progresso'      => $progresso,
                     ],
                 ]);
             }
@@ -81,14 +106,24 @@ class CalendarioController extends Controller
     }
 
     /**
-     * Dettaglio di un evento (per il pannello laterale), con i task collegati. Visibile a
-     * chiunque appartenga al gruppo ente, non solo a chi l'ha creato.
+     * Dettaglio di un evento (per il pannello laterale), con i task collegati. Il titolare
+     * vede tutto; un dipendente può aprire solo eventi che ha creato o su cui ha un task
+     * assegnato, e in quel caso vede solo i propri task, non quelli di tutto il team.
      */
     public function show(int $id)
     {
-        $evento = CalendarioEvento::whereIn('user_id', Auth::user()->gruppoEnteIds())
+        $user = Auth::user();
+
+        $evento = CalendarioEvento::whereIn('user_id', $user->gruppoEnteIds())
             ->with(['bando', 'tasks' => fn ($q) => $q->orderBy('created_at'), 'tasks.assegnatoUtente:id,name'])
             ->findOrFail($id);
+
+        if (!$user->isTitolare()) {
+            $haAccesso = $evento->user_id === $user->id || $evento->tasks->contains('assegnato_user_id', $user->id);
+            abort_unless($haAccesso, 403);
+
+            $evento->setRelation('tasks', $evento->tasks->where('assegnato_user_id', $user->id)->values());
+        }
 
         return response()->json([
             'evento' => array_merge($evento->toArray(), [
@@ -164,18 +199,25 @@ class CalendarioController extends Controller
     }
 
     /**
-     * Tutti i task del gruppo ente per la vista Kanban, con il titolo dell'evento/bando
-     * associato come contesto e l'assegnatario reale.
+     * Task per la vista Kanban, con il titolo dell'evento/bando associato come contesto e
+     * l'assegnatario reale. Il titolare vede tutti i task del gruppo, un dipendente vede
+     * solo quelli assegnati a lui.
      */
     public function task()
     {
-        $gruppoIds = Auth::user()->gruppoEnteIds();
+        $user = Auth::user();
+        $gruppoIds = $user->gruppoEnteIds();
 
-        $task = CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
+        $query = CalendarioTask::whereHas('evento', fn ($q) => $q->whereIn('user_id', $gruppoIds))
             ->with(['evento.bando:id,titolo', 'assegnatoUtente:id,name'])
             ->orderBy('stato')
-            ->orderBy('ordine')
-            ->get()
+            ->orderBy('ordine');
+
+        if (!$user->isTitolare()) {
+            $query->where('assegnato_user_id', $user->id);
+        }
+
+        $task = $query->get()
             ->map(function (CalendarioTask $t) {
                 $arr = $t->toArray();
                 $arr['evento_titolo'] = $t->evento->tipo === 'bando' ? $t->evento->bando?->titolo : $t->evento->titolo;

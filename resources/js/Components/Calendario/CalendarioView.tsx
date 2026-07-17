@@ -4,7 +4,7 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import listPlugin from '@fullcalendar/list';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
-import { EventClickArg, EventDropArg } from '@fullcalendar/core';
+import { EventClickArg, EventContentArg, EventDropArg } from '@fullcalendar/core';
 
 export interface EventoGiorno {
     eventoId: number;
@@ -58,6 +58,33 @@ export default function CalendarioView({
         if (!res.ok) info.revert();
     };
 
+    const renderEventContent = (arg: EventContentArg) => {
+        const { kind, assegnato_nome, progresso } = arg.event.extendedProps as {
+            kind: 'evento' | 'task';
+            assegnato_nome?: string | null;
+            progresso?: number;
+        };
+
+        if (kind !== 'task') {
+            return <div className="fc-event-title fc-sticky">{arg.event.title}</div>;
+        }
+
+        return (
+            <div className="w-full px-1 py-0.5 overflow-hidden">
+                <div className="flex items-baseline gap-1 text-[11px] leading-tight">
+                    <span className="truncate font-medium">{arg.event.title}</span>
+                    {assegnato_nome && <span className="truncate opacity-80 shrink-0">— {assegnato_nome}</span>}
+                </div>
+                <div className="h-1 w-full bg-black/25 rounded-full mt-1 overflow-hidden">
+                    <div className="h-full bg-white/80 rounded-full" style={{ width: `${progresso ?? 0}%` }} />
+                </div>
+            </div>
+        );
+    };
+
+    const eventClassNames = (arg: EventContentArg) =>
+        arg.event.extendedProps.kind === 'task' ? ['fc-task-pill'] : [];
+
     const handleDateClick = (info: DateClickArg) => {
         const api = calendarRef.current?.getApi();
         if (!api) return;
@@ -92,6 +119,8 @@ export default function CalendarioView({
                 moreLinkText={(n) => `+${n} altri`}
                 editable={true}
                 events={eventi}
+                eventContent={renderEventContent}
+                eventClassNames={eventClassNames}
                 eventClick={handleEventClick}
                 eventDrop={handleEventDrop}
                 dateClick={handleDateClick}

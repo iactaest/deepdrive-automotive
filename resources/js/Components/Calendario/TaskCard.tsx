@@ -25,6 +25,12 @@ const STATO_LABEL: Record<CalendarioTask['stato'], string> = {
     completato: 'Completato',
 };
 
+const STATO_PROGRESSO: Record<CalendarioTask['stato'], number> = {
+    da_fare: 0,
+    in_corso: 50,
+    completato: 100,
+};
+
 export default function TaskCard({
     task, aggiornando, onCambiaStato, onElimina,
 }: {
@@ -61,6 +67,13 @@ export default function TaskCard({
                 <button onClick={onElimina} title="Elimina task" className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 transition shrink-0">
                     <Trash2 className="h-3.5 w-3.5" />
                 </button>
+            </div>
+
+            <div className="h-1.5 w-full bg-slate-700/50 rounded-full mt-2.5 overflow-hidden">
+                <div
+                    className={`h-full rounded-full transition-all duration-300 ${task.stato === 'completato' ? 'bg-green-500' : 'bg-orange-400'}`}
+                    style={{ width: `${STATO_PROGRESSO[task.stato]}%` }}
+                />
             </div>
 
             <div className="mt-2 flex items-center gap-2">

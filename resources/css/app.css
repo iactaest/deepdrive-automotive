@@ -135,6 +135,11 @@
     transition: transform 0.15s;
 }
 
+.calendario-scadenze-wrapper .fc-daygrid-event.fc-task-pill {
+    border-radius: 5px !important;
+    padding: 2px 6px !important;
+}
+
 .calendario-scadenze-wrapper .fc-daygrid-event:hover {
     transform: translateY(-1px) scale(1.02);
     filter: brightness(1.1);
