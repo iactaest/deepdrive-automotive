@@ -10,19 +10,52 @@ import {
     X,
     Calendar,
     Building2,
-    TrendingUp,
     Archive,
     ListChecks,  // ← Icona per Lista Bandi
     Users,
-    Bot
+    Bot,
+    ClipboardCheck,
+    Trophy,
+    FolderOpen,
+    ChevronDown,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import CampanellaNotifiche from '@/Components/Notifiche/CampanellaNotifiche';
+
+interface NavItem { name: string; href: string; icon: LucideIcon }
+interface NavGroup { name: string; icon: LucideIcon; items: NavItem[] }
+
+const bandiGroup: NavGroup = {
+    name: 'Bandi',
+    icon: ListChecks,
+    items: [
+        { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },
+        { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
+        { name: 'Calendario Bandi', href: '/ente/calendario', icon: Calendar },
+        { name: 'Storico Bandi', href: '/ente/storico-bandi', icon: Trophy },
+    ],
+};
+
+const documentazioneGroup: NavGroup = {
+    name: 'Documentazione',
+    icon: FolderOpen,
+    items: [
+        { name: 'Cassetto Documenti', href: '/cassetto-documenti', icon: Archive },
+        { name: 'Rendicontazione', href: '/ente/rendicontazione', icon: ClipboardCheck },
+    ],
+};
+
+const gruppiNavigazione = [bandiGroup, documentazioneGroup];
 
 export default function LayoutEnte({ children }: { children: React.ReactNode }) {
     const { user } = usePage().props.auth;
+    const currentUrl = usePage().url;
     const isTitolare = !user?.ente_titolare_id;
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [isMobile, setIsMobile] = useState(false);
+    const [gruppiAperti, setGruppiAperti] = useState<Record<string, boolean>>(() =>
+        Object.fromEntries(gruppiNavigazione.map((g) => [g.name, g.items.some((i) => currentUrl.startsWith(i.href))]))
+    );
 
     useEffect(() => {
         const checkScreen = () => {
@@ -36,16 +69,16 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
         return () => window.removeEventListener('resize', checkScreen);
     }, []);
 
-    const navigation = [
+    const toggleGruppo = (nome: string) => setGruppiAperti((prev) => ({ ...prev, [nome]: !prev[nome] }));
+
+    const navPrima = [
         { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
         ...(isTitolare ? [{ name: 'Profilo Ente', href: '/ente/profilo', icon: Building2 }] : []),
-        { name: 'Lista Bandi', href: '/ente/lista-bandi', icon: ListChecks },
-        { name: 'Bandi Salvati', href: '/bandi-salvati', icon: Star },
-        { name: 'Cassetto Documenti', href: '/cassetto-documenti', icon: Archive },
-        { name: 'Calendario Bandi', href: '/ente/calendario', icon: Calendar },
+    ];
+
+    const navDopo = [
         ...(isTitolare ? [{ name: 'Gestione Team', href: '/ente/team', icon: Users }] : []),
         { name: 'Assistente', href: '/assistente', icon: Bot },
-        { name: 'Storico finanziamenti', href: '/ente/dashboard', icon: TrendingUp },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
     ];
 
@@ -78,10 +111,52 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                     </div>
 
                     <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                        {navigation.map((item) => (
-                            <Link 
-                                key={item.name} 
-                                href={item.href} 
+                        {navPrima.map((item) => (
+                            <Link
+                                key={item.name}
+                                href={item.href}
+                                onClick={handleLinkClick}
+                                className="flex items-center gap-3 px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group hover:translate-x-1"
+                            >
+                                <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                <span>{item.name}</span>
+                            </Link>
+                        ))}
+
+                        {gruppiNavigazione.map((gruppo) => (
+                            <div key={gruppo.name}>
+                                <button
+                                    onClick={() => toggleGruppo(gruppo.name)}
+                                    className="flex items-center justify-between w-full px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group"
+                                >
+                                    <span className="flex items-center gap-3">
+                                        <gruppo.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                        <span>{gruppo.name}</span>
+                                    </span>
+                                    <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${gruppiAperti[gruppo.name] ? 'rotate-180' : ''}`} />
+                                </button>
+                                {gruppiAperti[gruppo.name] && (
+                                    <div className="ml-4 pl-3 border-l border-slate-700/50 space-y-1 mt-1 mb-1">
+                                        {gruppo.items.map((item) => (
+                                            <Link
+                                                key={item.name}
+                                                href={item.href}
+                                                onClick={handleLinkClick}
+                                                className="flex items-center gap-2.5 px-3 py-2 text-slate-400 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all text-sm"
+                                            >
+                                                <item.icon className="h-4 w-4" />
+                                                <span>{item.name}</span>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {navDopo.map((item) => (
+                            <Link
+                                key={item.name}
+                                href={item.href}
                                 onClick={handleLinkClick}
                                 className="flex items-center gap-3 px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group hover:translate-x-1"
                             >

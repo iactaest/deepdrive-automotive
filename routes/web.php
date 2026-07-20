@@ -12,6 +12,11 @@ use App\Http\Controllers\BandoDocumentiController;
 use App\Http\Controllers\CalendarioController;
 use App\Http\Controllers\GestioneTeamController;
 use App\Http\Controllers\NotificheController;
+use App\Http\Controllers\RendicontazioneController;
+use App\Http\Controllers\RendicontazioneSpesaController;
+use App\Http\Controllers\RendicontazioneMilestoneController;
+use App\Http\Controllers\RendicontazioneReportController;
+use App\Http\Controllers\StoricoBandiController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -71,6 +76,8 @@ Route::middleware('auth')->group(function () {
     // ============================================================
    Route::get('/ente/lista-bandi', [BandiListaController::class, 'index'])->name('lista.bandi');
 Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->name('lista.bandi.dettaglio');
+Route::post('/ente/lista-bandi/{id}/perso', [BandiListaController::class, 'segnaPerso'])->name('lista.bandi.perso');
+Route::delete('/ente/lista-bandi/{id}/perso', [BandiListaController::class, 'annullaPerso'])->name('lista.bandi.perso.annulla');
 
     // ============================================================
     // ✅ BANDI SALVATI
@@ -124,6 +131,34 @@ Route::get('/ente/lista-bandi/{id}', [BandiListaController::class, 'show'])->nam
     Route::get('/notifiche/non-lette-count', [NotificheController::class, 'nonLetteCount'])->name('notifiche.non-lette-count');
     Route::post('/notifiche/{id}/letta', [NotificheController::class, 'segnaLetta'])->name('notifiche.letta');
     Route::post('/notifiche/segna-tutte-lette', [NotificheController::class, 'segnaTutteLette'])->name('notifiche.segna-tutte-lette');
+
+    // ============================================================
+    // ✅ RENDICONTAZIONE POST-AGGIUDICAZIONE
+    // ============================================================
+    Route::get('/ente/rendicontazione', [RendicontazioneController::class, 'index'])->name('rendicontazione.index');
+    Route::post('/ente/rendicontazione', [RendicontazioneController::class, 'store'])->name('rendicontazione.store');
+    Route::get('/ente/rendicontazione/{id}', [RendicontazioneController::class, 'show'])->name('rendicontazione.show');
+    Route::put('/ente/rendicontazione/{id}', [RendicontazioneController::class, 'update'])->name('rendicontazione.update');
+    Route::delete('/ente/rendicontazione/{id}', [RendicontazioneController::class, 'destroy'])->name('rendicontazione.destroy');
+
+    Route::post('/ente/rendicontazione/{id}/spese', [RendicontazioneSpesaController::class, 'store'])->name('rendicontazione.spese.store');
+    Route::put('/ente/rendicontazione/{id}/spese/{spesaId}', [RendicontazioneSpesaController::class, 'update'])->name('rendicontazione.spese.update');
+    Route::delete('/ente/rendicontazione/{id}/spese/{spesaId}', [RendicontazioneSpesaController::class, 'destroy'])->name('rendicontazione.spese.destroy');
+    Route::post('/ente/rendicontazione/{id}/spese/{spesaId}/upload', [RendicontazioneSpesaController::class, 'upload'])->name('rendicontazione.spese.upload');
+    Route::get('/ente/rendicontazione/{id}/spese/{spesaId}/download', [RendicontazioneSpesaController::class, 'download'])->name('rendicontazione.spese.download');
+
+    Route::post('/ente/rendicontazione/{id}/milestone', [RendicontazioneMilestoneController::class, 'store'])->name('rendicontazione.milestone.store');
+    Route::put('/ente/rendicontazione/{id}/milestone/{milestoneId}', [RendicontazioneMilestoneController::class, 'update'])->name('rendicontazione.milestone.update');
+    Route::patch('/ente/rendicontazione/{id}/milestone/{milestoneId}/ordine', [RendicontazioneMilestoneController::class, 'riordina'])->name('rendicontazione.milestone.ordine');
+    Route::delete('/ente/rendicontazione/{id}/milestone/{milestoneId}', [RendicontazioneMilestoneController::class, 'destroy'])->name('rendicontazione.milestone.destroy');
+
+    Route::post('/ente/rendicontazione/{id}/report', [RendicontazioneReportController::class, 'genera'])->name('rendicontazione.report.genera');
+    Route::get('/ente/rendicontazione/{id}/report/{reportId}/download', [RendicontazioneReportController::class, 'download'])->name('rendicontazione.report.download');
+
+    // ============================================================
+    // ✅ STORICO BANDI (totali / in corso / vinti / persi)
+    // ============================================================
+    Route::get('/ente/storico-bandi', [StoricoBandiController::class, 'index'])->name('storico.bandi');
 });
 
 Route::get('/test-ricerca', [BandiController::class, 'ricercaEnte'])->name('test.ricerca');

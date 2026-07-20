@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\ProfiloEnte;
 use App\Models\BandiMatch;
 use App\Models\ProgettoOpenCoesione;
+use App\Models\Rendicontazione;
 
 class EnteController extends Controller
 {
@@ -84,6 +85,12 @@ class EnteController extends Controller
         $storicoCount   = (clone $storicoQuery)->count();
         $storicoImporto = (float) (clone $storicoQuery)->sum('oc_importo');
 
+        $gruppoIds = auth()->user()->gruppoEnteIds();
+        $progettiRendicontazione = Rendicontazione::whereIn('user_id', $gruppoIds)->count();
+        $speseRegistrateTotali   = (float) \App\Models\RendicontazioneSpesa::whereHas(
+            'rendicontazione', fn ($q) => $q->whereIn('user_id', $gruppoIds)
+        )->sum('importo');
+
         $trendAnnuale = (clone $storicoQuery)
             ->whereNotNull('anno_fine')
             ->where('anno_fine', '>=', now()->year - 9)
@@ -100,6 +107,8 @@ class EnteController extends Controller
                 'in_scadenza'     => $inScadenza->count(),
                 'storico_progetti' => $storicoCount,
                 'storico_importo' => $storicoImporto,
+                'progetti_rendicontazione' => $progettiRendicontazione,
+                'spese_registrate_totali'  => $speseRegistrateTotali,
             ],
             'per_categoria'      => ['labels' => $perCategoria->keys()->values(), 'valori' => $perCategoria->values()],
             'per_livello'        => ['labels' => $perLivello->keys()->values(), 'valori' => $perLivello->values()],

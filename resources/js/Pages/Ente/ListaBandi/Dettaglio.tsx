@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
-import { FileText, Bot, Loader2 } from 'lucide-react';
+import { FileText, Bot, Loader2, ClipboardCheck, XCircle, Undo2 } from 'lucide-react';
 import DocumentoRiga, { DocumentoBando } from '@/Components/DocumentoRiga';
 
 interface Bando {
@@ -29,6 +29,8 @@ interface Props {
     match: Match;
     ente: any;
     isSalvato: boolean;
+    rendicontazioneEsistente: { id: number } | null;
+    bandoPersoEsistente: boolean;
 }
 
 const getMatchColor = (scadenza: string | null, stato: string): string => {
@@ -57,8 +59,37 @@ const MAX_RIGHE = 20;
 const csrfToken = () =>
     document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
-export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) {
+export default function ListaBandiDettaglio({ bando, match, isSalvato, rendicontazioneEsistente, bandoPersoEsistente }: Props) {
     const [descAperta, setDescAperta] = useState(false);
+
+    const segnaPerso = () => {
+        if (!confirm('Segnare questo bando come partecipato e perso?')) return;
+        router.post(`/ente/lista-bandi/${bando.id}/perso`, {}, { preserveScroll: true });
+    };
+
+    const annullaPerso = () => {
+        router.delete(`/ente/lista-bandi/${bando.id}/perso`, { preserveScroll: true });
+    };
+
+    const [modaleAvvioAperto, setModaleAvvioAperto] = useState(false);
+    const [avvioForm, setAvvioForm] = useState({
+        titolo_progetto: bando.titolo,
+        importo_finanziato: '',
+        importo_cofinanziamento: '',
+        data_inizio: '',
+        data_fine: '',
+    });
+    const [avvioErrori, setAvvioErrori] = useState<Record<string, string>>({});
+    const [avviando, setAvviando] = useState(false);
+
+    const avviaRendicontazione = () => {
+        setAvviando(true);
+        setAvvioErrori({});
+        router.post('/ente/rendicontazione', { ...avvioForm, bando_id: bando.id }, {
+            onError: (errors) => setAvvioErrori(errors as Record<string, string>),
+            onFinish: () => setAvviando(false),
+        });
+    };
 
     const [documenti, setDocumenti] = useState<DocumentoBando[]>([]);
     const [completamento, setCompletamento] = useState(0);
@@ -202,6 +233,40 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) 
                                 >
                                     🔍 Cerca il bando online
                                 </a>
+                                {rendicontazioneEsistente ? (
+                                    <button
+                                        onClick={() => router.get(`/ente/rendicontazione/${rendicontazioneEsistente.id}`)}
+                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 rounded-lg text-white text-sm font-medium transition"
+                                    >
+                                        <ClipboardCheck className="h-4 w-4" /> Vai alla Rendicontazione
+                                    </button>
+                                ) : (
+                                    <>
+                                        <button
+                                            onClick={() => setModaleAvvioAperto(true)}
+                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 rounded-lg text-white text-sm font-medium transition"
+                                        >
+                                            <ClipboardCheck className="h-4 w-4" /> Avvia Rendicontazione
+                                        </button>
+                                        {bando.stato === 'chiuso' && (
+                                            bandoPersoEsistente ? (
+                                                <button
+                                                    onClick={annullaPerso}
+                                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-medium transition border border-slate-600/60"
+                                                >
+                                                    <Undo2 className="h-4 w-4" /> Annulla marcatura persa
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={segnaPerso}
+                                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-medium transition border border-red-500/30"
+                                                >
+                                                    <XCircle className="h-4 w-4" /> Segna come partecipato e perso
+                                                </button>
+                                            )
+                                        )}
+                                    </>
+                                )}
                             </div>
                         </div>
 
@@ -393,6 +458,97 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato }: Props) 
                     </div>
                 </div>
             </div>
+
+            {modaleAvvioAperto && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-slate-800 rounded-xl border border-slate-700/50 w-full max-w-lg p-6">
+                        <h3 className="text-lg font-semibold text-white flex items-center gap-2 mb-4">
+                            <ClipboardCheck className="h-5 w-5 text-green-400" /> Avvia Rendicontazione
+                        </h3>
+
+                        <div className="space-y-3">
+                            <div>
+                                <label className="block text-xs text-slate-400 mb-1">Titolo progetto</label>
+                                <input
+                                    type="text"
+                                    value={avvioForm.titolo_progetto}
+                                    onChange={(e) => setAvvioForm(f => ({ ...f, titolo_progetto: e.target.value }))}
+                                    className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2 text-sm text-white"
+                                />
+                                {avvioErrori.titolo_progetto && <p className="text-xs text-red-400 mt-1">{avvioErrori.titolo_progetto}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Importo finanziato (€)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={avvioForm.importo_finanziato}
+                                        onChange={(e) => setAvvioForm(f => ({ ...f, importo_finanziato: e.target.value }))}
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2 text-sm text-white"
+                                    />
+                                    {avvioErrori.importo_finanziato && <p className="text-xs text-red-400 mt-1">{avvioErrori.importo_finanziato}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Cofinanziamento (€)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        step="0.01"
+                                        value={avvioForm.importo_cofinanziamento}
+                                        onChange={(e) => setAvvioForm(f => ({ ...f, importo_cofinanziamento: e.target.value }))}
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2 text-sm text-white"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Data inizio</label>
+                                    <input
+                                        type="date"
+                                        value={avvioForm.data_inizio}
+                                        onChange={(e) => setAvvioForm(f => ({ ...f, data_inizio: e.target.value }))}
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2 text-sm text-white"
+                                    />
+                                    {avvioErrori.data_inizio && <p className="text-xs text-red-400 mt-1">{avvioErrori.data_inizio}</p>}
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-400 mb-1">Data fine</label>
+                                    <input
+                                        type="date"
+                                        value={avvioForm.data_fine}
+                                        onChange={(e) => setAvvioForm(f => ({ ...f, data_fine: e.target.value }))}
+                                        className="w-full bg-slate-900/60 border border-slate-600/60 rounded-lg px-3 py-2 text-sm text-white"
+                                    />
+                                    {avvioErrori.data_fine && <p className="text-xs text-red-400 mt-1">{avvioErrori.data_fine}</p>}
+                                </div>
+                            </div>
+
+                            {avvioErrori.generico && <p className="text-xs text-red-400">{avvioErrori.generico}</p>}
+                        </div>
+
+                        <div className="flex justify-end gap-2 mt-6">
+                            <button
+                                onClick={() => setModaleAvvioAperto(false)}
+                                className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:bg-slate-700/60 transition"
+                            >
+                                Annulla
+                            </button>
+                            <button
+                                onClick={avviaRendicontazione}
+                                disabled={avviando}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 disabled:opacity-60 rounded-lg text-white text-sm font-medium transition"
+                            >
+                                {avviando && <Loader2 className="h-4 w-4 animate-spin" />}
+                                Avvia
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </LayoutEnte>
     );
 }

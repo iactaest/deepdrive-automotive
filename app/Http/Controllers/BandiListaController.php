@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\BandoImportato;
+use App\Models\BandoPerso;
 use App\Models\BandoPreferito;
 use App\Models\Ente;
 use App\Models\ProfiloEnte;
+use App\Models\Rendicontazione;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
@@ -478,6 +480,31 @@ class BandiListaController extends Controller
                 'punti_debolezza'=> $risultato['punti_debolezza'],
             ],
             'ente' => $ente,
+            'rendicontazioneEsistente' => Rendicontazione::whereIn('user_id', Auth::user()->gruppoEnteIds())
+                ->where('bando_id', $bando->id)->first(['id']),
+            'bandoPersoEsistente' => BandoPerso::whereIn('user_id', Auth::user()->gruppoEnteIds())
+                ->where('bando_id', $bando->id)->exists(),
         ]);
+    }
+
+    public function segnaPerso(int $id)
+    {
+        $bando = BandoImportato::findOrFail($id);
+
+        BandoPerso::firstOrCreate([
+            'user_id'  => Auth::id(),
+            'bando_id' => $bando->id,
+        ]);
+
+        return redirect()->back();
+    }
+
+    public function annullaPerso(int $id)
+    {
+        BandoPerso::whereIn('user_id', Auth::user()->gruppoEnteIds())
+            ->where('bando_id', $id)
+            ->delete();
+
+        return redirect()->back();
     }
 }

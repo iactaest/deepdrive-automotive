@@ -3,7 +3,7 @@ import { Link, usePage } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
 import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler } from 'chart.js';
-import { TrendingUp, FileText, Calendar, Building2, Eye, Clock, Euro, Landmark, Archive } from 'lucide-react';
+import { TrendingUp, FileText, Calendar, Building2, Eye, Clock, Euro, Landmark, Archive, ClipboardCheck, Receipt } from 'lucide-react';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement, Filler);
 
@@ -28,6 +28,8 @@ interface DashboardData {
         in_scadenza: number;
         storico_progetti: number;
         storico_importo: number;
+        progetti_rendicontazione: number;
+        spese_registrate_totali: number;
     };
     per_categoria: { labels: string[]; valori: number[] };
     per_livello: { labels: string[]; valori: number[] };
@@ -112,6 +114,8 @@ export default function DashboardEnte({ dashboard, profilo }: { dashboard: Dashb
         { title: 'Budget Mediano (bandi attivi)', value: formatEuro(dashboard.stats.budget_mediano), icon: Euro, color: 'blue' },
         { title: 'In Scadenza (30gg)', value: String(dashboard.stats.in_scadenza), icon: Calendar, color: 'orange' },
         { title: 'Progetti Storici nel Territorio', value: String(dashboard.stats.storico_progetti), icon: Archive, color: 'purple' },
+        { title: 'Progetti in Rendicontazione', value: String(dashboard.stats.progetti_rendicontazione), icon: ClipboardCheck, color: 'emerald' },
+        { title: 'Spese Registrate', value: formatEuro(dashboard.stats.spese_registrate_totali), icon: Receipt, color: 'teal' },
     ];
 
     return (
@@ -128,7 +132,7 @@ export default function DashboardEnte({ dashboard, profilo }: { dashboard: Dashb
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6">
                     {stats.map((stat) => (
                         <div key={stat.title} className="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 hover:border-green-500/50 transition hover:scale-105 cursor-pointer">
                             <div className="flex justify-between">
