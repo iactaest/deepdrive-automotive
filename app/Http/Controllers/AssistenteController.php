@@ -13,7 +13,7 @@ class AssistenteController extends Controller
 {
     private const GEMINI_MODEL = 'gemini-2.5-flash';
 
-    public function index()
+    public function index(Request $request)
     {
         $conversazioni = ConversazioneAssistente::where('user_id', auth()->id())
             ->latest()
@@ -24,6 +24,10 @@ class AssistenteController extends Controller
                 'risposta' => $conv->risposta,
                 'created_at' => $conv->created_at->toISOString(),
             ]);
+
+        if ($request->wantsJson()) {
+            return response()->json(['conversazioni' => $conversazioni]);
+        }
 
         return Inertia::render('Assistente', [
             'conversazioni' => $conversazioni,
@@ -45,6 +49,17 @@ class AssistenteController extends Controller
         $risposta = $this->chiedaGemini($request->domanda) ?? 'Il servizio AI non è al momento disponibile, riprova tra poco.';
 
         $conversazione->update(['risposta' => $risposta]);
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'conversazione' => [
+                    'id' => $conversazione->id,
+                    'domanda' => $conversazione->domanda,
+                    'risposta' => $conversazione->risposta,
+                    'created_at' => $conversazione->created_at->toISOString(),
+                ],
+            ]);
+        }
 
         return redirect()->route('assistente')->with('success', '✅ Domanda inviata con successo!');
     }

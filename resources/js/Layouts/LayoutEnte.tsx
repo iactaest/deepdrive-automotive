@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import CampanellaNotifiche from '@/Components/Notifiche/CampanellaNotifiche';
+import AssistenteModal from '@/Components/Assistente/AssistenteModal';
 
 interface NavItem { name: string; href: string; icon: LucideIcon }
 interface NavGroup { name: string; icon: LucideIcon; items: NavItem[] }
@@ -78,9 +79,10 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
     const navDopo = [
         ...(isTitolare ? [{ name: 'Gestione Team', href: '/ente/team', icon: Users }] : []),
-        { name: 'Assistente', href: '/assistente', icon: Bot },
         { name: 'Impostazioni', href: '/settings', icon: Settings },
     ];
+
+    const [assistenteAperto, setAssistenteAperto] = useState(false);
 
     const handleLinkClick = () => { if (isMobile) setSidebarOpen(false); };
 
@@ -200,6 +202,16 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                 </div>
                 <div className="p-4 md:p-6 animate-fade-in">{children}</div>
             </main>
+
+            <button
+                onClick={() => setAssistenteAperto(true)}
+                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-900/40 flex items-center justify-center transition-transform hover:scale-110"
+                title="Assistente Virtuale"
+            >
+                <Bot className="h-6 w-6 text-white" />
+            </button>
+
+            {assistenteAperto && <AssistenteModal onClose={() => setAssistenteAperto(false)} />}
         </div>
     );
 }
