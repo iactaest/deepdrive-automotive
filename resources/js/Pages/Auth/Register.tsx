@@ -27,11 +27,8 @@ export default function Register() {
             <div className="relative z-10 w-full max-w-md px-4">
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-8 shadow-2xl">
 
-                    <div className="flex items-center justify-center gap-3 mb-8">
-                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/20">
-                            <Landmark className="h-5 w-5 text-white" />
-                        </div>
-                        <span className="text-2xl font-bold text-white tracking-tight">Deep<span className="text-emerald-400">Bandi</span></span>
+                    <div className="flex items-center justify-center mb-8">
+                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-16 w-auto" />
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Crea un Account</h2>

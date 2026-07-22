@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import { Landmark, Bot, Settings, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
+import { Bot, Settings, LogOut, Menu, X, LayoutDashboard } from 'lucide-react';
 
 export default function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { user } = usePage().props.auth;
@@ -51,8 +51,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                     {/* Logo */}
                     <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                         <Link href="/ente/dashboard" className="flex items-center gap-2">
-                            <Landmark className="h-8 w-8 text-green-500" />
-                            <span className="text-lg font-bold text-white">DeepBandi</span>
+                            <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-10 w-auto" />
                         </Link>
                         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400">
                             <X className="h-5 w-5" />

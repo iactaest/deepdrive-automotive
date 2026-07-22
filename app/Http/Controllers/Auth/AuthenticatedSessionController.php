@@ -60,7 +60,7 @@ class AuthenticatedSessionController extends Controller
     {
         return match ($tipoUtente) {
             'impresa' => 'impresa.dashboard',
-            'ente' => 'ente.dashboard',
+            'ente' => 'ente.menu',
             'associazione' => 'associazione.dashboard',
             'professionista' => 'professionista.dashboard',
             default => 'dashboard',

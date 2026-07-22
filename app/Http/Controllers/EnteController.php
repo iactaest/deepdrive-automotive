@@ -28,6 +28,17 @@ class EnteController extends Controller
     ]);
 }
 
+    public function menu()
+    {
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
+
+        if (!$profilo || !$profilo->profilo_completo) {
+            return redirect()->route('ente.profilo.create');
+        }
+
+        return Inertia::render('Ente/MenuBolle');
+    }
+
     /**
      * Costruisce i dati reali per la dashboard a partire da bandi_match (calcolati dal
      * comando batch bandi:calculate-matches) e dallo storico OpenCoesione per il
