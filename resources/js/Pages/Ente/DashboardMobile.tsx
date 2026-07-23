@@ -346,6 +346,14 @@ const CSS = `
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
 }
+@keyframes mb-float-logo {
+    0%, 100% { transform: translateX(-50%) translateY(0px); }
+    50% { transform: translateX(-50%) translateY(-4px); }
+}
+.mb-float-logo {
+    animation: mb-float-logo 4.2s ease-in-out infinite;
+    animation-delay: .6s;
+}
 @keyframes mb-spin {
     to { transform: rotate(360deg); }
 }
@@ -584,6 +592,7 @@ export default function DashboardMobile() {
             <img
                 src="/images/logo-deepbandi-chiaro.png"
                 alt="DeepBandi"
+                className="mb-float-logo"
                 style={{
                     position: 'absolute',
                     left: 320,
@@ -594,15 +603,6 @@ export default function DashboardMobile() {
                     zIndex: 4,
                 }}
             />
-
-            <svg
-                viewBox={`0 0 640 ${CANVAS_H}`}
-                style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-                aria-hidden="true"
-            >
-                <line x1="320" y1={384 + RING_Y} x2="320" y2={346 + RING_Y} stroke="#3A454F" strokeWidth="1.5" />
-                <line x1="320" y1={596 + RING_Y} x2="320" y2={653 + RING_Y} stroke="#3A454F" strokeWidth="1.5" />
-            </svg>
 
             {BOLLE.map((b) => (
                 <div
