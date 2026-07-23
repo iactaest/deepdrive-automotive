@@ -23,7 +23,7 @@ class EnteController extends Controller
     }
 
     // Dashboard con sidebar solo su desktop: da mobile si passa alla Dashboard_Mobile.
-    if ($request->isMobile()) {
+    if ($this->isMobileDevice($request)) {
         return redirect()->route('ente.menu');
     }
 
@@ -42,11 +42,25 @@ class EnteController extends Controller
         }
 
         // Dashboard_Mobile (ruota di bolle) solo su mobile: da desktop si passa alla Dashboard classica.
-        if (!$request->isMobile()) {
+        if (!$this->isMobileDevice($request)) {
             return redirect()->route('ente.dashboard');
         }
 
         return Inertia::render('Ente/DashboardMobile');
+    }
+
+    /**
+     * Rilevamento dispositivo via User-Agent, usato per smistare tra
+     * Ente/Dashboard (sidebar, desktop) e Ente/DashboardMobile (ruota di
+     * bolle, mobile). Metodo interno al controller (non una macro su
+     * Request) cosi non dipende dal boot di un service provider.
+     */
+    private function isMobileDevice(Request $request): bool
+    {
+        return (bool) preg_match(
+            '/android|iphone|ipad|ipod|windows phone|mobile|blackberry|opera mini|iemobile/i',
+            (string) $request->userAgent()
+        );
     }
 
     /**
