@@ -63,7 +63,7 @@ const DOCUMENTI_SUB: SubVoce[] = [
 // Tutte le posizioni dell'anello sono spostate di +RING_Y rispetto al design
 // originale, per lasciare spazio in alto a un logo più grande e più basso
 // senza che si sovrapponga alla bolla DASHBOARD.
-const RING_Y = 50;
+const RING_Y = 90;
 
 const BOLLE: Bolla[] = [
     {
@@ -250,8 +250,8 @@ const stilePannello: React.CSSProperties = {
     transition: 'opacity .3s ease, transform .3s ease',
 };
 
-// Sfondo scuro con luce soffusa in alto e in basso (invece del quadrettato) e
-// vignettatura ai bordi: dà sensazione di profondità, come un fondale illuminato.
+// Sfondo scuro con luce soffusa in alto e in basso, per dare profondità alla
+// vista generale (non alla tela del menu, che resta senza sfondo proprio).
 const SFONDO_PROFONDITA: React.CSSProperties = {
     backgroundColor: '#0E1318',
     backgroundImage:
@@ -569,7 +569,7 @@ export default function DashboardMobile() {
             <div
                 style={{
                     position: 'absolute',
-                    top: -45,
+                    top: -10,
                     left: 0,
                     width: CANVAS_W,
                     height: CANVAS_H,
@@ -577,7 +577,6 @@ export default function DashboardMobile() {
                     transformOrigin: 'top left',
                     borderRadius: 12,
                     overflow: 'hidden',
-                    ...SFONDO_PROFONDITA,
                 }}
         >
             <style>{CSS}</style>
@@ -588,9 +587,9 @@ export default function DashboardMobile() {
                 style={{
                     position: 'absolute',
                     left: 320,
-                    top: 50,
+                    top: 60,
                     transform: 'translateX(-50%)',
-                    height: 150,
+                    height: 180,
                     width: 'auto',
                     zIndex: 4,
                 }}
