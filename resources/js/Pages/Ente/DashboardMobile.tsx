@@ -732,6 +732,10 @@ export default function DashboardMobile() {
                     <Link
                         key={b.label}
                         href={b.href}
+                        // /logout accetta solo POST: un <Link> senza method farebbe una
+                        // GET e il server risponderebbe 405 MethodNotAllowedHttpException.
+                        method={b.label === 'LOGOUT' ? 'post' : 'get'}
+                        as={b.label === 'LOGOUT' ? 'button' : undefined}
                         className="mb-bolla mb-float"
                         style={{
                             ...stileBolla,
@@ -740,6 +744,9 @@ export default function DashboardMobile() {
                             left: b.left,
                             top: b.top,
                             border: `${size < 152 ? 8 : 9}px solid ${b.bordo}`,
+                            cursor: b.label === 'LOGOUT' ? 'pointer' : undefined,
+                            font: b.label === 'LOGOUT' ? 'inherit' : undefined,
+                            padding: b.label === 'LOGOUT' ? 0 : undefined,
                             ...animazioneGalleggiamento(indice),
                         }}
                     >
