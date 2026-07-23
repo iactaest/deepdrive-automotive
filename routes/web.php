@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/ente/profilo', [ProfiloEnteController::class, 'destroy'])->name('ente.profilo.destroy');
     
     Route::get('/ente/menu', [EnteController::class, 'menu'])->name('ente.menu');
+    Route::get('/ente/menu/dati-dashboard', [EnteController::class, 'datiDashboard'])->name('ente.menu.dati-dashboard');
     Route::get('/ente/dashboard', [EnteController::class, 'index'])->name('ente.dashboard');
     Route::get('/ente/ricerca', [BandiController::class, 'ricercaEnte'])->name('ente.ricerca');
     Route::post('/bandi/cerca', [BandiController::class, 'cerca'])->name('bandi.cerca');

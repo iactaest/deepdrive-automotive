@@ -60,7 +60,9 @@ class AuthenticatedSessionController extends Controller
     {
         return match ($tipoUtente) {
             'impresa' => 'impresa.dashboard',
-            'ente' => 'ente.menu',
+            // 'ente.dashboard' fa da hub: EnteController::index() rimbalza da solo
+            // su 'ente.menu' (Dashboard_Mobile) se il dispositivo è mobile.
+            'ente' => 'ente.dashboard',
             'associazione' => 'associazione.dashboard',
             'professionista' => 'professionista.dashboard',
             default => 'dashboard',

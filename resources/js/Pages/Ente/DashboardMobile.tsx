@@ -15,8 +15,11 @@ import {
     FolderOpen,
     ClipboardCheck,
     ChevronDown,
+    Menu,
+    Loader2,
     type LucideIcon,
 } from 'lucide-react';
+import DashboardContenuto, { type DashboardData } from './DashboardContenuto';
 
 type Bolla = {
     label: string;
@@ -57,14 +60,19 @@ const DOCUMENTI_SUB: SubVoce[] = [
 // Scala di 6 colori derivata da arancio (#F0913A) e verde (#3FCF97): tonalità
 // ravvicinate e desaturate cosi il bordo resta poco vistoso ma ogni bottone
 // resta riconoscibile dagli altri.
+// Tutte le posizioni dell'anello sono spostate di +RING_Y rispetto al design
+// originale, per lasciare spazio in alto a un logo più grande e più basso
+// senza che si sovrapponga alla bolla DASHBOARD.
+const RING_Y = 50;
+
 const BOLLE: Bolla[] = [
     {
         label: 'DASHBOARD',
         href: '/ente/dashboard',
         left: 320,
-        top: 237,
+        top: 237 + RING_Y,
         tailLeft: 320,
-        tailTop: 313,
+        tailTop: 313 + RING_Y,
         rot: 45,
         bordo: '#CE8A52',
         tail: 'linear-gradient(145deg,#DFA774,#AD6E38)',
@@ -74,9 +82,9 @@ const BOLLE: Bolla[] = [
         label: 'PROFILO',
         href: '/ente/profilo',
         left: 131,
-        top: 374,
+        top: 374 + RING_Y,
         tailLeft: 196,
-        tailTop: 414,
+        tailTop: 414 + RING_Y,
         rot: 76.5,
         bordo: '#C0975F',
         tail: 'linear-gradient(145deg,#D3B27F,#9C7846)',
@@ -86,9 +94,9 @@ const BOLLE: Bolla[] = [
         label: 'TEAM',
         href: '/ente/team',
         left: 131,
-        top: 624,
+        top: 624 + RING_Y,
         tailLeft: 193,
-        tailTop: 580,
+        tailTop: 580 + RING_Y,
         rot: 9.7,
         bordo: '#AFA36C',
         tail: 'linear-gradient(145deg,#C4BB89,#8A804E)',
@@ -98,9 +106,9 @@ const BOLLE: Bolla[] = [
         label: 'DOCUMENTI',
         href: '/cassetto-documenti',
         left: 508,
-        top: 374,
+        top: 374 + RING_Y,
         tailLeft: 443,
-        tailTop: 414,
+        tailTop: 414 + RING_Y,
         rot: 193.3,
         bordo: '#84AC80',
         tail: 'linear-gradient(145deg,#A0C79C,#5F8A5C)',
@@ -110,9 +118,9 @@ const BOLLE: Bolla[] = [
         label: 'IMPOSTAZIONI',
         href: '/settings',
         left: 508,
-        top: 624,
+        top: 624 + RING_Y,
         tailLeft: 446,
-        tailTop: 580,
+        tailTop: 580 + RING_Y,
         rot: -99.5,
         bordo: '#66AB93',
         tail: 'linear-gradient(145deg,#85C7AE,#428069)',
@@ -122,9 +130,9 @@ const BOLLE: Bolla[] = [
         label: 'LOGOUT',
         href: '/logout',
         left: 320,
-        top: 761,
+        top: 761 + RING_Y,
         tailLeft: 320,
-        tailTop: 685,
+        tailTop: 685 + RING_Y,
         rot: 45,
         bordo: '#4FA39B',
         tail: 'linear-gradient(145deg,#70C0B8,#2F7F78)',
@@ -194,6 +202,32 @@ const stileTail: React.CSSProperties = {
     boxShadow: 'inset 0 2px 3px rgba(255,255,255,.35), inset 0 -4px 8px rgba(0,0,0,.3)',
 };
 
+// Ombra bianca statica sotto ogni bolla, stessa forma circolare del bottone:
+// dà l'idea che siano sospese senza l'effetto "meccanico" di un'animazione
+// che pulsa in sincrono col galleggiamento.
+function stileOmbra(size: number): React.CSSProperties {
+    return {
+        position: 'absolute',
+        width: size * 0.5,
+        height: size * 0.5,
+        borderRadius: '50%',
+        background: 'rgba(255,255,255,.05)',
+        filter: 'blur(8px)',
+        transform: 'translate(-50%, -50%)',
+        zIndex: 1,
+        pointerEvents: 'none',
+    };
+}
+
+// Ogni bolla riceve un ritardo/durata leggermente diversi cosi il movimento
+// resta "indipendente" invece di sincronizzarsi tutte insieme.
+function animazioneGalleggiamento(indice: number): React.CSSProperties {
+    return {
+        animationDelay: `${(indice * 0.37) % 2.2}s`,
+        animationDuration: `${3.6 + (indice % 4) * 0.45}s`,
+    };
+}
+
 // Pannello "vetro" semi-trasparente che ospita le bolle del sottomenu, in
 // sovraimpressione sopra le bolle principali circostanti.
 const PANNELLO_PAD = 14;
@@ -216,12 +250,14 @@ const stilePannello: React.CSSProperties = {
     transition: 'opacity .3s ease, transform .3s ease',
 };
 
-// Sfondo scuro con luce soffusa (invece del quadrettato) per dare profondità.
+// Sfondo scuro con luce soffusa in alto e in basso (invece del quadrettato) e
+// vignettatura ai bordi: dà sensazione di profondità, come un fondale illuminato.
 const SFONDO_PROFONDITA: React.CSSProperties = {
     backgroundColor: '#0E1318',
     backgroundImage:
-        'radial-gradient(ellipse 900px 520px at 50% -8%, rgba(255,255,255,.07), transparent 60%),' +
-        'radial-gradient(ellipse 700px 480px at 50% 108%, rgba(0,0,0,.4), transparent 62%)',
+        'radial-gradient(ellipse 900px 480px at 50% -6%, rgba(255,255,255,.08), transparent 60%),' +
+        'radial-gradient(ellipse 800px 460px at 50% 106%, rgba(180,210,255,.07), transparent 60%),' +
+        'radial-gradient(ellipse 900px 900px at 50% 50%, transparent 45%, rgba(0,0,0,.4) 100%)',
 };
 
 // Livello con l'immagine di sfondo (pattern di icone) schiarita via filtro CSS e
@@ -301,10 +337,25 @@ const CSS = `
 .mb-icona {
     filter: drop-shadow(0 3px 3px rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(255,255,255,.12));
 }
+@keyframes mb-float {
+    0%, 100% { transform: translate(-50%, -50%) translateY(0px); }
+    50% { transform: translate(-50%, -50%) translateY(-3px); }
+}
+.mb-float {
+    animation-name: mb-float;
+    animation-timing-function: ease-in-out;
+    animation-iteration-count: infinite;
+}
+@keyframes mb-spin {
+    to { transform: rotate(360deg); }
+}
+.mb-spin {
+    animation: mb-spin 1s linear infinite;
+}
 `;
 
 const CANVAS_W = 640;
-const CANVAS_H = 880;
+const CANVAS_H = 880 + RING_Y;
 
 function PannelloSotto({
     voci,
@@ -352,11 +403,18 @@ function PannelloSotto({
     );
 }
 
-export default function MenuBolle() {
+export default function DashboardMobile() {
     const wrapRef = useRef<HTMLDivElement>(null);
     const [scale, setScale] = useState(1);
     const [bandiAperto, setBandiAperto] = useState(false);
     const [documentiAperto, setDocumentiAperto] = useState(false);
+
+    // Test: la Dashboard si apre "incorporata" sopra la ruota, che nel
+    // frattempo si rimpicciolisce e scende, invece di navigare alla pagina.
+    const [dashboardAperta, setDashboardAperta] = useState(false);
+    const [dashboardCaricando, setDashboardCaricando] = useState(false);
+    const [dashboardErrore, setDashboardErrore] = useState<string | null>(null);
+    const [datiDashboard, setDatiDashboard] = useState<{ dashboard: DashboardData; profilo?: { nome_ente?: string | null } } | null>(null);
 
     useEffect(() => {
         const el = wrapRef.current;
@@ -381,6 +439,38 @@ export default function MenuBolle() {
         setBandiAperto(false);
     };
 
+    const apriDashboard = async () => {
+        if (dashboardAperta) {
+            setDashboardAperta(false);
+            return;
+        }
+
+        setBandiAperto(false);
+        setDocumentiAperto(false);
+        setDashboardAperta(true);
+
+        if (!datiDashboard) {
+            setDashboardCaricando(true);
+            setDashboardErrore(null);
+            try {
+                // Endpoint JSON dedicato (non la pagina /ente/dashboard): quella pagina
+                // reindirizza sempre qui su mobile, quindi un fetch verso di lei
+                // otterrebbe solo un redirect invece dei dati.
+                const res = await fetch('/ente/menu/dati-dashboard', {
+                    headers: { Accept: 'application/json' },
+                });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const json = await res.json();
+                if (!json?.dashboard) throw new Error('Risposta inattesa dal server');
+                setDatiDashboard({ dashboard: json.dashboard, profilo: json.profilo });
+            } catch (e) {
+                setDashboardErrore('Non è stato possibile caricare la dashboard. Riprova.');
+            } finally {
+                setDashboardCaricando(false);
+            }
+        }
+    };
+
     return (
         <div
             style={{
@@ -388,23 +478,98 @@ export default function MenuBolle() {
                 ...SFONDO_PROFONDITA,
             }}
         >
+            {/* Barra fissa in alto: resta visibile durante lo scroll del contenuto
+                sottostante (position:fixed, non sticky, per non dipendere dagli
+                overflow:hidden usati per l'animazione di apertura/chiusura). */}
+            <div
+                style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    zIndex: 50,
+                    opacity: dashboardAperta ? 1 : 0,
+                    pointerEvents: dashboardAperta ? 'auto' : 'none',
+                    transition: 'opacity .3s ease',
+                    background: 'rgba(14,19,24,.85)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    borderBottom: '1px solid rgba(255,255,255,.08)',
+                }}
+            >
+                <div style={{ maxWidth: 640, margin: '0 auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 16px' }}>
+                    <span style={{ color: TESTO, fontWeight: 600, fontSize: 14, letterSpacing: '.06em' }}>DASHBOARD</span>
+                    <button
+                        type="button"
+                        onClick={apriDashboard}
+                        aria-label="Torna al menu"
+                        style={{
+                            background: 'rgba(255,255,255,.08)',
+                            border: '1px solid rgba(255,255,255,.16)',
+                            borderRadius: 999,
+                            width: 32,
+                            height: 32,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <Menu size={16} color={TESTO} />
+                    </button>
+                </div>
+            </div>
+
             <div style={{ maxWidth: 640, margin: '0 auto' }}>
+
+            <div
+                style={{
+                    display: 'grid',
+                    gridTemplateRows: dashboardAperta ? '1fr' : '0fr',
+                    transition: 'grid-template-rows .5s cubic-bezier(.4,0,.2,1)',
+                }}
+            >
+                <div style={{ overflow: 'hidden', minHeight: 0 }}>
+                    <div
+                        style={{
+                            opacity: dashboardAperta ? 1 : 0,
+                            transform: dashboardAperta ? 'translateY(0)' : 'translateY(-16px)',
+                            transition: 'opacity .4s ease .1s, transform .4s ease .1s',
+                            padding: '68px 16px 28px',
+                        }}
+                    >
+                        {dashboardCaricando && (
+                            <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
+                                <Loader2 className="mb-spin" size={28} color={TESTO} />
+                            </div>
+                        )}
+                        {dashboardErrore && !dashboardCaricando && (
+                            <p style={{ color: '#F0A0A0', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>{dashboardErrore}</p>
+                        )}
+                        {datiDashboard && !dashboardCaricando && !dashboardErrore && (
+                            <DashboardContenuto dashboard={datiDashboard.dashboard} profilo={datiDashboard.profilo} compatto />
+                        )}
+                    </div>
+                </div>
+            </div>
+
             <div
                 ref={wrapRef}
                 style={{
                     position: 'relative',
                     width: '100%',
-                    maxWidth: CANVAS_W,
+                    maxWidth: dashboardAperta ? CANVAS_W * 0.5 : CANVAS_W,
                     height: CANVAS_H * scale,
                     margin: '0 auto',
                     borderRadius: 12,
                     overflow: 'hidden',
+                    transition: 'max-width .5s cubic-bezier(.4,0,.2,1)',
                 }}
             >
             <div
                 style={{
                     position: 'absolute',
-                    top: 0,
+                    top: -45,
                     left: 0,
                     width: CANVAS_W,
                     height: CANVAS_H,
@@ -417,13 +582,27 @@ export default function MenuBolle() {
         >
             <style>{CSS}</style>
 
+            <img
+                src="/images/logo-deepbandi-chiaro.png"
+                alt="DeepBandi"
+                style={{
+                    position: 'absolute',
+                    left: 320,
+                    top: 50,
+                    transform: 'translateX(-50%)',
+                    height: 150,
+                    width: 'auto',
+                    zIndex: 4,
+                }}
+            />
+
             <svg
-                viewBox="0 0 640 880"
+                viewBox={`0 0 640 ${CANVAS_H}`}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
                 aria-hidden="true"
             >
-                <line x1="320" y1="384" x2="320" y2="346" stroke="#3A454F" strokeWidth="1.5" />
-                <line x1="320" y1="596" x2="320" y2="653" stroke="#3A454F" strokeWidth="1.5" />
+                <line x1="320" y1={384 + RING_Y} x2="320" y2={346 + RING_Y} stroke="#3A454F" strokeWidth="1.5" />
+                <line x1="320" y1={596 + RING_Y} x2="320" y2={653 + RING_Y} stroke="#3A454F" strokeWidth="1.5" />
             </svg>
 
             {BOLLE.map((b) => (
@@ -439,9 +618,30 @@ export default function MenuBolle() {
                 />
             ))}
 
-            {BOLLE.map((b) => {
+            {BOLLE.map((b) => (
+                <div
+                    key={`ombra-${b.label}`}
+                    style={{
+                        ...stileOmbra(b.size ?? 152),
+                        left: b.left,
+                        top: b.top + (b.size ?? 152) * 0.16,
+                    }}
+                />
+            ))}
+            <div
+                style={{
+                    ...stileOmbra(212),
+                    left: 320,
+                    top: 490 + RING_Y + 212 * 0.16,
+                }}
+            />
+
+            {BOLLE.map((b, indice) => {
                 const size = b.size ?? 152;
                 const isDocumenti = b.label === 'DOCUMENTI';
+                const isDashboard = b.label === 'DASHBOARD';
+                const conFreccia = isDocumenti || isDashboard;
+                const freccaAperta = isDocumenti ? documentiAperto : dashboardAperta;
                 const contenuto = (
                     <>
                         <span className="mb-bg" />
@@ -450,13 +650,13 @@ export default function MenuBolle() {
                         <span className="mb-label" style={{ ...FONT_LABEL, color: TESTO }}>
                             <b.icona className="mb-icona" size={24} strokeWidth={1.75} color={TESTO} />
                             {b.label}
-                            {isDocumenti && (
+                            {conFreccia && (
                                 <ChevronDown
                                     size={14}
                                     className="mb-icona"
                                     color={TESTO}
                                     style={{
-                                        transform: documentiAperto ? 'rotate(180deg)' : 'none',
+                                        transform: freccaAperta ? 'rotate(180deg)' : 'none',
                                         transition: 'transform .3s ease',
                                         marginTop: -2,
                                     }}
@@ -473,7 +673,7 @@ export default function MenuBolle() {
                             type="button"
                             onClick={apriDocumenti}
                             aria-expanded={documentiAperto}
-                            className="mb-bolla"
+                            className="mb-bolla mb-float"
                             style={{
                                 ...stileBolla,
                                 width: size,
@@ -484,6 +684,33 @@ export default function MenuBolle() {
                                 cursor: 'pointer',
                                 padding: 0,
                                 font: 'inherit',
+                                ...animazioneGalleggiamento(indice),
+                            }}
+                        >
+                            {contenuto}
+                        </button>
+                    );
+                }
+
+                if (isDashboard) {
+                    return (
+                        <button
+                            key={b.label}
+                            type="button"
+                            onClick={apriDashboard}
+                            aria-expanded={dashboardAperta}
+                            className="mb-bolla mb-float"
+                            style={{
+                                ...stileBolla,
+                                width: size,
+                                height: size,
+                                left: b.left,
+                                top: b.top,
+                                border: `9px solid ${b.bordo}`,
+                                cursor: 'pointer',
+                                padding: 0,
+                                font: 'inherit',
+                                ...animazioneGalleggiamento(indice),
                             }}
                         >
                             {contenuto}
@@ -495,7 +722,7 @@ export default function MenuBolle() {
                     <Link
                         key={b.label}
                         href={b.href}
-                        className="mb-bolla"
+                        className="mb-bolla mb-float"
                         style={{
                             ...stileBolla,
                             width: size,
@@ -503,6 +730,7 @@ export default function MenuBolle() {
                             left: b.left,
                             top: b.top,
                             border: `${size < 152 ? 8 : 9}px solid ${b.bordo}`,
+                            ...animazioneGalleggiamento(indice),
                         }}
                     >
                         {contenuto}
@@ -514,11 +742,11 @@ export default function MenuBolle() {
                 type="button"
                 onClick={apriBandi}
                 aria-expanded={bandiAperto}
-                className="mb-bolla mb-bandi"
+                className="mb-bolla mb-bandi mb-float"
                 style={{
                     position: 'absolute',
                     left: 320,
-                    top: 490,
+                    top: 490 + RING_Y,
                     transform: 'translate(-50%, -50%)',
                     width: 212,
                     height: 212,
@@ -535,6 +763,7 @@ export default function MenuBolle() {
                     cursor: 'pointer',
                     padding: 0,
                     font: 'inherit',
+                    ...animazioneGalleggiamento(6),
                 }}
             >
                 <span className="mb-bg" />
@@ -556,8 +785,8 @@ export default function MenuBolle() {
                 </span>
             </button>
 
-            <PannelloSotto voci={BANDI_SUB} left={320} top={490} colonne={2} aperto={bandiAperto} />
-            <PannelloSotto voci={DOCUMENTI_SUB} left={508} top={374} colonne={2} aperto={documentiAperto} />
+            <PannelloSotto voci={BANDI_SUB} left={320} top={490 + RING_Y} colonne={2} aperto={bandiAperto} />
+            <PannelloSotto voci={DOCUMENTI_SUB} left={508} top={374 + RING_Y} colonne={2} aperto={documentiAperto} />
             </div>
             </div>
             </div>

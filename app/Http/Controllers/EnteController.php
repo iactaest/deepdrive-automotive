@@ -11,7 +11,7 @@ use App\Models\Rendicontazione;
 
 class EnteController extends Controller
 {
-   public function index()
+   public function index(Request $request)
 {
     // enteEffettivoUserId(): un dipendente invitato non ha un proprio ProfiloEnte, condivide
     // quello del titolare — altrimenti finirebbe sempre reindirizzato al wizard.
@@ -22,13 +22,18 @@ class EnteController extends Controller
         return redirect()->route('ente.profilo.create');
     }
 
+    // Dashboard con sidebar solo su desktop: da mobile si passa alla Dashboard_Mobile.
+    if ($request->isMobile()) {
+        return redirect()->route('ente.menu');
+    }
+
     return Inertia::render('Ente/Dashboard', [
         'profilo' => $profilo,
         'dashboard' => $this->buildDashboardData($profilo),
     ]);
 }
 
-    public function menu()
+    public function menu(Request $request)
     {
         $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
 
@@ -36,7 +41,31 @@ class EnteController extends Controller
             return redirect()->route('ente.profilo.create');
         }
 
-        return Inertia::render('Ente/MenuBolle');
+        // Dashboard_Mobile (ruota di bolle) solo su mobile: da desktop si passa alla Dashboard classica.
+        if (!$request->isMobile()) {
+            return redirect()->route('ente.dashboard');
+        }
+
+        return Inertia::render('Ente/DashboardMobile');
+    }
+
+    /**
+     * Dati grezzi della dashboard in JSON, usati da DashboardMobile per mostrare
+     * il contenuto incorporato senza navigare alla pagina vera e propria — che
+     * su mobile reindirizzerebbe sempre a questa stessa vista (vedi index()).
+     */
+    public function datiDashboard()
+    {
+        $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
+
+        if (!$profilo || !$profilo->profilo_completo) {
+            return response()->json(['message' => 'Profilo non completo'], 422);
+        }
+
+        return response()->json([
+            'profilo' => $profilo,
+            'dashboard' => $this->buildDashboardData($profilo),
+        ]);
     }
 
     /**
