@@ -63,7 +63,10 @@ const DOCUMENTI_SUB: SubVoce[] = [
 // Tutte le posizioni dell'anello sono spostate di +RING_Y rispetto al design
 // originale, per lasciare spazio in alto a un logo più grande e più basso
 // senza che si sovrapponga alla bolla DASHBOARD.
-const RING_Y = 90;
+// Il logo ora vive fuori dalla tela (sopra, in flusso normale, non si
+// rimpicciolisce con la ruota), quindi non serve piu riservargli spazio
+// interno alle coordinate dell'anello.
+const RING_Y = 0;
 
 const BOLLE: Bolla[] = [
     {
@@ -346,12 +349,12 @@ const CSS = `
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
 }
-@keyframes mb-float-logo {
-    0%, 100% { transform: translateX(-50%) translateY(0px); }
-    50% { transform: translateX(-50%) translateY(-4px); }
+@keyframes mb-float-logo2 {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-4px); }
 }
-.mb-float-logo {
-    animation: mb-float-logo 4.2s ease-in-out infinite;
+.mb-float-logo2 {
+    animation: mb-float-logo2 4.2s ease-in-out infinite;
     animation-delay: .6s;
 }
 @keyframes mb-spin {
@@ -530,11 +533,34 @@ export default function DashboardMobile() {
 
             <div style={{ maxWidth: 640, margin: '0 auto' }}>
 
+            {/* Logo fuori dalla tela: resta sempre alla stessa dimensione, in cima,
+                sia a ruota piena sia quando la Dashboard è aperta e la ruota si
+                rimpicciolisce sotto di lui. */}
+            <div
+                style={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    // Quando la Dashboard è aperta la barra fissa (~53px) copre la
+                    // parte superiore del logo: gli riserviamo spazio sotto di lei
+                    // solo in quel momento, cosi a ruota piena resta vicino al bordo.
+                    padding: dashboardAperta ? '60px 0 0' : '8px 0 0',
+                    transition: 'padding-top .3s ease',
+                }}
+            >
+                <img
+                    src="/images/logo-deepbandi-chiaro.png"
+                    alt="DeepBandi"
+                    className="mb-float-logo2"
+                    style={{ height: 160, width: 'auto' }}
+                />
+            </div>
+
             <div
                 style={{
                     display: 'grid',
                     gridTemplateRows: dashboardAperta ? '1fr' : '0fr',
                     transition: 'grid-template-rows .5s cubic-bezier(.4,0,.2,1)',
+                    marginTop: -20,
                 }}
             >
                 <div style={{ overflow: 'hidden', minHeight: 0 }}>
@@ -543,7 +569,7 @@ export default function DashboardMobile() {
                             opacity: dashboardAperta ? 1 : 0,
                             transform: dashboardAperta ? 'translateY(0)' : 'translateY(-16px)',
                             transition: 'opacity .4s ease .1s, transform .4s ease .1s',
-                            padding: '68px 16px 28px',
+                            padding: '10px 16px 18px',
                         }}
                     >
                         {dashboardCaricando && (
@@ -577,7 +603,7 @@ export default function DashboardMobile() {
             <div
                 style={{
                     position: 'absolute',
-                    top: -10,
+                    top: -80,
                     left: 0,
                     width: CANVAS_W,
                     height: CANVAS_H,
@@ -588,21 +614,6 @@ export default function DashboardMobile() {
                 }}
         >
             <style>{CSS}</style>
-
-            <img
-                src="/images/logo-deepbandi-chiaro.png"
-                alt="DeepBandi"
-                className="mb-float-logo"
-                style={{
-                    position: 'absolute',
-                    left: 320,
-                    top: 60,
-                    transform: 'translateX(-50%)',
-                    height: 180,
-                    width: 'auto',
-                    zIndex: 4,
-                }}
-            />
 
             {BOLLE.map((b) => (
                 <div
