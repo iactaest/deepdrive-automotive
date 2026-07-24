@@ -97,14 +97,20 @@ class BandiListaController extends Controller
         $categorie = BandoImportato::whereNotNull('categoria')->distinct()->pluck('categoria')->filter()->values();
         $regioni   = BandoImportato::whereNotNull('regione')->distinct()->pluck('regione')->filter()->values();
 
-        return Inertia::render('Ente/ListaBandi/Index', [
+        $props = [
             'bandi'    => $bandiConMatch,
             'stats'    => $stats,
             'categorie' => $categorie,
             'regioni'  => $regioni,
             'filtri'   => array_merge($request->all(), ['min_match' => $minMatch, 'max_match' => $maxMatch]),
             'ente'     => $ente,
-        ]);
+        ];
+
+        if ($request->boolean('embed')) {
+            return response()->json($props);
+        }
+
+        return Inertia::render('Ente/ListaBandi/Index', $props);
     }
 
     private function statoReale(?string $scadenza, string $oggi): string

@@ -11,7 +11,7 @@ use Inertia\Inertia;
 
 class RendicontazioneController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $gruppoIds = Auth::user()->gruppoEnteIds();
 
@@ -31,6 +31,10 @@ class RendicontazioneController extends Controller
                 'spese_count'           => $r->spese_count,
                 'milestone_count'       => $r->milestone_count,
             ]);
+
+        if ($request->boolean('embed')) {
+            return response()->json(['progetti' => $progetti]);
+        }
 
         return Inertia::render('Ente/Rendicontazione/Index', [
             'progetti' => $progetti,

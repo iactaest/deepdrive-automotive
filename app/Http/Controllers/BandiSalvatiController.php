@@ -40,6 +40,10 @@ class BandiSalvatiController extends Controller
             ])
         );
 
+        if ($request->boolean('embed')) {
+            return response()->json(['preferiti' => $preferiti]);
+        }
+
         return Inertia::render('Ente/BandiSalvati/Index', [
             'preferiti' => $preferiti,
         ]);

@@ -17,10 +17,14 @@ class BandiController extends Controller
     }
 
     // Pagina ricerca ente
-    public function ricercaEnte()
+    public function ricercaEnte(Request $request)
     {
         $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
-        
+
+        if ($request->boolean('embed')) {
+            return response()->json(['profilo' => $profilo]);
+        }
+
         return Inertia::render('Bandi/RicercaEnte', [
             'profilo' => $profilo
         ]);

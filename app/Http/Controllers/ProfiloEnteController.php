@@ -113,14 +113,14 @@ class ProfiloEnteController extends Controller
         }
     }
 
-    public function show()
+    public function show(Request $request)
     {
         $profilo = ProfiloEnte::where('user_id', auth()->user()->enteEffettivoUserId())->first();
-        
+
         if (!$profilo) {
             return redirect()->route('ente.profilo.create');
         }
-        
+
         // Decodifica JSON
         $profilo->categorie_interesse = json_decode($profilo->categorie_interesse, true) ?? [];
         $profilo->livelli_interesse = json_decode($profilo->livelli_interesse, true) ?? [];
@@ -131,7 +131,12 @@ class ProfiloEnteController extends Controller
         $profilo->attivita_erogabili = json_decode($profilo->attivita_erogabili, true) ?? [];
         $profilo->sistemi_informativi = json_decode($profilo->sistemi_informativi, true) ?? [];
         $profilo->obiettivi_policy = json_decode($profilo->obiettivi_policy, true) ?? [];
-        
+
+        // Vista incorporata nel menu mobile: stessi dati della pagina, in JSON.
+        if ($request->boolean('embed')) {
+            return response()->json(['profilo' => $profilo]);
+        }
+
         return Inertia::render('Ente/ProfiloShow', ['profilo' => $profilo]);
     }
 

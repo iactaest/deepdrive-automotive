@@ -19,7 +19,7 @@ class BandoDocumentiController extends Controller
      * documenti (avviata dall'Assistente AI nel dettaglio), con lo stesso elenco/layout
      * del dettaglio bando, per completare da qui eventuali documenti mancanti.
      */
-    public function cassettoGlobale()
+    public function cassettoGlobale(Request $request)
     {
         $documenti = BandoDocumento::where('user_id', Auth::id())
             ->with('bando:id,titolo')
@@ -41,6 +41,10 @@ class BandoDocumentiController extends Controller
                 'completamento' => $totale > 0 ? round($caricati / $totale * 100) : 0,
             ];
         })->sortBy('bando_titolo')->values();
+
+        if ($request->boolean('embed')) {
+            return response()->json(['bandi' => $perBando]);
+        }
 
         return Inertia::render('Ente/CassettoDocumenti/Index', [
             'bandi' => $perBando,

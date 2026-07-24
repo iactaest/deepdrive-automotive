@@ -64,7 +64,7 @@ const CSS_COMPATTO = `
     position: relative;
     overflow: hidden;
     isolation: isolate;
-    background: linear-gradient(145deg, rgba(69,79,89,.22), rgba(51,59,69,.22) 55%, rgba(36,43,51,.22));
+    background: linear-gradient(145deg, rgba(69,79,89,.13), rgba(51,59,69,.13) 55%, rgba(36,43,51,.13));
     box-shadow: 0 10px 22px rgba(0,0,0,.4), inset 0 2px 3px rgba(255,255,255,.14), inset 0 -4px 8px rgba(0,0,0,.25);
 }
 .dc-bg {

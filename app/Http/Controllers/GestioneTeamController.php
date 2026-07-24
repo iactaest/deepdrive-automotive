@@ -15,7 +15,7 @@ use Inertia\Inertia;
 
 class GestioneTeamController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $user = Auth::user();
         $titolareId = $user->ente_titolare_id ?? $user->id;
@@ -40,11 +40,17 @@ class GestioneTeamController extends Controller
             ])
             : collect();
 
-        return Inertia::render('Ente/GestioneTeam/Index', [
+        $props = [
             'membri'      => $membri,
             'inviti'      => $inviti,
             'puoInvitare' => $user->isTitolare(),
-        ]);
+        ];
+
+        if ($request->boolean('embed')) {
+            return response()->json($props);
+        }
+
+        return Inertia::render('Ente/GestioneTeam/Index', $props);
     }
 
     public function invita(Request $request)

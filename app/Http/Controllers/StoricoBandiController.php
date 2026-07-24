@@ -6,12 +6,13 @@ use App\Models\BandiMatch;
 use App\Models\BandoPerso;
 use App\Models\ProfiloEnte;
 use App\Models\Rendicontazione;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Inertia\Inertia;
 
 class StoricoBandiController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $profiloUserId = Auth::user()->enteEffettivoUserId();
         $profilo = ProfiloEnte::where('user_id', $profiloUserId)->first();
@@ -35,7 +36,7 @@ class StoricoBandiController extends Controller
             ->get()
             ->unique('bando_id');
 
-        return Inertia::render('Ente/StoricoBandi/Index', [
+        $props = [
             'stats' => [
                 'totali'   => $totali,
                 'in_corso' => $inCorso,
@@ -53,6 +54,12 @@ class StoricoBandiController extends Controller
                 'titolo'     => $p->bando?->titolo,
                 'marcato_il' => $p->created_at->toDateString(),
             ])->values(),
-        ]);
+        ];
+
+        if ($request->boolean('embed')) {
+            return response()->json($props);
+        }
+
+        return Inertia::render('Ente/StoricoBandi/Index', $props);
     }
 }
