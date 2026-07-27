@@ -64,7 +64,7 @@ export default function BandiSalvatiContenuto({ preferiti, onPagina }: Props) {
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                     <Star className="h-6 w-6 text-yellow-400" />
@@ -80,7 +80,7 @@ export default function BandiSalvatiContenuto({ preferiti, onPagina }: Props) {
             ) : (
                 <div className="space-y-3">
                     {preferiti.data.map((b, idx) => (
-                        <CardBolla key={b.preferito_id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} className="p-5 hover:brightness-110 transition">
+                        <CardBolla key={b.preferito_id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-5 hover:brightness-110 transition">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                 <div className="flex-1 min-w-0">
                                     <Link href={`/ente/lista-bandi/${b.id}`} className="text-white font-semibold hover:text-green-400 transition block truncate">

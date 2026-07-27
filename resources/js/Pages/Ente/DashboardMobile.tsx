@@ -16,7 +16,6 @@ import {
     ClipboardCheck,
     ChevronDown,
     Menu,
-    Loader2,
     type LucideIcon,
 } from 'lucide-react';
 import DashboardContenuto from './DashboardContenuto';
@@ -28,6 +27,15 @@ import ListaBandiContenuto from './ListaBandi/Contenuto';
 import RicercaContenuto from '../Bandi/RicercaContenuto';
 import BandiSalvatiContenuto from './BandiSalvati/Contenuto';
 import StoricoBandiContenuto from './StoricoBandi/Contenuto';
+import {
+    animaSparizioneMenu,
+    animaComparsaMenu,
+    animaEmersioneContenuto,
+    animaRisucchioContenuto,
+    prefersReducedMotion,
+    ORIGINE_RISUCCHIO_FRAZIONE,
+    type PuntoVortice,
+} from './Vortice';
 
 type Bolla = {
     label: string;
@@ -384,12 +392,6 @@ const CSS = `
     animation: mb-float-logo2 4.2s ease-in-out infinite;
     animation-delay: .6s;
 }
-@keyframes mb-spin {
-    to { transform: rotate(360deg); }
-}
-.mb-spin {
-    animation: mb-spin 1s linear infinite;
-}
 .mb-luce-bandi {
     position: absolute;
     width: 620px;
@@ -475,6 +477,41 @@ export default function DashboardMobile() {
     const [errore, setErrore] = useState<string | null>(null);
     const [dati, setDati] = useState<any>(null);
 
+    // Transizione "vortice": il menu (wrapRef, l'intera ruota) ruota e si
+    // rimpicciolisce fino a sparire; contenutoRef è il blocco che "boccia"
+    // rotondo dal punto in cui è sparito. menuFinito/contenutoFinito tracciano
+    // le due animazioni che corrono in sovrapposizione, cosi vortexBusy si
+    // sblocca solo quando entrambe sono terminate.
+    const contenutoRef = useRef<HTMLDivElement | null>(null);
+    const menuFinito = useRef(true);
+    const contenutoFinito = useRef(true);
+    const [vortexBusy, setVortexBusy] = useState(false);
+
+    // Logo di fondo: appare appena si clicca un bottone (mentre il menu
+    // sparisce e le card devono ancora arrivare), resta dietro le card man
+    // mano che compaiono, e si dissolve mezzo secondo dopo che i dati sono
+    // pronti. Dinamico: parte piccolo e da subito si ingrandisce mentre
+    // svanisce (un'unica animazione continua, non statico e poi ingrandito
+    // solo alla fine) — logoCresciuto passa a true un frame dopo la comparsa,
+    // cosi la transizione parte da uno stato piccolo osservabile.
+    const [testoSfondoVisibile, setTestoSfondoVisibile] = useState(false);
+    const [logoCresciuto, setLogoCresciuto] = useState(false);
+
+    useEffect(() => {
+        if (caricando || !testoSfondoVisibile) return;
+        const timer = setTimeout(() => setTestoSfondoVisibile(false), 500);
+        return () => clearTimeout(timer);
+    }, [caricando, testoSfondoVisibile]);
+
+    useEffect(() => {
+        if (!testoSfondoVisibile) {
+            setLogoCresciuto(false);
+            return;
+        }
+        const raf = requestAnimationFrame(() => setLogoCresciuto(true));
+        return () => cancelAnimationFrame(raf);
+    }, [testoSfondoVisibile]);
+
     useEffect(() => {
         const el = wrapRef.current;
         if (!el) return;
@@ -489,11 +526,13 @@ export default function DashboardMobile() {
     }, []);
 
     const apriBandi = () => {
+        if (vortexBusy) return;
         setBandiAperto((v) => !v);
         setDocumentiAperto(false);
     };
 
     const apriDocumenti = () => {
+        if (vortexBusy) return;
         setDocumentiAperto((v) => !v);
         setBandiAperto(false);
     };
@@ -533,6 +572,118 @@ export default function DashboardMobile() {
     const ricaricaPannello = (urlOverride?: string) => {
         if (!pannelloAperto) return;
         caricaPannello(pannelloAperto, urlOverride ?? PANNELLI[pannelloAperto].url);
+    };
+
+    // Si sblocca solo quando SIA il menu SIA il contenuto hanno finito di
+    // animarsi: le due animazioni corrono in sovrapposizione (il menu sparisce
+    // mentre il contenuto sboccia), non in sequenza.
+    const provaSbloccareVortice = () => {
+        if (menuFinito.current && contenutoFinito.current) setVortexBusy(false);
+    };
+
+    // Punto (in px, relativo al box del blocco contenuto) in cui il menu
+    // sparisce/ricompare: misurato a runtime cosi la pagina nasce/si richiude
+    // esattamente li, anche se contenuto e menu vivono in punti diversi del
+    // layout. Il left/top del blocco contenuto restano validi anche quando è
+    // ancora "collassato" a altezza zero (non ancora aperto): solo l'altezza
+    // finale non è nota in anticipo, per questo il raggio del cerchio usa un
+    // valore di sicurezza abbastanza grande da coprire tutto lo schermo.
+    const calcolaPuntoVortice = (): PuntoVortice | undefined => {
+        const menuEl = wrapRef.current;
+        const contenutoEl = contenutoRef.current;
+        if (!menuEl || !contenutoEl) return undefined;
+        const rMenu = menuEl.getBoundingClientRect();
+        const rContenuto = contenutoEl.getBoundingClientRect();
+        const puntoX = rMenu.left + rMenu.width * ORIGINE_RISUCCHIO_FRAZIONE.x;
+        const puntoY = rMenu.top + rMenu.height * ORIGINE_RISUCCHIO_FRAZIONE.y;
+        return { x: puntoX - rContenuto.left, y: puntoY - rContenuto.top };
+    };
+
+    // Al tap su un satellite: il menu che sparisce e il contenuto che sboccia
+    // partono ESATTAMENTE insieme, con la stessa durata e la stessa curva —
+    // cosi il loro progresso resta identico istante per istante (a metà
+    // tempo il menu è a metà rimpicciolimento e il contenuto è a metà della
+    // sua crescita, per costruzione) — e nascono/si richiudono nello stesso
+    // punto fisico dello schermo. Il fetch dei dati reali (apriPannello)
+    // parte in parallelo: il contenuto rivelato mostra intanto il loader già
+    // esistente finché i dati non arrivano.
+    const avviaAperturaVortice = (chiave: ChiavePannello) => {
+        if (vortexBusy) return;
+
+        if (pannelloAperto === chiave) {
+            avviaChiusuraVortice();
+            return;
+        }
+
+        if (prefersReducedMotion()) {
+            apriPannello(chiave);
+            return;
+        }
+
+        const punto = calcolaPuntoVortice();
+
+        setVortexBusy(true);
+        menuFinito.current = false;
+        contenutoFinito.current = false;
+        setTestoSfondoVisibile(true);
+        apriPannello(chiave);
+
+        if (wrapRef.current) {
+            animaSparizioneMenu(wrapRef.current).then(() => {
+                menuFinito.current = true;
+                provaSbloccareVortice();
+            });
+        } else {
+            menuFinito.current = true;
+        }
+
+        if (contenutoRef.current) {
+            animaEmersioneContenuto(contenutoRef.current, { centro: punto }).then(() => {
+                contenutoFinito.current = true;
+                provaSbloccareVortice();
+            });
+        } else {
+            contenutoFinito.current = true;
+        }
+    };
+
+    // Percorso inverso: stessa logica, contenuto e menu partono insieme verso
+    // lo stesso punto.
+    const avviaChiusuraVortice = () => {
+        if (vortexBusy) return;
+
+        setTestoSfondoVisibile(false);
+
+        if (prefersReducedMotion()) {
+            setPannelloAperto(null);
+            return;
+        }
+
+        const punto = calcolaPuntoVortice();
+
+        setVortexBusy(true);
+        menuFinito.current = false;
+        contenutoFinito.current = false;
+
+        if (contenutoRef.current) {
+            animaRisucchioContenuto(contenutoRef.current, { centro: punto }).then(() => {
+                contenutoFinito.current = true;
+                provaSbloccareVortice();
+            });
+        } else {
+            contenutoFinito.current = true;
+        }
+
+        setPannelloAperto(null);
+
+        if (wrapRef.current) {
+            animaComparsaMenu(wrapRef.current).then(() => {
+                menuFinito.current = true;
+                provaSbloccareVortice();
+            });
+        } else {
+            menuFinito.current = true;
+        }
     };
 
     const dashboardAperta = pannelloAperto !== null;
@@ -597,6 +748,45 @@ export default function DashboardMobile() {
                 ...SFONDO_PROFONDITA,
             }}
         >
+            {/* Logo di fondo, centrato sullo schermo (fixed, non legato all'altezza
+                variabile del pannello): primo elemento nel DOM, senza z-index, cosi
+                resta dietro a tutto il resto per semplice ordine di disegno
+                (nessuna guerra di z-index con header/bolle). */}
+            <div
+                aria-hidden="true"
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                    // Non appena compare parte già piccolo e a piena opacità; un
+                    // frame dopo (logoCresciuto) inizia un'unica crescita lenta e
+                    // continua verso grande+trasparente — durata lunga apposta:
+                    // se i dati arrivano prima che finisca (il caso normale), la
+                    // sparizione vera e propria (sotto, testoSfondoVisibile=false)
+                    // la interrompe/taglia subito, cosi il logo resta visibile
+                    // per tutto il tempo di caricamento invece di sparire da solo
+                    // troppo presto e lasciare un vuoto prima che arrivino le card.
+                    opacity: !testoSfondoVisibile ? 0 : logoCresciuto ? 0 : 0.55,
+                    transition: testoSfondoVisibile && logoCresciuto ? 'opacity 2.5s ease' : 'opacity 0s',
+                }}
+            >
+                <img
+                    src="/images/logo-deepbandi-chiaro.png"
+                    alt=""
+                    style={{
+                        height: 'min(250px, 27vh)',
+                        width: 'auto',
+                        // Parte un po' più piccolo (0.8x) e cresce di +100px
+                        // rispetto alla base (1.4x = 350px) in un'unica corsa lenta.
+                        transform: logoCresciuto ? 'scale(1.4)' : 'scale(0.8)',
+                        transition: testoSfondoVisibile && logoCresciuto ? 'transform 2.5s ease' : 'transform 0s',
+                    }}
+                />
+            </div>
+
             {/* Barra fissa in alto: resta visibile durante lo scroll del contenuto
                 sottostante (position:fixed, non sticky, per non dipendere dagli
                 overflow:hidden usati per l'animazione di apertura/chiusura). */}
@@ -623,11 +813,11 @@ export default function DashboardMobile() {
                     <img
                         src="/images/logo-deepbandi-chiaro.png"
                         alt="DeepBandi"
-                        style={{ height: 60, width: 'auto', justifySelf: 'center' }}
+                        style={{ height: 75, width: 'auto', justifySelf: 'center' }}
                     />
                     <button
                         type="button"
-                        onClick={() => setPannelloAperto(null)}
+                        onClick={avviaChiusuraVortice}
                         aria-label="Torna al menu"
                         style={{
                             justifySelf: 'end',
@@ -675,25 +865,25 @@ export default function DashboardMobile() {
             <div
                 style={{
                     display: 'grid',
-                    gridTemplateRows: dashboardAperta ? '1fr' : '0fr',
-                    transition: 'grid-template-rows .5s cubic-bezier(.4,0,.2,1)',
+                    // Resta espansa per tutta la durata della transizione (non solo
+                    // quando il pannello è "ufficialmente" aperto), altrimenti la
+                    // riga si schiaccerebbe a metà dell'animazione di comparsa —
+                    // niente transition qui: la crescita visiva la fa già
+                    // l'animazione JS su contenutoRef (scale/opacity/clip-path).
+                    gridTemplateRows: dashboardAperta || vortexBusy ? '1fr' : '0fr',
                     marginTop: 70,
                 }}
             >
                 <div style={{ overflow: 'hidden', minHeight: 0 }}>
+                    {/* opacity/transform/clip-path qui sono gestiti imperativamente da
+                        animaEmersioneContenuto/animaRisucchioContenuto (fase 3 del
+                        vortice): niente transizione/valori dichiarativi React, altrimenti
+                        ogni re-render (es. quando arrivano i dati) sovrascriverebbe i
+                        frame dell'animazione in corso. */}
                     <div
-                        style={{
-                            opacity: dashboardAperta ? 1 : 0,
-                            transform: dashboardAperta ? 'translateY(0)' : 'translateY(-16px)',
-                            transition: 'opacity .4s ease .1s, transform .4s ease .1s',
-                            padding: '10px 16px 18px',
-                        }}
+                        ref={contenutoRef}
+                        style={{ padding: '10px 16px 18px' }}
                     >
-                        {caricando && (
-                            <div style={{ display: 'flex', justifyContent: 'center', padding: '60px 0' }}>
-                                <Loader2 className="mb-spin" size={28} color={TESTO} />
-                            </div>
-                        )}
                         {errore && !caricando && (
                             <p style={{ color: '#F0A0A0', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>{errore}</p>
                         )}
@@ -831,7 +1021,7 @@ export default function DashboardMobile() {
                         <button
                             key={b.label}
                             type="button"
-                            onClick={() => apriPannello(chiaveEmbed)}
+                            onClick={() => avviaAperturaVortice(chiaveEmbed)}
                             aria-expanded={pannelloAperto === chiaveEmbed}
                             className="mb-bolla mb-float"
                             style={{
@@ -926,8 +1116,22 @@ export default function DashboardMobile() {
                 </span>
             </button>
 
-            <PannelloSotto voci={BANDI_SUB} left={320} top={490 + RING_Y} colonne={2} aperto={bandiAperto} onSeleziona={apriPannello} />
-            <PannelloSotto voci={DOCUMENTI_SUB} left={508} top={374 + RING_Y} colonne={1} aperto={documentiAperto} onSeleziona={apriPannello} />
+            <PannelloSotto
+                voci={BANDI_SUB}
+                left={320}
+                top={490 + RING_Y}
+                colonne={2}
+                aperto={bandiAperto}
+                onSeleziona={avviaAperturaVortice}
+            />
+            <PannelloSotto
+                voci={DOCUMENTI_SUB}
+                left={508}
+                top={374 + RING_Y}
+                colonne={1}
+                aperto={documentiAperto}
+                onSeleziona={avviaAperturaVortice}
+            />
             </div>
             </div>
             </div>

@@ -43,7 +43,7 @@ export default function StoricoBandiContenuto({ stats, bandiVinti, bandiPersi, c
     ];
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                     <Trophy className="h-6 w-6 text-emerald-400" />
@@ -54,7 +54,7 @@ export default function StoricoBandiContenuto({ stats, bandiVinti, bandiPersi, c
 
             <div className={`grid grid-cols-1 gap-4 ${compatto ? '' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
                 {cards.map((c, idx) => (
-                    <CardBolla key={c.title} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} className="p-5">
+                    <CardBolla key={c.title} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-5">
                         <div className="flex justify-between items-start">
                             <div>
                                 <p className="text-sm text-slate-400">{c.title}</p>
@@ -69,7 +69,7 @@ export default function StoricoBandiContenuto({ stats, bandiVinti, bandiPersi, c
             </div>
 
             <div className={`grid grid-cols-1 gap-6 ${compatto ? '' : 'lg:grid-cols-2'}`}>
-                <CardBolla bordo="#66AB93" className="p-5">
+                <CardBolla bordo="#66AB93" indice={4} className="p-5">
                     <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-emerald-400" /> Bandi vinti ({bandiVinti.length})
                     </h3>
@@ -94,7 +94,7 @@ export default function StoricoBandiContenuto({ stats, bandiVinti, bandiPersi, c
                     )}
                 </CardBolla>
 
-                <CardBolla bordo="#C08FA8" className="p-5">
+                <CardBolla bordo="#C08FA8" indice={5} className="p-5">
                     <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                         <XCircle className="h-4 w-4 text-red-400" /> Bandi persi ({bandiPersi.length})
                     </h3>

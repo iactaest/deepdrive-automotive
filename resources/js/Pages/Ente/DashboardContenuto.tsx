@@ -84,18 +84,22 @@ const CSS_COMPATTO = `
 `;
 
 // Wrapper della card: su desktop resta la card piatta originale, in modalità
-// compatta applica lo sfondo/pattern/bordo colorato in stile "bolla del menu".
+// compatta applica lo sfondo/pattern/bordo colorato in stile "bolla del menu"
+// e un fade-in scaglionato dall'alto (vedi indice, riusa .card-bolla-entrata
+// già definita globalmente in app.css).
 function Card({
     compatto,
     bordo,
     classeDesktop,
     classeCompatta,
+    indice = 0,
     children,
 }: {
     compatto: boolean;
     bordo: string;
     classeDesktop: string;
     classeCompatta: string;
+    indice?: number;
     children: React.ReactNode;
 }) {
     if (!compatto) {
@@ -103,7 +107,10 @@ function Card({
     }
 
     return (
-        <div className={`dc-card ${classeCompatta}`} style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo }}>
+        <div
+            className={`dc-card card-bolla-entrata ${classeCompatta}`}
+            style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo, animationDelay: `${Math.min(indice, 10) * 70}ms` }}
+        >
             <span className="dc-bg" />
             <div className="relative">{children}</div>
         </div>
@@ -177,7 +184,7 @@ export default function DashboardContenuto({
     compatto = false,
 }: {
     dashboard: DashboardData;
-    profilo?: { nome_ente?: string | null };
+    profilo?: { nome_ente?: string | null; tipo_ente?: string | null };
     compatto?: boolean;
 }) {
     const { user } = usePage().props.auth;
@@ -186,6 +193,17 @@ export default function DashboardContenuto({
     useEffect(() => { setAnimate(true); }, []);
 
     const c = (normale: string, compatta: string) => (compatto ? compatta : normale);
+
+    // Etichetta del tipo di ente ("Comune", "Regione", ecc.) da anteporre al
+    // nome nel saluto — stessa mappa usata nel resto dell'app (es. ProfiloShow).
+    const TIPO_ENTE_LABEL: Record<string, string> = {
+        comune: 'Comune', provincia: 'Provincia', regione: 'Regione',
+        asl: 'ASL', universita: 'Università', scuola: 'Scuola', altro: 'Altro',
+    };
+    const tipoEnteLabel = profilo?.tipo_ente ? TIPO_ENTE_LABEL[profilo.tipo_ente] ?? null : null;
+    const nomeSaluto = profilo?.nome_ente
+        ? (tipoEnteLabel ? `${tipoEnteLabel} di ${profilo.nome_ente}` : profilo.nome_ente)
+        : user?.name;
 
     const lineData = {
         labels: dashboard.trend_storico.labels,
@@ -260,28 +278,23 @@ export default function DashboardContenuto({
         <div className={c('space-y-6 animate-fade-in', 'space-y-3 animate-fade-in')}>
             {compatto && <style>{CSS_COMPATTO}</style>}
 
-            <Card
-                compatto={compatto}
-                bordo="#CE8A52"
-                classeDesktop="relative overflow-hidden rounded-2xl bg-gradient-to-r from-green-600/20 via-emerald-600/20 to-slate-800/50 p-6 border border-slate-700/50"
-                classeCompatta="rounded-xl p-3"
-            >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-green-500/10 rounded-full blur-3xl" />
-                <h1 className={c('text-3xl font-bold text-white flex items-center gap-2', 'text-base font-bold text-white flex items-center gap-1.5')}>
+            <div className={c('text-center', 'text-center')} style={{ paddingTop: 20 }}>
+                <h1 className={c('text-[35px] font-bold text-white flex items-center justify-center gap-2', 'text-[21px] font-bold text-white flex items-center justify-center gap-1.5')}>
                     <Landmark className={c('h-8 w-8 text-green-400', 'dc-icona h-4 w-4 text-green-400')} />
-                    Bentornato, {user?.name}!
+                    Bentornato, {nomeSaluto}!
                 </h1>
                 <p className={c('text-slate-400 mt-2', 'text-slate-400 mt-1 text-[11px]')}>
-                    {profilo?.nome_ente ? `${profilo.nome_ente} — ` : ''}Gestisci bandi, gare e appalti pubblici in modo efficiente
+                    Gestisci bandi, gare e appalti pubblici in modo efficiente
                 </p>
-            </Card>
+            </div>
 
             <div className={c('grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6', 'grid grid-cols-2 gap-2')}>
-                {stats.map((stat) => (
+                {stats.map((stat, idx) => (
                     <Card
                         key={stat.title}
                         compatto={compatto}
                         bordo={COLORE_STAT[stat.color] ?? '#8FA3C7'}
+                        indice={idx}
                         classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 hover:border-green-500/50 transition hover:scale-105 cursor-pointer"
                         classeCompatta="rounded-lg p-2.5"
                     >
@@ -302,14 +315,14 @@ export default function DashboardContenuto({
             </div>
 
             <div className={c('grid grid-cols-1 lg:grid-cols-2 gap-6', 'grid grid-cols-1 gap-3')}>
-                <Card compatto={compatto} bordo="#8FA3C7" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#8FA3C7" indice={6} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Storico Finanziamenti nel Territorio (OpenCoesione)" icona={TrendingUp} coloreIcona="text-green-400" compatto={compatto}>
                         {dashboard.trend_storico.labels.length > 0
                             ? <Line data={lineData} options={chartOptions} />
                             : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun dato storico disponibile per il tuo territorio.</p>}
                     </SezioneGrafico>
                 </Card>
-                <Card compatto={compatto} bordo="#9C93C7" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#9C93C7" indice={7} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Bandi Attivi per Categoria" icona={Building2} coloreIcona="text-purple-400" compatto={compatto}>
                         {dashboard.per_categoria.labels.length > 0
                             ? <Bar data={barData} options={chartOptions} />
@@ -319,7 +332,7 @@ export default function DashboardContenuto({
             </div>
 
             <div className={c('grid grid-cols-1 lg:grid-cols-3 gap-6', 'grid grid-cols-1 gap-3')}>
-                <Card compatto={compatto} bordo="#B08FC0" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#B08FC0" indice={8} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Budget per Livello" icona={Euro} coloreIcona="text-blue-400" compatto={compatto}>
                         {dashboard.per_livello.labels.length > 0
                             ? <Doughnut data={doughnutData} options={doughnutOptions} />
@@ -329,6 +342,7 @@ export default function DashboardContenuto({
                 <Card
                     compatto={compatto}
                     bordo="#C08FA8"
+                    indice={9}
                     classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 col-span-2"
                     classeCompatta="rounded-lg p-3"
                 >
@@ -351,7 +365,7 @@ export default function DashboardContenuto({
                 </Card>
             </div>
 
-            <Card compatto={compatto} bordo="#66AB93" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+            <Card compatto={compatto} bordo="#66AB93" indice={10} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                 <h3 className={c('text-lg font-semibold text-white mb-4 flex items-center gap-2', 'text-xs font-semibold text-white mb-2 flex items-center gap-1.5')}>
                     <Eye className={c('h-5 w-5 text-cyan-400', 'dc-icona h-3.5 w-3.5 text-cyan-400')} />
                     Bandi Consigliati

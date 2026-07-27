@@ -82,7 +82,7 @@ export default function CassettoDocumentiContenuto({ bandi, onRicarica }: Props)
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                     <Archive className="h-6 w-6 text-purple-400" />
@@ -106,7 +106,7 @@ export default function CassettoDocumentiContenuto({ bandi, onRicarica }: Props)
                         const documentiSpecifici = b.documenti.filter(d => d.categoria === 'specifico');
 
                         return (
-                            <CardBolla key={b.bando_id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]}>
+                            <CardBolla key={b.bando_id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx}>
                                 <div id={`bando-${b.bando_id}`}>
                                 <button
                                     onClick={() => toggleAperto(b.bando_id)}

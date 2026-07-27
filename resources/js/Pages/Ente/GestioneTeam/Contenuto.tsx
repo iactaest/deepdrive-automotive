@@ -56,7 +56,7 @@ export default function GestioneTeamContenuto({ membri, inviti, puoInvitare }: P
     };
 
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                     <Users className="h-6 w-6 text-green-400" />
@@ -68,7 +68,7 @@ export default function GestioneTeamContenuto({ membri, inviti, puoInvitare }: P
             </div>
 
             {puoInvitare && (
-                <CardBolla bordo="#AFA36C" className="p-6">
+                <CardBolla bordo="#AFA36C" indice={0} className="p-6">
                     <h3 className="text-sm font-semibold text-white mb-3">Invita un collega</h3>
                     <form onSubmit={invita} className="flex items-center gap-2 flex-wrap">
                         <div className="relative flex-1 min-w-[220px]">
@@ -94,7 +94,7 @@ export default function GestioneTeamContenuto({ membri, inviti, puoInvitare }: P
                 </CardBolla>
             )}
 
-            <CardBolla bordo="#8FA3C7">
+            <CardBolla bordo="#8FA3C7" indice={1}>
                 <div className="p-5 border-b border-white/10">
                     <h3 className="text-sm font-semibold text-white">Membri ({membri.length})</h3>
                 </div>
@@ -123,7 +123,7 @@ export default function GestioneTeamContenuto({ membri, inviti, puoInvitare }: P
             </CardBolla>
 
             {puoInvitare && inviti.length > 0 && (
-                <CardBolla bordo="#C0975F">
+                <CardBolla bordo="#C0975F" indice={2}>
                     <div className="p-5 border-b border-white/10">
                         <h3 className="text-sm font-semibold text-white">Inviti</h3>
                     </div>

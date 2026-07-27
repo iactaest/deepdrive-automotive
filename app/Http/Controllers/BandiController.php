@@ -4,12 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Models\Bando;
 use App\Models\ProfiloEnte;
-use GuzzleHttp\Client;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Inertia\Inertia;
 
 class BandiController extends Controller
 {
+    // Stesso modello Gemini già usato da AssistenteController/BandoDocumentiController.
+    private const GEMINI_MODEL = 'gemini-2.5-flash';
+
     // Landing page bivio
     public function landing()
     {
@@ -82,37 +85,30 @@ class BandiController extends Controller
             ->orderBy('scadenza', 'asc')
             ->get();
         
-        // 2. FALLBACK: RICERCA WEB CON DEEPSEEK (solo se database vuoto)
+        // 2. FALLBACK: RICERCA WEB CON GEMINI (solo se database vuoto)
         if ($bandi->isEmpty()) {
             try {
-                $client = new Client();
-                $prompt = $this->buildDeepSeekPrompt($profilo, $filters);
-                
-                $response = $client->post(env('DEEPSEEK_API_URL'), [
-                    'headers' => [
-                        'Authorization' => 'Bearer ' . env('DEEPSEEK_API_KEY'),
-                        'Content-Type' => 'application/json',
+                $apiKey = env('GEMINI_API_KEY');
+                if (!$apiKey) {
+                    throw new \RuntimeException('GEMINI_API_KEY non configurata.');
+                }
+
+                $prompt = 'Sei un esperto di bandi e finanziamenti per enti pubblici in Italia.' . "\n\n"
+                    . $this->buildPromptRicercaBandi($profilo, $filters);
+
+                $url = 'https://generativelanguage.googleapis.com/v1beta/models/' . self::GEMINI_MODEL . ":generateContent?key={$apiKey}";
+
+                $response = Http::timeout(60)->post($url, [
+                    'contents' => [
+                        ['parts' => [['text' => $prompt]]],
                     ],
-                    'json' => [
-                        'model' => 'deepseek-chat',
-                        'messages' => [
-                            [
-                                'role' => 'system',
-                                'content' => 'Sei un esperto di bandi e finanziamenti per enti pubblici in Italia.'
-                            ],
-                            [
-                                'role' => 'user',
-                                'content' => $prompt
-                            ],
-                        ],
-                        'max_tokens' => 2000,
+                    'generationConfig' => [
                         'temperature' => 0.3,
                     ],
-                ]);
-                
-                $body = json_decode($response->getBody(), true);
-                $risposta = $body['choices'][0]['message']['content'];
-                
+                ])->throw();
+
+                $risposta = $response->json('candidates.0.content.parts.0.text') ?? '';
+
                 preg_match('/\{.*\}/s', $risposta, $matches);
                 $bandiWeb = json_decode($matches[0] ?? '{}', true);
                 
@@ -121,11 +117,25 @@ class BandiController extends Controller
                     // Verifica se esiste già
                     $esistente = Bando::where('titolo', $bandoData['titolo'])->first();
                     if (!$esistente) {
+                        // L'AI a volte restituisce una scadenza testuale (es. "Continuo
+                        // fino ad esaurimento fondi") invece di una data YYYY-MM-DD come
+                        // richiesto nel prompt: la colonna è nullable e il modello gestisce
+                        // già scadenza=null altrove, quindi la scartiamo invece di far
+                        // fallire il salvataggio dell'intero bando.
+                        $scadenza = null;
+                        if (!empty($bandoData['scadenza'])) {
+                            try {
+                                $scadenza = \Carbon\Carbon::parse($bandoData['scadenza']);
+                            } catch (\Exception $e) {
+                                $scadenza = null;
+                            }
+                        }
+
                         Bando::create([
                             'titolo' => $bandoData['titolo'],
                             'descrizione' => $bandoData['descrizione'],
                             'ente_erogatore' => $bandoData['ente'],
-                            'scadenza' => $bandoData['scadenza'],
+                            'scadenza' => $scadenza,
                             'budget_totale' => $bandoData['budget'] ?? null,
                             'livello' => $bandoData['livello'],
                             'categoria' => $bandoData['categoria'],
@@ -180,7 +190,7 @@ class BandiController extends Controller
         ]);
     }
 
-    private function buildDeepSeekPrompt($profilo, $filters = [])
+    private function buildPromptRicercaBandi($profilo, $filters = [])
     {
         $categorie = !empty($filters['categoria']) ? $filters['categoria'] : (json_decode($profilo->categorie_interesse, true) ?? []);
         $livelli = !empty($filters['livello']) ? $filters['livello'] : (json_decode($profilo->livelli_interesse, true) ?? []);

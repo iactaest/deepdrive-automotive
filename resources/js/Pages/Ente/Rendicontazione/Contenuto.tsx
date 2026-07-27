@@ -37,7 +37,7 @@ const STATO_LABEL: Record<Progetto['stato'], string> = {
 // incorporato in DashboardMobile (griglia a colonna singola in compatto).
 export default function RendicontazioneContenuto({ progetti, compatto = false }: Props) {
     return (
-        <div className="space-y-6 animate-fade-in">
+        <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div>
                 <h1 className="text-2xl font-bold text-white flex items-center gap-2">
                     <ClipboardCheck className="h-6 w-6 text-green-400" />
@@ -60,8 +60,8 @@ export default function RendicontazioneContenuto({ progetti, compatto = false }:
                             <Link
                                 key={p.id}
                                 href={`/ente/rendicontazione/${p.id}`}
-                                className="card-bolla block p-5 transition hover:brightness-125"
-                                style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo }}
+                                className="card-bolla card-bolla-entrata block p-5 transition hover:brightness-125"
+                                style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo, animationDelay: `${Math.min(idx, 10) * 70}ms` }}
                             >
                                 <span className="card-bolla-bg" />
                                 <div className="relative">

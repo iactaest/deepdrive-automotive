@@ -237,7 +237,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
     return (
         <>
             {/* Header */}
-            <div className="mb-8">
+            <div className="mb-8" style={{ marginTop: 25 }}>
                 <h1 className="text-3xl font-bold text-white flex items-center gap-2">
                     <Zap className="h-8 w-8 text-yellow-400" />
                     Bandi Finder Avanzato
@@ -247,19 +247,19 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
 
             {/* CHART ROW 1 */}
             <div className={grigliaChart}>
-                <CardBolla bordo={PALETTE_BOLLA[0]} className="p-4">
+                <CardBolla bordo={PALETTE_BOLLA[0]} indice={0} className="p-4">
                     <h3 className="text-sm font-semibold text-white mb-3 text-center">Trend Bandi nel Tempo</h3>
                     <div className="h-[250px] flex items-center justify-center">
                         <div className="w-full"><Line data={trendData} options={chartOptions} /></div>
                     </div>
                 </CardBolla>
-                <CardBolla bordo={PALETTE_BOLLA[1]} className="p-4">
+                <CardBolla bordo={PALETTE_BOLLA[1]} indice={1} className="p-4">
                     <h3 className="text-sm font-semibold text-white mb-3 text-center">Tipo Finanziamento</h3>
                     <div className="h-[250px] flex items-center justify-center">
                         <div className="w-full max-w-[220px]"><Doughnut data={finanziamentoData} options={doughnutOptions} /></div>
                     </div>
                 </CardBolla>
-                <CardBolla bordo={PALETTE_BOLLA[2]} className="p-4">
+                <CardBolla bordo={PALETTE_BOLLA[2]} indice={2} className="p-4">
                     <h3 className="text-sm font-semibold text-white mb-3 text-center">Bandi per Stato</h3>
                     <div className="h-[250px] flex items-center justify-center">
                         <div className="w-full"><Bar data={statoData} options={barOptions} /></div>
@@ -268,7 +268,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
             </div>
 
             {/* Filtri */}
-            <CardBolla bordo={PALETTE_BOLLA[3]} className="p-6 mb-8">
+            <CardBolla bordo={PALETTE_BOLLA[3]} indice={3} className="p-6 mb-8">
                 <div className="flex items-center gap-2 mb-4">
                     <Filter className="h-5 w-5 text-blue-400" />
                     <h2 className="text-lg font-semibold text-white">Filtri di Ricerca</h2>
@@ -380,7 +380,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
             {bandi.length > 0 && (
                 <div className={grigliaStat}>
                     {stats.map((stat, idx) => (
-                        <CardBolla key={stat.title} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} className="p-4">
+                        <CardBolla key={stat.title} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-4">
                             <div className="flex justify-between items-start">
                                 <div><p className="text-sm text-slate-400">{stat.title}</p><p className="text-2xl font-bold text-white">{stat.value}</p></div>
                                 <div className={`w-10 h-10 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center`}>
@@ -395,19 +395,19 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
             {/* CHART ROW 2 */}
             {showAdvancedStats && bandi.length > 0 && (
                 <div className={grigliaChart}>
-                    <CardBolla bordo={PALETTE_BOLLA[4]} className="p-4">
+                    <CardBolla bordo={PALETTE_BOLLA[4]} indice={4} className="p-4">
                         <h3 className="text-sm font-semibold text-white mb-3 text-center">Budget per Categoria (Milioni €)</h3>
                         <div className="h-[250px] flex items-center justify-center">
                             <div className="w-full max-w-[280px]"><Radar data={budgetPerCategoriaData} options={radarOptions} /></div>
                         </div>
                     </CardBolla>
-                    <CardBolla bordo={PALETTE_BOLLA[5]} className="p-4">
+                    <CardBolla bordo={PALETTE_BOLLA[5]} indice={5} className="p-4">
                         <h3 className="text-sm font-semibold text-white mb-3 text-center">Distribuzione Scadenze</h3>
                         <div className="h-[250px] flex items-center justify-center">
                             <div className="w-full"><Bar data={scadenzeData} options={barOptions} /></div>
                         </div>
                     </CardBolla>
-                    <CardBolla bordo={PALETTE_BOLLA[6]} className="p-4">
+                    <CardBolla bordo={PALETTE_BOLLA[6]} indice={6} className="p-4">
                         <h3 className="text-sm font-semibold text-white mb-3 text-center">Match per Livello Geografico</h3>
                         <div className="h-[250px] flex items-center justify-center">
                             <div className="w-full max-w-[220px]"><Doughnut data={matchLivelloData} options={doughnutOptions} /></div>
@@ -421,7 +421,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
                 <div className="space-y-4">
                     <h2 className="text-xl font-semibold text-white">🎯 Bandi Trovati ({bandi.length})</h2>
                     {bandi.map((bando: any, idx: number) => (
-                        <CardBolla key={bando.id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} className="p-6 hover:brightness-110 transition cursor-pointer"
+                        <CardBolla key={bando.id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-6 hover:brightness-110 transition cursor-pointer"
                             onClick={() => router.visit(`/bandi/${bando.id}`)}>
                             <div className="flex justify-between items-start flex-wrap gap-4">
                                 <div className="flex-1">

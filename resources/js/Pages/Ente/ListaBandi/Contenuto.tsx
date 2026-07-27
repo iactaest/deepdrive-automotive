@@ -141,7 +141,7 @@ export default function ListaBandiContenuto({ bandi, stats, categorie, regioni, 
     return (
         <>
             {/* Header */}
-            <div className="mb-6">
+            <div className="mb-6" style={{ marginTop: 25 }}>
                 <h1 className="text-3xl font-bold text-white">📋 Lista Bandi</h1>
                 <p className="text-slate-400 mt-1">
                     {stats.totale} bandi trovati — clicca le card per filtrare
@@ -237,7 +237,7 @@ export default function ListaBandiContenuto({ bandi, stats, categorie, regioni, 
                     </CardBolla>
                 ) : (
                     bandiPagina.map((bando, idx) => (
-                        <CardBolla key={bando.id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} className="p-4 hover:brightness-110 transition-all">
+                        <CardBolla key={bando.id} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-4 hover:brightness-110 transition-all">
                             <div className="flex flex-wrap items-start gap-4">
 
                                 <div className="flex-shrink-0 w-14 text-center">

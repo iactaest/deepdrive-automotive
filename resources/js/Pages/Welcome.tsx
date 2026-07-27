@@ -74,14 +74,14 @@ export default function Welcome({ canLogin, canRegister, laravelVersion, phpVers
             <div className="relative z-10">
                 {/* Navbar */}
                 <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-12 w-auto" />
+                    <div className="flex items-center gap-3" style={{ marginTop: -10 }}>
+                        <img src="/images/logo-deepbandi-chiaro.png" alt="DeepBandi" className="h-[78px] w-auto" />
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-4" style={{ marginTop: -10 }}>
                         {canLogin && (
                             <>
                                 {canRegister && (
-                                    <Link href="/register" className="text-slate-400 hover:text-white transition px-4 py-2 rounded-lg text-sm font-medium">
+                                    <Link href="/register" className="text-slate-400 hover:text-white transition px-4 py-2 rounded-lg text-sm font-medium border border-slate-600">
                                         Registrati
                                     </Link>
                                 )}

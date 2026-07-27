@@ -64,7 +64,7 @@ export default function ProfiloContenuto({ profilo, compatto = false }: { profil
 
     // Card sezione principale - stesso stile "bolla" della dashboard.
     const SectionCard = ({ icon: Icon, title, children, idx = 0 }: any) => (
-        <CardBolla bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} className="p-4">
+        <CardBolla bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-4">
             <h2 className="text-sm font-semibold text-white mb-2.5 flex items-center gap-2">
                 <Icon className="card-bolla-icona h-4 w-4" style={{ color: PALETTE_BOLLA[idx % PALETTE_BOLLA.length] }} /> {title}
             </h2>
@@ -84,7 +84,7 @@ export default function ProfiloContenuto({ profilo, compatto = false }: { profil
     };
 
     return (
-        <div>
+        <div style={{ marginTop: 25 }}>
             {/* Header */}
             <div className="mb-5">
                 {!compatto && (
@@ -98,10 +98,16 @@ export default function ProfiloContenuto({ profilo, compatto = false }: { profil
                         <p className="text-slate-400 text-sm">{getTipoLabel(profilo.tipo_ente)}</p>
                     </div>
                     <div className="flex gap-2">
-                        <button onClick={() => router.visit('/ente/profilo/modifica')} className="px-3 py-1.5 bg-blue-600 rounded-lg text-white text-sm flex items-center gap-1.5 hover:bg-blue-500 transition">
+                        <button
+                            onClick={() => router.visit('/ente/profilo/modifica')}
+                            className="px-3 py-1.5 bg-[#8FA3C7]/15 hover:bg-[#8FA3C7]/25 border border-[#8FA3C7]/40 rounded-lg text-[#8FA3C7] text-sm font-medium flex items-center gap-1.5 transition"
+                        >
                             <Edit className="h-3.5 w-3.5" /> Modifica
                         </button>
-                        <button onClick={handleDelete} className="px-3 py-1.5 bg-red-600 rounded-lg text-white text-sm flex items-center gap-1.5 hover:bg-red-500 transition">
+                        <button
+                            onClick={handleDelete}
+                            className="px-3 py-1.5 bg-[#C08FA8]/15 hover:bg-[#C08FA8]/25 border border-[#C08FA8]/40 rounded-lg text-[#C08FA8] text-sm font-medium flex items-center gap-1.5 transition"
+                        >
                             <Trash2 className="h-3.5 w-3.5" /> Cancella
                         </button>
                     </div>

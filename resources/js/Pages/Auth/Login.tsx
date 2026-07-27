@@ -28,7 +28,7 @@ export default function Login({ status, canResetPassword }: any) {
 
                     {/* Logo */}
                     <div className="flex items-center justify-center mb-8">
-                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-16 w-auto" />
+                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-[84px] w-auto" />
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Benvenuto</h2>
