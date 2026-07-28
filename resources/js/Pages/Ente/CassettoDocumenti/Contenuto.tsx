@@ -84,11 +84,11 @@ export default function CassettoDocumentiContenuto({ bandi, onRicarica }: Props)
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div className="text-center">
-                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                    <Archive className="h-6 w-6 text-purple-400" />
+                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                    <Archive className="card-bolla-icona h-7 w-7 text-purple-400" />
                     Cassetto Documenti
                 </h1>
-                <p className="text-slate-400 mt-1">
+                <p className="text-slate-300 mt-1">
                     Tutti i documenti compilati e caricati per ogni bando. Da qui puoi completare quelli mancanti.
                 </p>
             </div>

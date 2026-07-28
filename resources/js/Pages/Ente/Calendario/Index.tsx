@@ -169,11 +169,11 @@ export default function CalendarioIndex() {
         <LayoutEnte>
             <div className="space-y-6 animate-fade-in">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                        <CalendarDays className="h-6 w-6 text-green-400" />
+                    <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                        <CalendarDays className="card-bolla-icona h-7 w-7 text-green-400" />
                         Calendario Scadenze
                     </h1>
-                    <p className="text-slate-400 mt-1">
+                    <p className="text-slate-300 mt-1">
                         Scadenze dei bandi salvati e in match, con task interni collegati. Clicca su un giorno per il dettaglio.
                     </p>
                     <div className="flex items-center justify-center gap-2 mt-3">

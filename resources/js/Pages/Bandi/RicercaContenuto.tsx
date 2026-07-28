@@ -259,11 +259,11 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
         <>
             {/* Header */}
             <div className="mb-8 text-center" style={{ marginTop: 25 }}>
-                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
-                    <Zap className="h-8 w-8 text-yellow-400" />
+                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                    <Zap className="card-bolla-icona h-8 w-8 text-yellow-400" />
                     Bandi Finder Avanzato
                 </h1>
-                <p className="text-slate-400 mt-2">Cerca bandi e finanziamenti con filtri intelligenti</p>
+                <p className="text-slate-300 mt-2">Cerca bandi e finanziamenti con filtri intelligenti</p>
             </div>
 
             {/* CHART ROW 1 */}

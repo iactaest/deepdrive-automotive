@@ -280,10 +280,10 @@ export default function DashboardContenuto({
 
             <div className={c('text-center', 'text-center')} style={{ paddingTop: 20 }}>
                 <h1 className={c('text-[35px] font-bold text-white flex items-center justify-center gap-2', 'text-[21px] font-bold text-white flex items-center justify-center gap-1.5')}>
-                    <Landmark className={c('h-8 w-8 text-green-400', 'dc-icona h-4 w-4 text-green-400')} />
+                    <Landmark className={c('dc-icona h-8 w-8 text-green-400', 'dc-icona h-4 w-4 text-green-400')} />
                     Bentornato, {nomeSaluto}!
                 </h1>
-                <p className={c('text-slate-400 mt-2', 'text-slate-400 mt-1 text-[11px]')}>
+                <p className={c('text-slate-300 mt-2', 'text-slate-300 mt-1 text-[11px]')}>
                     Gestisci bandi, gare e appalti pubblici in modo efficiente
                 </p>
             </div>

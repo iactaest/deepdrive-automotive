@@ -18,11 +18,11 @@ export default function ImpostazioniContenuto({ mustVerifyEmail = false, status,
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: compatto ? 25 : 0 }}>
             <div className="text-center">
-                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                    <Settings className="card-bolla-icona h-6 w-6 text-[#66AB93]" strokeWidth={1.75} />
+                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                    <Settings className="card-bolla-icona h-7 w-7 text-[#66AB93]" strokeWidth={1.75} />
                     Impostazioni
                 </h1>
-                <p className="text-slate-400 mt-1">Gestisci i dati del tuo account e la sicurezza dell'accesso.</p>
+                <p className="text-slate-300 mt-1">Gestisci i dati del tuo account e la sicurezza dell'accesso.</p>
             </div>
 
             <CardBolla bordo={PALETTE_BOLLA[1]} indice={0} className="p-5">

@@ -94,8 +94,8 @@ export default function ProfiloContenuto({ profilo, compatto = false }: { profil
                 )}
                 <div className="flex justify-between items-center flex-wrap gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">{profilo.nome_ente || 'N/D'}</h1>
-                        <p className="text-slate-400 text-sm">{getTipoLabel(profilo.tipo_ente)}</p>
+                        <h1 className="text-3xl font-bold text-white">{profilo.nome_ente || 'N/D'}</h1>
+                        <p className="text-slate-300 text-sm">{getTipoLabel(profilo.tipo_ente)}</p>
                     </div>
                     <div className="flex gap-2">
                         <button

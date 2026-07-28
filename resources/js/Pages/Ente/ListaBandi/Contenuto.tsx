@@ -114,7 +114,7 @@ export default function ListaBandiContenuto({ bandi, stats, categorie, regioni, 
             {/* Header */}
             <div className="mb-6 text-center" style={{ marginTop: 25 }}>
                 <h1 className="text-3xl font-bold text-white">📋 Lista Bandi</h1>
-                <p className="text-slate-400 mt-1">
+                <p className="text-slate-300 mt-1">
                     {stats.totale} bandi trovati — clicca le card per filtrare
                 </p>
             </div>

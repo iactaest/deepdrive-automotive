@@ -394,6 +394,12 @@ const CSS = `
     animation-timing-function: ease-in-out;
     animation-iteration-count: infinite;
 }
+/* Durante la transizione vortice il galleggiamento continuo delle bolle viene
+   messo in pausa: un movimento solo (rotazione+scala del menu) invece di due
+   sovrapposti rendeva la comparsa/sparizione meno fluida da vedere. */
+.mb-vortex-transizione .mb-float {
+    animation-play-state: paused;
+}
 @keyframes mb-float-logo2 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-4px); }
@@ -774,22 +780,31 @@ export default function DashboardMobile() {
         <div
             style={{
                 minHeight: '100vh',
+                // Crea un contesto di stacking locale: senza questo, lo
+                // zIndex:-1 dei livelli di sfondo qui sotto viene confrontato
+                // con l'intera pagina, e il colore di sfondo pieno di QUESTO
+                // stesso div (non essendo lui stesso "positioned") finisce
+                // comunque sopra — l'immagine risultava disegnata ma coperta.
+                isolation: 'isolate',
                 ...SFONDO_PROFONDITA,
             }}
         >
             {/* Stessa immagine di sfondo di Welcome/Login, stessa opacita' — fixed
                 cosi resta ferma dietro a tutto anche mentre il contenuto scorre.
-                Primi elementi nel DOM, senza z-index, cosi restano dietro a tutto
-                il resto per semplice ordine di disegno. */}
+                zIndex:-1 esplicito: essendo "position:fixed" (un elemento
+                posizionato) altrimenti finirebbe comunque sopra al contenuto
+                statico sottostante (titoli, testi) per le regole di stacking
+                CSS, anche stando prima nel DOM — non basta l'ordine markup. */}
             <div
                 aria-hidden="true"
                 style={{
                     position: 'fixed',
                     inset: 0,
+                    zIndex: -1,
                     backgroundImage: "url('/images/sfondo-menu.jpg')",
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    opacity: 0.4,
+                    opacity: 0.6,
                     pointerEvents: 'none',
                 }}
             />
@@ -798,6 +813,7 @@ export default function DashboardMobile() {
                 style={{
                     position: 'fixed',
                     inset: 0,
+                    zIndex: -1,
                     background: 'linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.35), rgba(0,0,0,.65))',
                     pointerEvents: 'none',
                 }}
@@ -863,7 +879,7 @@ export default function DashboardMobile() {
                 }}
             >
                 <div style={{ maxWidth: 640, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', padding: '10px 16px' }}>
-                    <span style={{ color: TESTO, fontWeight: 600, fontSize: 14, letterSpacing: '.06em' }}>
+                    <span style={{ color: '#FFFFFF', fontWeight: 700, fontSize: 15, letterSpacing: '.06em' }}>
                         {pannelloAperto ? PANNELLI[pannelloAperto].titolo : ''}
                     </span>
                     <img
@@ -950,6 +966,7 @@ export default function DashboardMobile() {
 
             <div
                 ref={wrapRef}
+                className={vortexBusy ? 'mb-vortex-transizione' : undefined}
                 style={{
                     position: 'relative',
                     width: '100%',
@@ -959,7 +976,15 @@ export default function DashboardMobile() {
                     marginTop: dashboardAperta ? 0 : -100,
                     borderRadius: 12,
                     overflow: 'hidden',
-                    transition: 'max-width .5s cubic-bezier(.4,0,.2,1)',
+                    // Durante il vortice la transizione va disattivata: max-width
+                    // e' osservato da un ResizeObserver che riscala il contenuto
+                    // interno via stato React, un sistema indipendente e non
+                    // perfettamente sincronizzato con l'animazione JS del
+                    // vortice — le due animazioni in parallelo sulla stessa
+                    // dimensione producevano un piccolo scatto residuo
+                    // nell'ultimo fotogramma. Fuori dal vortice resta comunque
+                    // morbida (es. resize della finestra).
+                    transition: vortexBusy ? 'none' : 'max-width .3s cubic-bezier(.4,0,.2,1), margin-top .3s cubic-bezier(.4,0,.2,1)',
                 }}
             >
             <div

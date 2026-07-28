@@ -45,11 +45,11 @@ export default function StoricoBandiContenuto({ stats, bandiVinti, bandiPersi, c
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div className="text-center">
-                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                    <Trophy className="h-6 w-6 text-emerald-400" />
+                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                    <Trophy className="card-bolla-icona h-7 w-7 text-emerald-400" />
                     Storico Bandi
                 </h1>
-                <p className="text-slate-400 mt-1">Riepilogo dei bandi seguiti dal tuo ente: quanti totali, in corso, vinti e persi.</p>
+                <p className="text-slate-300 mt-1">Riepilogo dei bandi seguiti dal tuo ente: quanti totali, in corso, vinti e persi.</p>
             </div>
 
             <div className="grid grid-cols-4 gap-2 sm:gap-4">

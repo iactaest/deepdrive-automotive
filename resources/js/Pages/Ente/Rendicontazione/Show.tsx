@@ -50,11 +50,11 @@ export default function RendicontazioneShow({ rendicontazione: r }: Props) {
         <LayoutEnte>
             <div className="space-y-6 animate-fade-in">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                        <ClipboardCheck className="h-6 w-6 text-green-400" />
+                    <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                        <ClipboardCheck className="card-bolla-icona h-7 w-7 text-green-400" />
                         {r.titolo_progetto}
                     </h1>
-                    {r.bando && <p className="text-slate-400 mt-1">{r.bando.titolo}</p>}
+                    {r.bando && <p className="text-slate-300 mt-1">{r.bando.titolo}</p>}
                 </div>
 
                 <div className="inline-flex items-center rounded-lg bg-slate-800/60 border border-slate-700/50 p-1">

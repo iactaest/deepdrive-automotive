@@ -39,11 +39,11 @@ export default function RendicontazioneContenuto({ progetti, compatto = false }:
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
             <div className="text-center">
-                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
-                    <ClipboardCheck className="h-6 w-6 text-green-400" />
+                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2.5">
+                    <ClipboardCheck className="card-bolla-icona h-7 w-7 text-green-400" />
                     Rendicontazione
                 </h1>
-                <p className="text-slate-400 mt-1">
+                <p className="text-slate-300 mt-1">
                     Gestisci spese, milestone e report dei progetti finanziati. Per avviarne uno nuovo, vai al dettaglio di un bando.
                 </p>
             </div>
