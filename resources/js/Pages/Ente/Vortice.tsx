@@ -24,11 +24,14 @@ export const ORIGINE_RISUCCHIO_FRAZIONE = { x: 0.5, y: 0.28 };
 const ORIGINE_RISUCCHIO = `${ORIGINE_RISUCCHIO_FRAZIONE.x * 100}% ${ORIGINE_RISUCCHIO_FRAZIONE.y * 100}%`;
 
 const EASE_APERTURA: [number, number, number, number] = [0.45, 0, 0.2, 1]; // ease morbido, niente overshoot: mantiene menu e contenuto sincronizzati
-const EASE_CHIUSURA = 'backOut' as const; // leggero rimbalzo quando il menu ricompare
-const GIRI_MENU = 320;
+// Stessa famiglia di curva dell'apertura (decelerazione morbida, niente
+// rimbalzo/overshoot): un ease "backOut" su una rotazione così ampia in poco
+// tempo dava l'impressione di uno scatto invece che di un movimento continuo.
+const EASE_CHIUSURA: [number, number, number, number] = [0.16, 1, 0.3, 1];
+const GIRI_MENU = 200;
 
 export const DURATA_APERTURA = 0.9;
-export const DURATA_CHIUSURA = 0.55;
+export const DURATA_CHIUSURA = 0.75;
 
 export interface PuntoVortice {
     x: number;
@@ -73,7 +76,7 @@ export function animaSparizioneMenu(elemento: HTMLElement, { durata = DURATA_APE
 }
 
 // Percorso inverso: il menu riemerge dallo stesso punto, girando, fino alla
-// forma e dimensione originali (leggero overshoot).
+// forma e dimensione originali.
 export function animaComparsaMenu(elemento: HTMLElement, { durata = DURATA_CHIUSURA }: OpzioniFase = {}): Promise<unknown> {
     elemento.style.transformOrigin = ORIGINE_RISUCCHIO;
     elemento.style.willChange = 'transform, opacity';
@@ -81,9 +84,8 @@ export function animaComparsaMenu(elemento: HTMLElement, { durata = DURATA_CHIUS
         duration: durata,
         ease: EASE_CHIUSURA,
         onUpdate(t) {
-            const s = Math.max(0, t); // backOut può scendere sotto 0 a inizio corsa
-            elemento.style.transform = `rotate(${GIRI_MENU * (1 - t)}deg) scale(${s})`;
-            elemento.style.opacity = String(Math.min(1, s));
+            elemento.style.transform = `rotate(${GIRI_MENU * (1 - t)}deg) scale(${t})`;
+            elemento.style.opacity = String(t);
         },
     }).then(() => {
         elemento.style.willChange = 'auto';
@@ -113,6 +115,8 @@ export function animaEmersioneContenuto(elemento: HTMLElement, { durata = DURATA
         },
     }).then(() => {
         elemento.style.willChange = 'auto';
+        elemento.style.transform = '';
+        elemento.style.clipPath = '';
     });
 }
 

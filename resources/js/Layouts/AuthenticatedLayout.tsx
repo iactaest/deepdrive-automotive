@@ -25,7 +25,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
    const navigation = [
     { name: 'Dashboard', href: '/ente/dashboard', icon: LayoutDashboard },
     { name: 'Assistente', href: '/assistente', icon: Bot },
-    { name: 'Impostazioni', href: '/settings', icon: Settings },
+    { name: 'Impostazioni', href: '/profile', icon: Settings },
 ];
 
     const handleLinkClick = () => {
@@ -51,7 +51,7 @@ export default function AuthenticatedLayout({ children }: { children: React.Reac
                     {/* Logo */}
                     <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                         <Link href="/ente/dashboard" className="flex items-center gap-2">
-                            <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-10 w-auto" />
+                            <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-10 w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                         </Link>
                         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400">
                             <X className="h-5 w-5" />

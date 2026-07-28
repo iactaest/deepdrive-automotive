@@ -78,7 +78,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
     const navDopo = [
         ...(isTitolare ? [{ name: 'Gestione Team', href: '/ente/team', icon: Users }] : []),
-        { name: 'Impostazioni', href: '/settings', icon: Settings },
+        { name: 'Impostazioni', href: '/profile', icon: Settings },
     ];
 
     const [assistenteAperto, setAssistenteAperto] = useState(false);
@@ -99,7 +99,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                 <div className="flex flex-col h-full">
                     <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
                         <Link href="/ente/dashboard" className="flex items-center gap-2 group">
-                            <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-10 w-auto group-hover:scale-110 transition-transform" />
+                            <img src="/images/logo-deepbandi-chiaro.png" alt="DeepBandi" className="w-auto group-hover:scale-110 transition-transform" style={{ height: 90, filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                         </Link>
                         <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400"><X className="h-5 w-5" /></button>
                     </div>
@@ -118,7 +118,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                                 onClick={handleLinkClick}
                                 className="flex items-center gap-3 px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group hover:translate-x-1"
                             >
-                                <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                <item.icon className="card-bolla-icona h-5 w-5 group-hover:scale-110 transition-transform" strokeWidth={1.75} />
                                 <span>{item.name}</span>
                             </Link>
                         ))}
@@ -130,7 +130,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                                     className="flex items-center justify-between w-full px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group"
                                 >
                                     <span className="flex items-center gap-3">
-                                        <gruppo.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                        <gruppo.icon className="card-bolla-icona h-5 w-5 group-hover:scale-110 transition-transform" strokeWidth={1.75} />
                                         <span>{gruppo.name}</span>
                                     </span>
                                     <ChevronDown className={`h-4 w-4 shrink-0 transition-transform ${gruppiAperti[gruppo.name] ? 'rotate-180' : ''}`} />
@@ -144,7 +144,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                                                 onClick={handleLinkClick}
                                                 className="flex items-center gap-2.5 px-3 py-2 text-slate-400 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all text-sm"
                                             >
-                                                <item.icon className="h-4 w-4" />
+                                                <item.icon className="card-bolla-icona h-4 w-4" strokeWidth={1.75} />
                                                 <span>{item.name}</span>
                                             </Link>
                                         ))}
@@ -160,7 +160,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                                 onClick={handleLinkClick}
                                 className="flex items-center gap-3 px-4 py-2.5 text-slate-300 rounded-lg hover:bg-slate-800/50 hover:text-white transition-all group hover:translate-x-1"
                             >
-                                <item.icon className="h-5 w-5 group-hover:scale-110 transition-transform" />
+                                <item.icon className="card-bolla-icona h-5 w-5 group-hover:scale-110 transition-transform" strokeWidth={1.75} />
                                 <span>{item.name}</span>
                             </Link>
                         ))}
@@ -179,7 +179,7 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
                         <Link href="/logout" method="post" as="button"
                             className="flex items-center gap-3 w-full px-4 py-2.5 text-slate-300 rounded-lg hover:bg-red-500/20 hover:text-red-400 transition group"
                         >
-                            <LogOut className="h-5 w-5 group-hover:rotate-12 transition-transform" />
+                            <LogOut className="card-bolla-icona h-5 w-5 group-hover:rotate-12 transition-transform" strokeWidth={1.75} />
                             <span>Logout</span>
                         </Link>
                     </div>
@@ -203,10 +203,11 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
             <button
                 onClick={() => setAssistenteAperto(true)}
-                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-lg shadow-purple-900/40 flex items-center justify-center transition-transform hover:scale-110"
+                className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-gradient-to-br from-[#4FA39B] to-[#66AB93] hover:from-[#66AB93] hover:to-[#7CB08A] shadow-lg shadow-[#66AB93]/30 flex items-center justify-center transition-transform hover:scale-110"
+                style={{ boxShadow: '0 10px 22px rgba(0,0,0,.4), inset 0 2px 3px rgba(255,255,255,.25), inset 0 -4px 8px rgba(0,0,0,.2)' }}
                 title="Assistente Virtuale"
             >
-                <Bot className="h-6 w-6 text-white" />
+                <Bot className="h-6 w-6 text-white" style={{ filter: 'drop-shadow(0 2px 2px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.14))' }} />
             </button>
 
             {assistenteAperto && <AssistenteModal onClose={() => setAssistenteAperto(false)} />}

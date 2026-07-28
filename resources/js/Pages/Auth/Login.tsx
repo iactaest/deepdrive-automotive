@@ -16,19 +16,24 @@ export default function Login({ status, canResetPassword }: any) {
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 relative overflow-hidden flex items-center justify-center">
-            
-            {/* Luce fioca al centro */}
-            <div className="absolute inset-0 pointer-events-none">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-emerald-500/10 blur-3xl animate-pulse" />
-            </div>
+        <div className="min-h-screen bg-[#05070a] relative overflow-hidden flex items-center justify-center">
+
+            {/* Stesso sfondo della landing: immagine attenuata + velo scuro sopra.
+                Opacita' piu' alta e velo piu' leggero rispetto alla landing,
+                altrimenti su questa pagina (piu' corta, card centrale grande)
+                l'immagine risultava troppo scura per essere notata. */}
+            <div
+                className="absolute inset-0 bg-cover bg-center pointer-events-none"
+                style={{ backgroundImage: "url('/images/sfondo-landing.png')", opacity: 0.85 }}
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/65 pointer-events-none" />
 
             <div className="relative z-10 w-full max-w-md px-4">
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-8 shadow-2xl">
 
                     {/* Logo */}
                     <div className="flex items-center justify-center mb-8">
-                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-[84px] w-auto" />
+                        <img src="/images/logo-deepbandi-chiaro.png" alt="DeepBandi" className="h-[84px] w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Benvenuto</h2>

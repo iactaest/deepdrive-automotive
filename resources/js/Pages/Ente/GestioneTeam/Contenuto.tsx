@@ -57,8 +57,8 @@ export default function GestioneTeamContenuto({ membri, inviti, puoInvitare }: P
 
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
-            <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
                     <Users className="h-6 w-6 text-green-400" />
                     Gestione Team
                 </h1>

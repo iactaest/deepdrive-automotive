@@ -27,6 +27,7 @@ import ListaBandiContenuto from './ListaBandi/Contenuto';
 import RicercaContenuto from '../Bandi/RicercaContenuto';
 import BandiSalvatiContenuto from './BandiSalvati/Contenuto';
 import StoricoBandiContenuto from './StoricoBandi/Contenuto';
+import ImpostazioniContenuto from './ImpostazioniContenuto';
 import {
     animaSparizioneMenu,
     animaComparsaMenu,
@@ -49,6 +50,7 @@ type Bolla = {
     tail: string;
     icona: LucideIcon;
     size?: number;
+    tailSize?: number;
 };
 
 // Le voci del menu che aprono un pannello incorporato (invece di navigare a
@@ -56,8 +58,10 @@ type Bolla = {
 // dati e il titolo mostrato nella barra fissa in alto quando sono aperte.
 type ChiavePannello =
     | 'dashboard' | 'profilo' | 'team' | 'documenti' | 'rendicontazione'
-    | 'lista-bandi' | 'ricerca' | 'bandi-salvati' | 'storico-bandi';
+    | 'lista-bandi' | 'ricerca' | 'bandi-salvati' | 'storico-bandi' | 'impostazioni';
 
+// "impostazioni" non ha una vera fetch (vedi apriPannello): l'url resta vuoto,
+// i dati dei form vengono presi dalle props globali condivise di Inertia.
 const PANNELLI: Record<ChiavePannello, { url: string; titolo: string }> = {
     dashboard:        { url: '/ente/menu/dati-dashboard', titolo: 'DASHBOARD' },
     profilo:           { url: '/ente/profilo?embed=1', titolo: 'PROFILO' },
@@ -67,6 +71,7 @@ const PANNELLI: Record<ChiavePannello, { url: string; titolo: string }> = {
     'lista-bandi':     { url: '/ente/lista-bandi?embed=1', titolo: 'LISTA BANDI' },
     ricerca:           { url: '/ente/ricerca?embed=1', titolo: 'RICERCA' },
     'bandi-salvati':   { url: '/bandi-salvati?embed=1', titolo: 'BANDI SALVATI' },
+    impostazioni:      { url: '', titolo: 'IMPOSTAZIONI' },
     'storico-bandi':   { url: '/ente/storico-bandi?embed=1', titolo: 'STORICO BANDI' },
 };
 
@@ -75,6 +80,9 @@ type SubVoce = {
     chiave: ChiavePannello;
     bordo: string;
     icona: LucideIcon;
+    // Font piu' piccolo e forzato su una riga sola, per le etichette troppo
+    // lunghe per stare su due parole nella larghezza standard della bolla.
+    fontSize?: number;
 };
 
 // Sottomenu BANDI: tonalità fredde (blu-violetto-rosa) per distinguersi dalla
@@ -88,8 +96,8 @@ const BANDI_SUB: SubVoce[] = [
 
 // Sottomenu DOCUMENTI: due verdi ravvicinati alla bolla madre (#84AC80).
 const DOCUMENTI_SUB: SubVoce[] = [
-    { label: 'DOCUMENTAZIONE', chiave: 'documenti', bordo: '#7CB08A', icona: FolderOpen },
-    { label: 'RENDICONTAZIONE', chiave: 'rendicontazione', bordo: '#6FA5A0', icona: ClipboardCheck },
+    { label: 'DOCUMENTAZIONE', chiave: 'documenti', bordo: '#7CB08A', icona: FolderOpen, fontSize: 12 },
+    { label: 'RENDICONTAZIONE', chiave: 'rendicontazione', bordo: '#6FA5A0', icona: ClipboardCheck, fontSize: 12 },
 ];
 
 // Scala di 6 colori derivata da arancio (#F0913A) e verde (#3FCF97): tonalità
@@ -154,7 +162,7 @@ const BOLLE: Bolla[] = [
     },
     {
         label: 'IMPOSTAZIONI',
-        href: '/settings',
+        href: '/profile',
         left: 508,
         top: 624 + RING_Y,
         tailLeft: 446,
@@ -168,20 +176,22 @@ const BOLLE: Bolla[] = [
         label: 'LOGOUT',
         href: '/logout',
         left: 320,
-        top: 761 + RING_Y,
+        top: 721 + RING_Y,
         tailLeft: 320,
-        tailTop: 685 + RING_Y,
+        tailTop: 673 + RING_Y,
         rot: 45,
-        bordo: '#4FA39B',
-        tail: 'linear-gradient(145deg,#70C0B8,#2F7F78)',
+        bordo: '#C1666B',
+        tail: 'linear-gradient(145deg,#D98A82,#9C4A42)',
         icona: LogOut,
-        size: 130,
+        size: 95,
+        tailSize: 33,
     },
 ];
 
 const TESTO = '#E7EAED';
+const FONT_LABEL_SIZE = 14;
 const FONT_LABEL: React.CSSProperties = {
-    fontSize: 14,
+    fontSize: FONT_LABEL_SIZE,
     letterSpacing: '.03em',
     fontWeight: 500,
     whiteSpace: 'nowrap',
@@ -453,7 +463,14 @@ function PannelloSotto({
                     <span className="mb-bg" />
                     <span className="mb-dome" />
                     <span className="mb-shine" />
-                    <span className="mb-label" style={{ ...FONT_SUB_LABEL, color: TESTO }}>
+                    <span
+                        className="mb-label"
+                        style={{
+                            ...FONT_SUB_LABEL,
+                            color: TESTO,
+                            ...(s.fontSize ? { fontSize: s.fontSize, whiteSpace: 'nowrap' } : null),
+                        }}
+                    >
                         <s.icona className="mb-icona" size={24} strokeWidth={1.75} color={TESTO} />
                         {s.label}
                     </span>
@@ -561,6 +578,16 @@ export default function DashboardMobile() {
         setBandiAperto(false);
         setDocumentiAperto(false);
         setPannelloAperto(chiave);
+
+        // "impostazioni" non richiede una fetch: i form usano le props
+        // globali condivise di Inertia (auth.user), non un endpoint JSON.
+        if (chiave === 'impostazioni') {
+            setErrore(null);
+            setCaricando(false);
+            setDati({});
+            return;
+        }
+
         setDati(null);
         caricaPannello(chiave, PANNELLI[chiave].url);
     };
@@ -736,6 +763,8 @@ export default function DashboardMobile() {
                 );
             case 'storico-bandi':
                 return <StoricoBandiContenuto stats={dati.stats} bandiVinti={dati.bandiVinti} bandiPersi={dati.bandiPersi} compatto />;
+            case 'impostazioni':
+                return <ImpostazioniContenuto compatto />;
             default:
                 return null;
         }
@@ -748,6 +777,32 @@ export default function DashboardMobile() {
                 ...SFONDO_PROFONDITA,
             }}
         >
+            {/* Stessa immagine di sfondo di Welcome/Login, stessa opacita' — fixed
+                cosi resta ferma dietro a tutto anche mentre il contenuto scorre.
+                Primi elementi nel DOM, senza z-index, cosi restano dietro a tutto
+                il resto per semplice ordine di disegno. */}
+            <div
+                aria-hidden="true"
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    backgroundImage: "url('/images/sfondo-menu.jpg')",
+                    backgroundSize: 'cover',
+                    backgroundPosition: 'center',
+                    opacity: 0.4,
+                    pointerEvents: 'none',
+                }}
+            />
+            <div
+                aria-hidden="true"
+                style={{
+                    position: 'fixed',
+                    inset: 0,
+                    background: 'linear-gradient(to bottom, rgba(0,0,0,.55), rgba(0,0,0,.35), rgba(0,0,0,.65))',
+                    pointerEvents: 'none',
+                }}
+            />
+
             {/* Logo di fondo, centrato sullo schermo (fixed, non legato all'altezza
                 variabile del pannello): primo elemento nel DOM, senza z-index, cosi
                 resta dietro a tutto il resto per semplice ordine di disegno
@@ -770,19 +825,20 @@ export default function DashboardMobile() {
                     // per tutto il tempo di caricamento invece di sparire da solo
                     // troppo presto e lasciare un vuoto prima che arrivino le card.
                     opacity: !testoSfondoVisibile ? 0 : logoCresciuto ? 0 : 0.55,
-                    transition: testoSfondoVisibile && logoCresciuto ? 'opacity 2.5s ease' : 'opacity 0s',
+                    transition: testoSfondoVisibile && logoCresciuto ? 'opacity 3.5s ease' : 'opacity 0s',
                 }}
             >
                 <img
                     src="/images/logo-deepbandi-chiaro.png"
                     alt=""
                     style={{
-                        height: 'min(250px, 27vh)',
+                        height: 'min(290px, 27vh)',
                         width: 'auto',
                         // Parte un po' più piccolo (0.8x) e cresce di +100px
                         // rispetto alla base (1.4x = 350px) in un'unica corsa lenta.
                         transform: logoCresciuto ? 'scale(1.4)' : 'scale(0.8)',
-                        transition: testoSfondoVisibile && logoCresciuto ? 'transform 2.5s ease' : 'transform 0s',
+                        transition: testoSfondoVisibile && logoCresciuto ? 'transform 3.5s ease' : 'transform 0s',
+                        filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))',
                     }}
                 />
             </div>
@@ -813,7 +869,7 @@ export default function DashboardMobile() {
                     <img
                         src="/images/logo-deepbandi-chiaro.png"
                         alt="DeepBandi"
-                        style={{ height: 75, width: 'auto', justifySelf: 'center' }}
+                        style={{ height: 75, width: 'auto', justifySelf: 'center', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }}
                     />
                     <button
                         type="button"
@@ -857,7 +913,7 @@ export default function DashboardMobile() {
                         src="/images/logo-deepbandi-chiaro.png"
                         alt="DeepBandi"
                         className="mb-float-logo2"
-                        style={{ height: 160, width: 'auto' }}
+                        style={{ height: 160, width: 'auto', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }}
                     />
                 )}
             </div>
@@ -928,6 +984,8 @@ export default function DashboardMobile() {
                     key={`tail-${b.label}`}
                     style={{
                         ...stileTail,
+                        width: b.tailSize ?? 48,
+                        height: b.tailSize ?? 48,
                         left: b.tailLeft,
                         top: b.tailTop,
                         background: b.tail,
@@ -949,6 +1007,7 @@ export default function DashboardMobile() {
             <div
                 style={{
                     ...stileOmbra(212),
+                    background: 'rgba(255,255,255,.025)',
                     left: 320,
                     top: 490 + RING_Y + 212 * 0.16,
                 }}
@@ -963,6 +1022,7 @@ export default function DashboardMobile() {
                     b.label === 'DASHBOARD' ? 'dashboard' :
                     b.label === 'PROFILO' ? 'profilo' :
                     b.label === 'TEAM' ? 'team' :
+                    b.label === 'IMPOSTAZIONI' ? 'impostazioni' :
                     null;
                 const conFreccia = isDocumenti;
                 const freccaAperta = documentiAperto;
@@ -971,7 +1031,7 @@ export default function DashboardMobile() {
                         <span className="mb-bg" />
                         <span className="mb-dome" />
                         <span className="mb-shine" />
-                        <span className="mb-label" style={{ ...FONT_LABEL, color: TESTO }}>
+                        <span className="mb-label" style={{ ...FONT_LABEL, color: TESTO, fontSize: FONT_LABEL_SIZE * (size / 152) }}>
                             <b.icona className="mb-icona" size={24} strokeWidth={1.75} color={TESTO} />
                             {b.label}
                             {conFreccia && (
@@ -1082,7 +1142,7 @@ export default function DashboardMobile() {
                     width: 212,
                     height: 212,
                     borderRadius: '50%',
-                    border: '10px solid #DDE2E6',
+                    border: '10px solid rgba(221,226,230,.5)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',

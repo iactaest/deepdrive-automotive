@@ -28,7 +28,7 @@ export default function Register() {
                 <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-8 shadow-2xl">
 
                     <div className="flex items-center justify-center mb-8">
-                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-16 w-auto" />
+                        <img src="/images/logo-deepbandi.png" alt="DeepBandi" className="h-16 w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Crea un Account</h2>

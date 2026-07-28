@@ -168,17 +168,15 @@ export default function CalendarioIndex() {
     return (
         <LayoutEnte>
             <div className="space-y-6 animate-fade-in">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div>
-                        <h1 className="text-2xl font-bold text-white flex items-center gap-2">
-                            <CalendarDays className="h-6 w-6 text-green-400" />
-                            Calendario Scadenze
-                        </h1>
-                        <p className="text-slate-400 mt-1">
-                            Scadenze dei bandi salvati e in match, con task interni collegati. Clicca su un giorno per il dettaglio.
-                        </p>
-                    </div>
-                    <div className="flex items-center gap-2">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
+                        <CalendarDays className="h-6 w-6 text-green-400" />
+                        Calendario Scadenze
+                    </h1>
+                    <p className="text-slate-400 mt-1">
+                        Scadenze dei bandi salvati e in match, con task interni collegati. Clicca su un giorno per il dettaglio.
+                    </p>
+                    <div className="flex items-center justify-center gap-2 mt-3">
                         <div className="inline-flex items-center rounded-lg bg-slate-800/60 border border-slate-700/50 p-1">
                             <button
                                 onClick={() => setVista('calendario')}

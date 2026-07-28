@@ -83,8 +83,8 @@ export default function CassettoDocumentiContenuto({ bandi, onRicarica }: Props)
 
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
-            <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
                     <Archive className="h-6 w-6 text-purple-400" />
                     Cassetto Documenti
                 </h1>

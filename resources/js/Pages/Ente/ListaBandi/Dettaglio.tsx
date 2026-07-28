@@ -3,6 +3,21 @@ import { router } from '@inertiajs/react';
 import LayoutEnte from '@/Layouts/LayoutEnte';
 import { FileText, Bot, Loader2, ClipboardCheck, XCircle, Undo2 } from 'lucide-react';
 import DocumentoRiga, { DocumentoBando } from '@/Components/DocumentoRiga';
+import { PALETTE_BOLLA } from '@/Components/CardBolla';
+
+// Stile pillola per i bottoni dell'header: stessa scala di colori (PALETTE_BOLLA)
+// usata per i bordi delle card in tutta l'app, invece di colori Tailwind generici.
+const stileBottone = (colore: string): React.CSSProperties => ({
+    background: `linear-gradient(145deg, ${colore}33, ${colore}1A)`,
+    borderColor: colore,
+    color: colore,
+});
+
+const stileBottoneNeutro: React.CSSProperties = {
+    background: 'rgba(255,255,255,.04)',
+    borderColor: 'rgba(255,255,255,.14)',
+    color: '#94a3b8',
+};
 
 interface Bando {
     id: number;
@@ -193,35 +208,15 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato, rendicont
 
                     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
 
-                        {/* Header: titolo + badges + button */}
-                        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 mb-6">
-                            <div className="flex-1">
-                                <h1 className="text-2xl font-bold text-white mb-3">{bando.titolo}</h1>
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatoBadge(bando.stato)}`}>
-                                        {statoLabel(bando.stato)}
-                                    </span>
-                                    <span className={`px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 ${getMatchColor(bando.scadenza, bando.stato)}`}>
-                                        📅 Scadenza:{' '}
-                                        {bando.scadenza
-                                            ? new Date(bando.scadenza).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
-                                            : 'Non specificata'}
-                                    </span>
-                                    <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 text-slate-300">
-                                        🎯 Match: {match.punteggio}%
-                                    </span>
-                                </div>
-                            </div>
-
-                            {/* Button link bando — sempre visibile */}
-                            <div className="shrink-0 flex flex-row flex-wrap gap-2">
+                        {/* Header: bottoni (piccoli, a destra) sopra, poi titolo a piena
+                            larghezza, poi badge — stessa scala di colori (PALETTE_BOLLA)
+                            usata nel resto dell'app invece delle classi Tailwind generiche. */}
+                        <div className="mb-6">
+                            <div className="flex justify-end flex-wrap gap-2 mb-4">
                                 <button
                                     onClick={toggleSalva}
-                                    className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition border ${
-                                        isSalvato
-                                            ? 'bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-400 border-yellow-500/40'
-                                            : 'bg-slate-700 hover:bg-slate-600 text-slate-300 border-slate-600/60'
-                                    }`}
+                                    style={isSalvato ? stileBottone(PALETTE_BOLLA[2]) : stileBottoneNeutro}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition"
                                 >
                                     {isSalvato ? '⭐ Salvato' : '☆ Salva'}
                                 </button>
@@ -229,44 +224,66 @@ export default function ListaBandiDettaglio({ bando, match, isSalvato, rendicont
                                     href={`https://www.google.com/search?q=${encodeURIComponent(bando.titolo + ' bando sito:gov.it OR sito:regione.sicilia.it OR sito:europa.eu')}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-medium transition border border-slate-600/60"
+                                    style={stileBottone(PALETTE_BOLLA[1])}
+                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition"
                                 >
-                                    🔍 Cerca il bando online
+                                    🔍 Cerca online
                                 </a>
                                 {rendicontazioneEsistente ? (
                                     <button
                                         onClick={() => router.get(`/ente/rendicontazione/${rendicontazioneEsistente.id}`)}
-                                        className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 rounded-lg text-white text-sm font-medium transition"
+                                        style={stileBottone(PALETTE_BOLLA[4])}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition"
                                     >
-                                        <ClipboardCheck className="h-4 w-4" /> Vai alla Rendicontazione
+                                        <ClipboardCheck className="h-3.5 w-3.5" /> Rendicontazione
                                     </button>
                                 ) : (
                                     <>
                                         <button
                                             onClick={() => setModaleAvvioAperto(true)}
-                                            className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 hover:bg-green-500 rounded-lg text-white text-sm font-medium transition"
+                                            style={stileBottone(PALETTE_BOLLA[4])}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition"
                                         >
-                                            <ClipboardCheck className="h-4 w-4" /> Avvia Rendicontazione
+                                            <ClipboardCheck className="h-3.5 w-3.5" /> Avvia Rendicontazione
                                         </button>
                                         {bando.stato === 'chiuso' && (
                                             bandoPersoEsistente ? (
                                                 <button
                                                     onClick={annullaPerso}
-                                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-medium transition border border-slate-600/60"
+                                                    style={stileBottoneNeutro}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition"
                                                 >
-                                                    <Undo2 className="h-4 w-4" /> Annulla marcatura persa
+                                                    <Undo2 className="h-3.5 w-3.5" /> Annulla marcatura persa
                                                 </button>
                                             ) : (
                                                 <button
                                                     onClick={segnaPerso}
-                                                    className="inline-flex items-center gap-2 px-5 py-2.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-sm font-medium transition border border-red-500/30"
+                                                    style={stileBottone(PALETTE_BOLLA[7])}
+                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium border transition"
                                                 >
-                                                    <XCircle className="h-4 w-4" /> Segna come partecipato e perso
+                                                    <XCircle className="h-3.5 w-3.5" /> Segna come perso
                                                 </button>
                                             )
                                         )}
                                     </>
                                 )}
+                            </div>
+
+                            <h1 className="text-2xl font-bold text-white w-full mb-3">{bando.titolo}</h1>
+
+                            <div className="flex flex-wrap items-center gap-2">
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${getStatoBadge(bando.stato)}`}>
+                                    {statoLabel(bando.stato)}
+                                </span>
+                                <span className={`px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 ${getMatchColor(bando.scadenza, bando.stato)}`}>
+                                    📅 Scadenza:{' '}
+                                    {bando.scadenza
+                                        ? new Date(bando.scadenza).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' })
+                                        : 'Non specificata'}
+                                </span>
+                                <span className="px-2.5 py-1 rounded-full text-xs font-medium bg-slate-700/60 text-slate-300">
+                                    🎯 Match: {match.punteggio}%
+                                </span>
                             </div>
                         </div>
 

@@ -27,44 +27,65 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
         scadenza: 'tutti'
     });
 
-    // Opzioni filtri
+    // Opzioni filtri — colori presi dalla stessa scala desaturata (PALETTE_BOLLA)
+    // usata per bordi delle card in tutta l'app, invece delle classi Tailwind
+    // generiche bg-${color}-500 (che oltretutto il build non genera, dato che
+    // sono costruite a runtime e JIT non le vede mai come stringa letterale).
     const livelliOpzioni = [
-        { value: 'comunale', label: 'Comunale', color: 'blue', icon: MapPin },
-        { value: 'regionale', label: 'Regionale', color: 'green', icon: Landmark },
-        { value: 'nazionale', label: 'Nazionale', color: 'purple', icon: Globe },
-        { value: 'europeo', label: 'Europeo', color: 'yellow', icon: Globe },
+        { value: 'comunale', label: 'Comunale', colore: PALETTE_BOLLA[1], icon: MapPin },
+        { value: 'regionale', label: 'Regionale', colore: PALETTE_BOLLA[0], icon: Landmark },
+        { value: 'nazionale', label: 'Nazionale', colore: PALETTE_BOLLA[3], icon: Globe },
+        { value: 'europeo', label: 'Europeo', colore: PALETTE_BOLLA[2], icon: Globe },
     ];
 
     const categorieOpzioni = [
-        { value: 'digitalizzazione', label: 'Digitalizzazione', color: 'blue' },
-        { value: 'ambiente', label: 'Ambiente', color: 'green' },
-        { value: 'formazione', label: 'Formazione', color: 'yellow' },
-        { value: 'sociale', label: 'Sociale', color: 'red' },
-        { value: 'cultura', label: 'Cultura', color: 'purple' },
-        { value: 'infrastrutture', label: 'Infrastrutture', color: 'orange' },
-        { value: 'agricoltura', label: 'Agricoltura', color: 'teal' },
-        { value: 'pesca', label: 'Pesca/Acquacoltura', color: 'cyan' },
+        { value: 'digitalizzazione', label: 'Digitalizzazione', colore: PALETTE_BOLLA[1] },
+        { value: 'ambiente', label: 'Ambiente', colore: PALETTE_BOLLA[0] },
+        { value: 'formazione', label: 'Formazione', colore: PALETTE_BOLLA[2] },
+        { value: 'sociale', label: 'Sociale', colore: PALETTE_BOLLA[7] },
+        { value: 'cultura', label: 'Cultura', colore: PALETTE_BOLLA[3] },
+        { value: 'infrastrutture', label: 'Infrastrutture', colore: PALETTE_BOLLA[8] },
+        { value: 'agricoltura', label: 'Agricoltura', colore: PALETTE_BOLLA[9] },
+        { value: 'pesca', label: 'Pesca/Acquacoltura', colore: PALETTE_BOLLA[5] },
     ];
 
     const statOpzioni = [
-        { value: 'aperto', label: 'Aperto', color: 'green' },
-        { value: 'in_scadenza', label: 'In scadenza', color: 'yellow' },
-        { value: 'chiuso', label: 'Chiuso', color: 'red' },
-        { value: 'scaduto', label: 'Scaduto', color: 'gray' },
+        { value: 'aperto', label: 'Aperto', colore: PALETTE_BOLLA[0] },
+        { value: 'in_scadenza', label: 'In scadenza', colore: PALETTE_BOLLA[2] },
+        { value: 'chiuso', label: 'Chiuso', colore: PALETTE_BOLLA[7] },
+        { value: 'scaduto', label: 'Scaduto', colore: '#8B93A1' },
     ];
 
     const settoreOpzioni = [
-        { value: 'edilizia', label: 'Edilizia' },
-        { value: 'agricoltura', label: 'Agricoltura' },
-        { value: 'pesca', label: 'Pesca' },
-        { value: 'foreste', label: 'Foreste' },
-        { value: 'promozione', label: 'Promozione' },
-        { value: 'innovazione', label: 'Innovazione' },
+        { value: 'edilizia', label: 'Edilizia', colore: PALETTE_BOLLA[2] },
+        { value: 'agricoltura', label: 'Agricoltura', colore: PALETTE_BOLLA[0] },
+        { value: 'pesca', label: 'Pesca', colore: PALETTE_BOLLA[5] },
+        { value: 'foreste', label: 'Foreste', colore: PALETTE_BOLLA[9] },
+        { value: 'promozione', label: 'Promozione', colore: PALETTE_BOLLA[7] },
+        { value: 'innovazione', label: 'Innovazione', colore: PALETTE_BOLLA[3] },
     ];
 
     const toggleFilter = (array: string[], value: string) => {
         return array.includes(value) ? array.filter(v => v !== value) : [...array, value];
     };
+
+    // Stile pillola per i bottoni filtro: non selezionato = neutro scuro,
+    // selezionato = sfumatura leggera del colore assegnato + bordo pieno e
+    // lieve bagliore, stessa logica "bolla" usata nel resto dell'app invece
+    // delle classi Tailwind bg-${color}-500 generate a runtime.
+    const stileFiltro = (colore: string, selezionato: boolean): React.CSSProperties =>
+        selezionato
+            ? {
+                  background: `linear-gradient(145deg, ${colore}33, ${colore}1A)`,
+                  borderColor: colore,
+                  color: colore,
+                  boxShadow: `0 0 0 1px ${colore}40, 0 4px 10px ${colore}26`,
+              }
+            : {
+                  background: 'rgba(255,255,255,.03)',
+                  borderColor: 'rgba(255,255,255,.12)',
+                  color: '#94a3b8',
+              };
 
     const handleSearch = async () => {
         setSearching(true);
@@ -171,7 +192,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
 
     const chartOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: { position: 'top' as const, labels: { color: '#94a3b8', font: { size: 11 } } },
             tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
@@ -184,7 +205,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
 
     const doughnutOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: { position: 'bottom' as const, labels: { color: '#94a3b8', font: { size: 10 } } },
             tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
@@ -194,7 +215,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
 
     const barOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: { position: 'top' as const, labels: { color: '#94a3b8', font: { size: 11 } } },
             tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
@@ -208,7 +229,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
 
     const radarOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        maintainAspectRatio: false,
         plugins: {
             legend: { position: 'top' as const, labels: { color: '#94a3b8' } },
             tooltip: { backgroundColor: '#1e293b' }
@@ -231,14 +252,14 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
         { title: 'In Scadenza (<30gg)', value: bandi.filter(b => b.giorni_scadenza <= 30).length, icon: Clock, color: 'orange' },
     ];
 
-    const grigliaChart = `grid grid-cols-1 gap-6 mb-8 ${compatto ? '' : 'md:grid-cols-3'}`;
+    const grigliaChart = `grid grid-cols-1 gap-6 mb-8 ${compatto ? '' : 'sm:grid-cols-3'}`;
     const grigliaStat = `grid grid-cols-1 gap-6 mb-8 ${compatto ? '' : 'md:grid-cols-4'}`;
 
     return (
         <>
             {/* Header */}
-            <div className="mb-8" style={{ marginTop: 25 }}>
-                <h1 className="text-3xl font-bold text-white flex items-center gap-2">
+            <div className="mb-8 text-center" style={{ marginTop: 25 }}>
+                <h1 className="text-3xl font-bold text-white flex items-center justify-center gap-2">
                     <Zap className="h-8 w-8 text-yellow-400" />
                     Bandi Finder Avanzato
                 </h1>
@@ -247,30 +268,24 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
 
             {/* CHART ROW 1 */}
             <div className={grigliaChart}>
-                <CardBolla bordo={PALETTE_BOLLA[0]} indice={0} className="p-4">
+                <CardBolla bordo={PALETTE_BOLLA[0]} indice={0} className="p-4 flex flex-col">
                     <h3 className="text-sm font-semibold text-white mb-3 text-center">Trend Bandi nel Tempo</h3>
-                    <div className="h-[250px] flex items-center justify-center">
-                        <div className="w-full"><Line data={trendData} options={chartOptions} /></div>
-                    </div>
+                    <div className="relative h-[280px] w-full"><Line data={trendData} options={chartOptions} /></div>
                 </CardBolla>
-                <CardBolla bordo={PALETTE_BOLLA[1]} indice={1} className="p-4">
+                <CardBolla bordo={PALETTE_BOLLA[1]} indice={1} className="p-4 flex flex-col">
                     <h3 className="text-sm font-semibold text-white mb-3 text-center">Tipo Finanziamento</h3>
-                    <div className="h-[250px] flex items-center justify-center">
-                        <div className="w-full max-w-[220px]"><Doughnut data={finanziamentoData} options={doughnutOptions} /></div>
-                    </div>
+                    <div className="relative h-[280px] w-full"><Doughnut data={finanziamentoData} options={doughnutOptions} /></div>
                 </CardBolla>
-                <CardBolla bordo={PALETTE_BOLLA[2]} indice={2} className="p-4">
+                <CardBolla bordo={PALETTE_BOLLA[2]} indice={2} className="p-4 flex flex-col">
                     <h3 className="text-sm font-semibold text-white mb-3 text-center">Bandi per Stato</h3>
-                    <div className="h-[250px] flex items-center justify-center">
-                        <div className="w-full"><Bar data={statoData} options={barOptions} /></div>
-                    </div>
+                    <div className="relative h-[280px] w-full"><Bar data={statoData} options={barOptions} /></div>
                 </CardBolla>
             </div>
 
             {/* Filtri */}
             <CardBolla bordo={PALETTE_BOLLA[3]} indice={3} className="p-6 mb-8">
-                <div className="flex items-center gap-2 mb-4">
-                    <Filter className="h-5 w-5 text-blue-400" />
+                <div className="flex items-center gap-2 mb-5">
+                    <Filter className="h-5 w-5" style={{ color: PALETTE_BOLLA[3] }} />
                     <h2 className="text-lg font-semibold text-white">Filtri di Ricerca</h2>
                 </div>
 
@@ -278,60 +293,69 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Livello Geografico</label>
                         <div className="flex flex-wrap gap-3">
-                            {livelliOpzioni.map((opt) => (
-                                <button key={opt.value} type="button"
-                                    onClick={() => setFilters({...filters, livello: toggleFilter(filters.livello, opt.value)})}
-                                    className={`px-4 py-2 rounded-lg transition-all ${filters.livello.includes(opt.value)
-                                        ? `bg-${opt.color}-500/20 text-${opt.color}-400 border border-${opt.color}-500/50`
-                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                                    {opt.label}
-                                </button>
-                            ))}
+                            {livelliOpzioni.map((opt) => {
+                                const selezionato = filters.livello.includes(opt.value);
+                                return (
+                                    <button key={opt.value} type="button"
+                                        onClick={() => setFilters({...filters, livello: toggleFilter(filters.livello, opt.value)})}
+                                        style={stileFiltro(opt.colore, selezionato)}
+                                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium border transition-all">
+                                        <opt.icon className="h-3.5 w-3.5" />
+                                        {opt.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Categorie</label>
                         <div className="flex flex-wrap gap-2">
-                            {categorieOpzioni.map((cat) => (
-                                <button key={cat.value} type="button"
-                                    onClick={() => setFilters({...filters, categoria: toggleFilter(filters.categoria, cat.value)})}
-                                    className={`px-3 py-1.5 rounded-full text-sm transition-all ${filters.categoria.includes(cat.value)
-                                        ? `bg-${cat.color}-500/20 text-${cat.color}-400 border border-${cat.color}-500/50`
-                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                                    {cat.label}
-                                </button>
-                            ))}
+                            {categorieOpzioni.map((cat) => {
+                                const selezionato = filters.categoria.includes(cat.value);
+                                return (
+                                    <button key={cat.value} type="button"
+                                        onClick={() => setFilters({...filters, categoria: toggleFilter(filters.categoria, cat.value)})}
+                                        style={stileFiltro(cat.colore, selezionato)}
+                                        className="px-3 py-1.5 rounded-full text-sm font-medium border transition-all">
+                                        {cat.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Stato Bando</label>
                         <div className="flex flex-wrap gap-3">
-                            {statOpzioni.map((opt) => (
-                                <button key={opt.value} type="button"
-                                    onClick={() => setFilters({...filters, stato: toggleFilter(filters.stato, opt.value)})}
-                                    className={`px-4 py-2 rounded-lg transition-all ${filters.stato.includes(opt.value)
-                                        ? `bg-${opt.color}-500/20 text-${opt.color}-400 border border-${opt.color}-500/50`
-                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                                    {opt.label}
-                                </button>
-                            ))}
+                            {statOpzioni.map((opt) => {
+                                const selezionato = filters.stato.includes(opt.value);
+                                return (
+                                    <button key={opt.value} type="button"
+                                        onClick={() => setFilters({...filters, stato: toggleFilter(filters.stato, opt.value)})}
+                                        style={stileFiltro(opt.colore, selezionato)}
+                                        className="px-4 py-2 rounded-lg text-sm font-medium border transition-all">
+                                        {opt.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
                     <div>
                         <label className="block text-sm font-medium text-slate-300 mb-2">Settore Specifico</label>
                         <div className="flex flex-wrap gap-2">
-                            {settoreOpzioni.map((set) => (
-                                <button key={set.value} type="button"
-                                    onClick={() => setFilters({...filters, settore: toggleFilter(filters.settore, set.value)})}
-                                    className={`px-3 py-1.5 rounded-full text-sm transition-all ${filters.settore.includes(set.value)
-                                        ? 'bg-teal-500/20 text-teal-400 border border-teal-500/50'
-                                        : 'bg-slate-700 text-slate-300 hover:bg-slate-600'}`}>
-                                    {set.label}
-                                </button>
-                            ))}
+                            {settoreOpzioni.map((set) => {
+                                const selezionato = filters.settore.includes(set.value);
+                                return (
+                                    <button key={set.value} type="button"
+                                        onClick={() => setFilters({...filters, settore: toggleFilter(filters.settore, set.value)})}
+                                        style={stileFiltro(set.colore, selezionato)}
+                                        className="px-3 py-1.5 rounded-full text-sm font-medium border transition-all">
+                                        {set.label}
+                                    </button>
+                                );
+                            })}
                         </div>
                     </div>
 
@@ -363,7 +387,7 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
                     </div>
 
                     <button onClick={handleSearch} disabled={searching}
-                        className="w-full py-3 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition">
+                        className="w-full py-3 bg-gradient-to-r from-[#4FA39B] to-[#66AB93] hover:from-[#66AB93] hover:to-[#7CB08A] text-white rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-50 transition shadow-lg shadow-[#66AB93]/20">
                         {searching ? (<><div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Ricerca in corso...</>) : (<><Search className="h-5 w-5" /> Cerca Bandi</>)}
                     </button>
                 </div>
@@ -395,23 +419,17 @@ export default function RicercaContenuto({ profilo, compatto = false }: any) {
             {/* CHART ROW 2 */}
             {showAdvancedStats && bandi.length > 0 && (
                 <div className={grigliaChart}>
-                    <CardBolla bordo={PALETTE_BOLLA[4]} indice={4} className="p-4">
+                    <CardBolla bordo={PALETTE_BOLLA[4]} indice={4} className="p-4 flex flex-col">
                         <h3 className="text-sm font-semibold text-white mb-3 text-center">Budget per Categoria (Milioni €)</h3>
-                        <div className="h-[250px] flex items-center justify-center">
-                            <div className="w-full max-w-[280px]"><Radar data={budgetPerCategoriaData} options={radarOptions} /></div>
-                        </div>
+                        <div className="relative h-[280px] w-full"><Radar data={budgetPerCategoriaData} options={radarOptions} /></div>
                     </CardBolla>
-                    <CardBolla bordo={PALETTE_BOLLA[5]} indice={5} className="p-4">
+                    <CardBolla bordo={PALETTE_BOLLA[5]} indice={5} className="p-4 flex flex-col">
                         <h3 className="text-sm font-semibold text-white mb-3 text-center">Distribuzione Scadenze</h3>
-                        <div className="h-[250px] flex items-center justify-center">
-                            <div className="w-full"><Bar data={scadenzeData} options={barOptions} /></div>
-                        </div>
+                        <div className="relative h-[280px] w-full"><Bar data={scadenzeData} options={barOptions} /></div>
                     </CardBolla>
-                    <CardBolla bordo={PALETTE_BOLLA[6]} indice={6} className="p-4">
+                    <CardBolla bordo={PALETTE_BOLLA[6]} indice={6} className="p-4 flex flex-col">
                         <h3 className="text-sm font-semibold text-white mb-3 text-center">Match per Livello Geografico</h3>
-                        <div className="h-[250px] flex items-center justify-center">
-                            <div className="w-full max-w-[220px]"><Doughnut data={matchLivelloData} options={doughnutOptions} /></div>
-                        </div>
+                        <div className="relative h-[280px] w-full"><Doughnut data={matchLivelloData} options={doughnutOptions} /></div>
                     </CardBolla>
                 </div>
             )}

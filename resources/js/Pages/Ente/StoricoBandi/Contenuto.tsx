@@ -1,5 +1,5 @@
 import { Link, router } from '@inertiajs/react';
-import { Trophy, XCircle, ListChecks, Clock, Undo2 } from 'lucide-react';
+import { Trophy, XCircle, Undo2 } from 'lucide-react';
 import CardBolla, { PALETTE_BOLLA } from '@/Components/CardBolla';
 
 interface BandoVinto {
@@ -36,39 +36,34 @@ export default function StoricoBandiContenuto({ stats, bandiVinti, bandiPersi, c
     };
 
     const cards = [
-        { title: 'Bandi Totali', value: stats.totali, icon: ListChecks, color: 'blue' },
-        { title: 'In Corso', value: stats.in_corso, icon: Clock, color: 'orange' },
-        { title: 'Vinti', value: stats.vinti, icon: Trophy, color: 'emerald' },
-        { title: 'Persi', value: stats.persi, icon: XCircle, color: 'red' },
+        { title: 'Bandi Totali', value: stats.totali },
+        { title: 'In Corso', value: stats.in_corso },
+        { title: 'Vinti', value: stats.vinti },
+        { title: 'Persi', value: stats.persi },
     ];
 
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
-            <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
                     <Trophy className="h-6 w-6 text-emerald-400" />
                     Storico Bandi
                 </h1>
                 <p className="text-slate-400 mt-1">Riepilogo dei bandi seguiti dal tuo ente: quanti totali, in corso, vinti e persi.</p>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 ${compatto ? '' : 'md:grid-cols-2 lg:grid-cols-4'}`}>
+            <div className="grid grid-cols-4 gap-2 sm:gap-4">
                 {cards.map((c, idx) => (
-                    <CardBolla key={c.title} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-5">
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <p className="text-sm text-slate-400">{c.title}</p>
-                                <p className="text-3xl font-bold text-white mt-1">{c.value}</p>
-                            </div>
-                            <div className={`w-11 h-11 rounded-xl bg-${c.color}-500/20 flex items-center justify-center`}>
-                                <c.icon className={`h-5 w-5 text-${c.color}-400`} />
-                            </div>
+                    <CardBolla key={c.title} bordo={PALETTE_BOLLA[idx % PALETTE_BOLLA.length]} indice={idx} className="p-2.5 sm:p-5">
+                        <div className="flex items-center justify-between gap-1.5">
+                            <p className="text-xs sm:text-sm text-slate-400 truncate">{c.title}</p>
+                            <p className="text-[13px] sm:text-[25px] font-bold text-white">{c.value}</p>
                         </div>
                     </CardBolla>
                 ))}
             </div>
 
-            <div className={`grid grid-cols-1 gap-6 ${compatto ? '' : 'lg:grid-cols-2'}`}>
+            <div className="grid grid-cols-1 gap-6">
                 <CardBolla bordo="#66AB93" indice={4} className="p-5">
                     <h3 className="text-sm font-semibold text-slate-300 mb-3 flex items-center gap-2">
                         <Trophy className="h-4 w-4 text-emerald-400" /> Bandi vinti ({bandiVinti.length})

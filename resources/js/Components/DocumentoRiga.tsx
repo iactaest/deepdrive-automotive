@@ -55,33 +55,8 @@ export default function DocumentoRiga({
 
     return (
         <div className="rounded-lg bg-slate-900/50 border border-slate-700/50">
-            <div className="flex items-start justify-between gap-3 p-3">
-                <div className="flex items-start gap-2 min-w-0">
-                    {doc.stato === 'caricato'
-                        ? <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
-                        : <Circle className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />}
-                    <div className="min-w-0">
-                        <p className="text-sm text-white font-medium flex items-center gap-2 flex-wrap">
-                            {doc.nome_documento}
-                            {doc.obbligatorio && (
-                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">obbligatorio</span>
-                            )}
-                        </p>
-                        {doc.descrizione && <p className="text-xs text-slate-400 mt-0.5">{doc.descrizione}</p>}
-                        {doc.stato !== 'caricato' && doc.link_ufficiale && (
-                            <a
-                                href={doc.link_ufficiale}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1"
-                            >
-                                <ExternalLink className="h-3 w-3" /> Dove trovarlo
-                            </a>
-                        )}
-                    </div>
-                </div>
-
-                <div className="shrink-0 flex items-center gap-2 flex-wrap justify-end">
+            <div className="p-3 space-y-2">
+                <div className="flex items-center gap-2 flex-wrap justify-start">
                     <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         doc.stato === 'caricato' ? 'bg-green-500/20 text-green-400' : 'bg-slate-700 text-slate-400'
                     }`}>
@@ -149,6 +124,31 @@ export default function DocumentoRiga({
                             </label>
                         </>
                     )}
+                </div>
+
+                <div className="flex items-start gap-2 w-full">
+                    {doc.stato === 'caricato'
+                        ? <CheckCircle2 className="h-4 w-4 text-green-400 shrink-0 mt-0.5" />
+                        : <Circle className="h-4 w-4 text-slate-500 shrink-0 mt-0.5" />}
+                    <div className="min-w-0 flex-1">
+                        <p className="text-sm text-white font-medium flex items-center gap-2 flex-wrap">
+                            {doc.nome_documento}
+                            {doc.obbligatorio && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-500/20 text-red-400">obbligatorio</span>
+                            )}
+                        </p>
+                        {doc.descrizione && <p className="text-xs text-slate-400 mt-0.5 w-full">{doc.descrizione}</p>}
+                        {doc.stato !== 'caricato' && doc.link_ufficiale && (
+                            <a
+                                href={doc.link_ufficiale}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 mt-1"
+                            >
+                                <ExternalLink className="h-3 w-3" /> Dove trovarlo
+                            </a>
+                        )}
+                    </div>
                 </div>
             </div>
 

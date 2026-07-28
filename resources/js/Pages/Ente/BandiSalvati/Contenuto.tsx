@@ -65,8 +65,8 @@ export default function BandiSalvatiContenuto({ preferiti, onPagina }: Props) {
 
     return (
         <div className="space-y-6 animate-fade-in" style={{ marginTop: 25 }}>
-            <div>
-                <h1 className="text-2xl font-bold text-white flex items-center gap-2">
+            <div className="text-center">
+                <h1 className="text-2xl font-bold text-white flex items-center justify-center gap-2">
                     <Star className="h-6 w-6 text-yellow-400" />
                     Bandi Salvati
                 </h1>

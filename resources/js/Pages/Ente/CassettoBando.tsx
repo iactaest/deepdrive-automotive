@@ -72,8 +72,8 @@ export default function CassettoBando({ bando, documenti: documentiIniziali, tot
                     </div>
 
                     <div className="bg-slate-800/50 rounded-xl p-6 border border-slate-700/50">
-                        <div className="mb-6">
-                            <h1 className="text-xl font-bold text-white flex items-center gap-2 mb-1">
+                        <div className="mb-6 text-center">
+                            <h1 className="text-xl font-bold text-white flex items-center justify-center gap-2 mb-1">
                                 <Archive className="h-6 w-6 text-purple-400" />
                                 Cassetto Documenti
                             </h1>
