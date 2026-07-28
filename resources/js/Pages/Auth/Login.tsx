@@ -18,18 +18,18 @@ export default function Login({ status, canResetPassword }: any) {
     return (
         <div className="min-h-screen bg-[#05070a] relative overflow-hidden flex items-center justify-center">
 
-            {/* Stesso sfondo della landing: immagine attenuata + velo scuro sopra.
-                Opacita' piu' alta e velo piu' leggero rispetto alla landing,
-                altrimenti su questa pagina (piu' corta, card centrale grande)
-                l'immagine risultava troppo scura per essere notata. */}
-            <div
-                className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                style={{ backgroundImage: "url('/images/sfondo-landing.png')", opacity: 0.85 }}
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/35 to-black/65 pointer-events-none" />
-
             <div className="relative z-10 w-full max-w-md px-4">
-                <div className="bg-slate-800/50 backdrop-blur-sm rounded-2xl border border-slate-700/30 p-8 shadow-2xl">
+                {/* L'immagine vive dentro la card (non su tutta la pagina): livello
+                    assoluto dietro al contenuto, contenuto in un contenitore con
+                    overflow-hidden cosi' resta dentro ai bordi arrotondati. */}
+                <div className="relative overflow-hidden rounded-2xl border border-slate-700/30 shadow-2xl">
+                    <div
+                        aria-hidden="true"
+                        className="absolute inset-0 bg-cover bg-center pointer-events-none"
+                        style={{ backgroundImage: "url('/images/sfondo-landing.png')", opacity: 0.5 }}
+                    />
+
+                    <div className="relative z-10 bg-slate-800/50 backdrop-blur-sm p-8">
 
                     {/* Logo */}
                     <div className="flex items-center justify-center mb-8">
@@ -118,6 +118,7 @@ export default function Login({ status, canResetPassword }: any) {
                             Registrati
                         </Link>
                     </p>
+                    </div>
                 </div>
             </div>
         </div>

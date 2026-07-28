@@ -96,7 +96,7 @@ export default function Welcome({ canLogin, canRegister }: any) {
                 non tocca il contenuto sopra. */}
             <div
                 className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                style={{ backgroundImage: "url('/images/sfondo-landing.png')", opacity: 0.5 }}
+                style={{ backgroundImage: "url('/images/sfondo-landing.png')", opacity: 0.3 }}
             />
 
             {/* Velo scuro sopra l'immagine, per garantire contrasto al testo. */}
