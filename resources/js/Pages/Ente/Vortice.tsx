@@ -28,7 +28,11 @@ const EASE_APERTURA: [number, number, number, number] = [0.45, 0, 0.2, 1]; // ea
 // rimbalzo/overshoot): un ease "backOut" su una rotazione così ampia in poco
 // tempo dava l'impressione di uno scatto invece che di un movimento continuo.
 const EASE_CHIUSURA: [number, number, number, number] = [0.16, 1, 0.3, 1];
-const GIRI_MENU = 130;
+// Ridotto piu' volte: una rotazione ampia, anche con easing morbido, si
+// legge come "vistosa" piuttosto che fluida. Un accenno di rotazione (60°)
+// piu' scala+opacita' come motore principale del movimento da' l'impressione
+// di fluidita' molto piu' della rotazione stessa.
+const GIRI_MENU = 60;
 
 export const DURATA_APERTURA = 0.9;
 export const DURATA_CHIUSURA = 0.9;

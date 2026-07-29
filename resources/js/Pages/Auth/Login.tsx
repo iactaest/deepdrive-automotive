@@ -26,7 +26,7 @@ export default function Login({ status, canResetPassword }: any) {
                     <div
                         aria-hidden="true"
                         className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                        style={{ backgroundImage: "url('/images/sfondo-landing.png')", opacity: 0.5 }}
+                        style={{ backgroundImage: "url('/images/sfondo-landing.jpg')", opacity: 0.5 }}
                     />
 
                     <div className="relative z-10 bg-slate-800/50 backdrop-blur-sm p-8">
