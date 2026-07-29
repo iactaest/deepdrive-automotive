@@ -85,21 +85,19 @@ const CSS_COMPATTO = `
 
 // Wrapper della card: su desktop resta la card piatta originale, in modalità
 // compatta applica lo sfondo/pattern/bordo colorato in stile "bolla del menu"
-// e un fade-in scaglionato dall'alto (vedi indice, riusa .card-bolla-entrata
-// già definita globalmente in app.css).
+// e un fade-in (riusa .card-bolla-entrata già definita globalmente in
+// app.css) — tutte le card insieme, nessuno scaglionamento per indice.
 function Card({
     compatto,
     bordo,
     classeDesktop,
     classeCompatta,
-    indice = 0,
     children,
 }: {
     compatto: boolean;
     bordo: string;
     classeDesktop: string;
     classeCompatta: string;
-    indice?: number;
     children: React.ReactNode;
 }) {
     if (!compatto) {
@@ -109,7 +107,7 @@ function Card({
     return (
         <div
             className={`dc-card card-bolla-entrata ${classeCompatta}`}
-            style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo, animationDelay: `${Math.min(indice, 10) * 70}ms` }}
+            style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo }}
         >
             <span className="dc-bg" />
             <div className="relative">{children}</div>
@@ -294,7 +292,6 @@ export default function DashboardContenuto({
                         key={stat.title}
                         compatto={compatto}
                         bordo={COLORE_STAT[stat.color] ?? '#8FA3C7'}
-                        indice={idx}
                         classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 hover:border-green-500/50 transition hover:scale-105 cursor-pointer"
                         classeCompatta="rounded-lg p-2.5"
                     >
@@ -315,14 +312,14 @@ export default function DashboardContenuto({
             </div>
 
             <div className={c('grid grid-cols-1 lg:grid-cols-2 gap-6', 'grid grid-cols-1 gap-3')}>
-                <Card compatto={compatto} bordo="#8FA3C7" indice={6} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#8FA3C7" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Storico Finanziamenti nel Territorio (OpenCoesione)" icona={TrendingUp} coloreIcona="text-green-400" compatto={compatto}>
                         {dashboard.trend_storico.labels.length > 0
                             ? <Line data={lineData} options={chartOptions} />
                             : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun dato storico disponibile per il tuo territorio.</p>}
                     </SezioneGrafico>
                 </Card>
-                <Card compatto={compatto} bordo="#9C93C7" indice={7} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#9C93C7" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Bandi Attivi per Categoria" icona={Building2} coloreIcona="text-purple-400" compatto={compatto}>
                         {dashboard.per_categoria.labels.length > 0
                             ? <Bar data={barData} options={chartOptions} />
@@ -332,7 +329,7 @@ export default function DashboardContenuto({
             </div>
 
             <div className={c('grid grid-cols-1 lg:grid-cols-3 gap-6', 'grid grid-cols-1 gap-3')}>
-                <Card compatto={compatto} bordo="#B08FC0" indice={8} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#B08FC0" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Budget per Livello" icona={Euro} coloreIcona="text-blue-400" compatto={compatto}>
                         {dashboard.per_livello.labels.length > 0
                             ? <Doughnut data={doughnutData} options={doughnutOptions} />
@@ -342,7 +339,6 @@ export default function DashboardContenuto({
                 <Card
                     compatto={compatto}
                     bordo="#C08FA8"
-                    indice={9}
                     classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 col-span-2"
                     classeCompatta="rounded-lg p-3"
                 >
@@ -365,7 +361,7 @@ export default function DashboardContenuto({
                 </Card>
             </div>
 
-            <Card compatto={compatto} bordo="#66AB93" indice={10} classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+            <Card compatto={compatto} bordo="#66AB93" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
                 <h3 className={c('text-lg font-semibold text-white mb-4 flex items-center gap-2', 'text-xs font-semibold text-white mb-2 flex items-center gap-1.5')}>
                     <Eye className={c('h-5 w-5 text-cyan-400', 'dc-icona h-3.5 w-3.5 text-cyan-400')} />
                     Bandi Consigliati

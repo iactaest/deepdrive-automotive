@@ -812,7 +812,7 @@ export default function DashboardMobile() {
                     backgroundImage: "url('/images/sfondo-menu.jpg')",
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
-                    opacity: 0.15,
+                    opacity: 0.3,
                     pointerEvents: 'none',
                 }}
             />

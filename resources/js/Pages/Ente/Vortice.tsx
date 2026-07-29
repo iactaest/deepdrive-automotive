@@ -105,13 +105,15 @@ export function animaComparsaMenu(elemento: HTMLElement, { durata = DURATA_CHIUS
 // due animazioni resta identico istante per istante.
 export function animaEmersioneContenuto(elemento: HTMLElement, { durata = DURATA_APERTURA, centro }: OpzioniContenuto = {}): Promise<unknown> {
     const raggioMax = raggioMassimoSchermo();
-    if (centro) elemento.style.transformOrigin = `${centro.x}px ${centro.y}px`;
-    elemento.style.willChange = 'transform, opacity, clip-path';
+    // Solo clip-path fa crescere il cerchio: aggiungere anche un transform:scale
+    // sullo stesso elemento moltiplicava i due effetti (dimensione visibile
+    // reale ~ t²), facendo partire la crescita lentissima e poi accelerare di
+    // scatto verso la fine, indipendentemente dalla curva di easing.
+    elemento.style.willChange = 'opacity, clip-path';
     return animate(0, 1, {
         duration: durata,
         ease: EASE_APERTURA,
         onUpdate(t) {
-            elemento.style.transform = `scale(${t})`;
             elemento.style.clipPath = centro
                 ? `circle(${t * raggioMax}px at ${centro.x}px ${centro.y}px)`
                 : `circle(${t * 150}% at 50% 52%)`;
@@ -119,7 +121,6 @@ export function animaEmersioneContenuto(elemento: HTMLElement, { durata = DURATA
         },
     }).then(() => {
         elemento.style.willChange = 'auto';
-        elemento.style.transform = '';
         elemento.style.clipPath = '';
     });
 }
@@ -128,14 +129,12 @@ export function animaEmersioneContenuto(elemento: HTMLElement, { durata = DURATA
 // nata (dove il menu sta per ricomparire).
 export function animaRisucchioContenuto(elemento: HTMLElement, { durata = DURATA_CHIUSURA, centro }: OpzioniContenuto = {}): Promise<unknown> {
     const raggioMax = raggioMassimoSchermo();
-    if (centro) elemento.style.transformOrigin = `${centro.x}px ${centro.y}px`;
-    elemento.style.willChange = 'transform, opacity, clip-path';
+    elemento.style.willChange = 'opacity, clip-path';
     return animate(1, 0, {
         duration: durata,
         ease: EASE_CHIUSURA,
         onUpdate(t) {
             const s = Math.max(0, t);
-            elemento.style.transform = `scale(${s})`;
             elemento.style.clipPath = centro
                 ? `circle(${s * raggioMax}px at ${centro.x}px ${centro.y}px)`
                 : `circle(${s * 150}% at 50% 52%)`;
@@ -143,7 +142,6 @@ export function animaRisucchioContenuto(elemento: HTMLElement, { durata = DURATA
         },
     }).then(() => {
         elemento.style.willChange = 'auto';
-        elemento.style.transform = '';
         elemento.style.clipPath = '';
     });
 }
