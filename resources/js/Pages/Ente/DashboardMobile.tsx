@@ -400,6 +400,14 @@ const CSS = `
 .mb-vortex-transizione .mb-float {
     animation-play-state: paused;
 }
+/* Durante il vortice si spengono anche i livelli decorativi delle bolle
+   (texture in blend-mode + gradiente "a cupola"): costano compositing GPU
+   non banale su mobile, e con la ruota che ruota/scala velocemente il
+   dettaglio non si nota comunque — tolti aiuta a evitare frame persi. */
+.mb-vortex-transizione .mb-bg,
+.mb-vortex-transizione .mb-dome {
+    display: none;
+}
 @keyframes mb-float-logo2 {
     0%, 100% { transform: translateY(0px); }
     50% { transform: translateY(-4px); }
@@ -954,7 +962,11 @@ export default function DashboardMobile() {
                         frame dell'animazione in corso. */}
                     <div
                         ref={contenutoRef}
-                        style={{ padding: '10px 16px 18px' }}
+                        // contain:paint aiuta il browser a isolare il repaint di
+                        // questo blocco (che durante il vortice ha un clip-path
+                        // animato via JS, costoso su mobile) invece di dover
+                        // ricontrollare il resto della pagina ad ogni frame.
+                        style={{ padding: '10px 16px 18px', contain: 'paint' }}
                     >
                         {errore && !caricando && (
                             <p style={{ color: '#F0A0A0', fontSize: 13, textAlign: 'center', padding: '24px 0' }}>{errore}</p>
