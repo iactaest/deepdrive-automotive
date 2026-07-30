@@ -60,7 +60,6 @@ Route::middleware('auth')->group(function () {
     // ============================================================
     
     Route::get('/ente/profilo', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
-    Route::get('/ente/profilo/show', [ProfiloEnteController::class, 'show'])->name('ente.profilo.show');
     Route::get('/ente/profilo/completa', [ProfiloEnteController::class, 'create'])->name('ente.profilo.create');
     Route::post('/ente/profilo/completa', [ProfiloEnteController::class, 'store'])->name('ente.profilo.completa');
     Route::get('/ente/profilo/modifica', [ProfiloEnteController::class, 'edit'])->name('ente.profilo.edit');
