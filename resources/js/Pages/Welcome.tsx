@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
+import { publicUrl } from '@/lib/publicUrl';
 
 const CSS_TITOLO = `
 /* Stesso galleggiamento impercettibile del logo nel menu mobile (mb-float-logo2). */
@@ -96,7 +97,7 @@ export default function Welcome({ canLogin, canRegister }: any) {
                 non tocca il contenuto sopra. */}
             <div
                 className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                style={{ backgroundImage: "url('/images/sfondo-landing.jpg')", opacity: 0.3 }}
+                style={{ backgroundImage: `url(${publicUrl('images/sfondo-landing.jpg')})`, opacity: 0.3 }}
             />
 
             {/* Velo scuro sopra l'immagine, per garantire contrasto al testo. */}
@@ -106,7 +107,7 @@ export default function Welcome({ canLogin, canRegister }: any) {
                 {/* Navbar — solo logo, centrato */}
                 <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex justify-center">
                     <img
-                        src="/images/logo-deepbandi-chiaro.png"
+                        src={publicUrl('images/logo-deepbandi-chiaro.png')}
                         alt="DeepBandi"
                         className="lp-float-logo h-[138px] w-auto"
                         style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }}

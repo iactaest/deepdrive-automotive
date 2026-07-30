@@ -70,7 +70,7 @@ const CSS_COMPATTO = `
 .dc-bg {
     position: absolute;
     inset: -10%;
-    background-image: url('/images/pattern-giochi.png');
+    background-image: var(--pattern-giochi-bg);
     background-size: 100px;
     background-repeat: repeat;
     filter: brightness(3.4) contrast(1.1);
@@ -78,15 +78,15 @@ const CSS_COMPATTO = `
     opacity: .1;
     pointer-events: none;
 }
-.dc-icona {
-    filter: drop-shadow(0 2px 2px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.12));
-}
 `;
 
-// Wrapper della card: su desktop resta la card piatta originale, in modalità
-// compatta applica lo sfondo/pattern/bordo colorato in stile "bolla del menu"
-// e un fade-in (riusa .card-bolla-entrata già definita globalmente in
-// app.css) — tutte le card insieme, nessuno scaglionamento per indice.
+// Wrapper della card: su entrambe le modalità applica lo stesso stile "bolla"
+// (pattern, gradiente 3D, bordo colorato) usato in tutte le altre pagine
+// dell'app (vedi CardBolla in resources/js/Components), cosi la dashboard
+// resta visivamente coerente col resto — su desktop riusa le classi/CSS
+// globali .card-bolla*, in modalità compatta (embedded in DashboardMobile)
+// usa la variante .dc-card con pattern leggermente più marcato, pensata per
+// schermi piccoli.
 function Card({
     compatto,
     bordo,
@@ -101,7 +101,15 @@ function Card({
     children: React.ReactNode;
 }) {
     if (!compatto) {
-        return <div className={classeDesktop}>{children}</div>;
+        return (
+            <div
+                className={`card-bolla card-bolla-entrata ${classeDesktop}`}
+                style={{ borderWidth: 2, borderStyle: 'solid', borderColor: bordo }}
+            >
+                <span className="card-bolla-bg" />
+                <div className="relative h-full flex flex-col">{children}</div>
+            </div>
+        );
     }
 
     return (
@@ -138,11 +146,11 @@ function SezioneGrafico({
     if (!compatto) {
         return (
             <>
-                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                    <Icona className={`h-5 w-5 ${coloreIcona}`} />
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2 shrink-0">
+                    <Icona className={`card-bolla-icona h-5 w-5 ${coloreIcona}`} />
                     {titolo}
                 </h3>
-                {children}
+                <div className="flex-1 relative">{children}</div>
             </>
         );
     }
@@ -155,7 +163,7 @@ function SezioneGrafico({
                 className="text-xs font-semibold text-white mb-0 flex items-center justify-between gap-1.5 w-full"
             >
                 <span className="flex items-center gap-1.5">
-                    <Icona className={`dc-icona h-3.5 w-3.5 ${coloreIcona}`} />
+                    <Icona className={`card-bolla-icona h-3.5 w-3.5 ${coloreIcona}`} />
                     {titolo}
                 </span>
                 <ChevronDown className={`h-3.5 w-3.5 text-slate-400 transition-transform shrink-0 ${aperta ? 'rotate-180' : ''}`} />
@@ -239,7 +247,11 @@ export default function DashboardContenuto({
 
     const chartOptions = {
         responsive: true,
-        maintainAspectRatio: true,
+        // Su desktop il grafico deve riempire tutta l'altezza disponibile della
+        // card (che ora si stira per l'intera riga a 5 colonne): con
+        // maintainAspectRatio true il canvas restava piccolo e centrato invece
+        // di occupare lo spazio verticale reale del contenitore flex.
+        maintainAspectRatio: compatto,
         plugins: {
             legend: { labels: { color: '#94a3b8', font: { size: compatto ? 9 : 11 } } },
             tooltip: { backgroundColor: '#1e293b', titleColor: '#fff', bodyColor: '#94a3b8' }
@@ -276,9 +288,9 @@ export default function DashboardContenuto({
         <div className={c('space-y-6 animate-fade-in', 'space-y-3 animate-fade-in')}>
             {compatto && <style>{CSS_COMPATTO}</style>}
 
-            <div className={c('text-center', 'text-center')} style={{ paddingTop: 20 }}>
-                <h1 className={c('text-[35px] font-bold text-white flex items-center justify-center gap-2', 'text-[21px] font-bold text-white flex items-center justify-center gap-1.5')}>
-                    <Landmark className={c('dc-icona h-8 w-8 text-green-400', 'dc-icona h-4 w-4 text-green-400')} />
+            <div className="text-center" style={{ paddingTop: 20 }}>
+                <h1 className={c('text-3xl font-bold text-white flex items-center justify-center gap-2.5', 'text-[21px] font-bold text-white flex items-center justify-center gap-1.5')}>
+                    <Landmark className={c('card-bolla-icona h-7 w-7 text-green-400', 'card-bolla-icona h-4 w-4 text-green-400')} />
                     Bentornato, {nomeSaluto}!
                 </h1>
                 <p className={c('text-slate-300 mt-2', 'text-slate-300 mt-1 text-[11px]')}>
@@ -292,7 +304,7 @@ export default function DashboardContenuto({
                         key={stat.title}
                         compatto={compatto}
                         bordo={COLORE_STAT[stat.color] ?? '#8FA3C7'}
-                        classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 hover:border-green-500/50 transition hover:scale-105 cursor-pointer"
+                        classeDesktop="p-6 transition-all hover:brightness-110 hover:scale-105 cursor-pointer"
                         classeCompatta="rounded-lg p-2.5"
                     >
                         <div className="flex justify-between">
@@ -304,98 +316,80 @@ export default function DashboardContenuto({
                                 `w-12 h-12 rounded-xl bg-${stat.color}-500/20 flex items-center justify-center shrink-0`,
                                 `w-7 h-7 rounded-lg bg-${stat.color}-500/20 flex items-center justify-center shrink-0`
                             )}>
-                                <stat.icon className={c(`h-6 w-6 text-${stat.color}-400`, `dc-icona h-3.5 w-3.5 text-${stat.color}-400`)} />
+                                <stat.icon className={c(`card-bolla-icona h-6 w-6 text-${stat.color}-400`, `card-bolla-icona h-3.5 w-3.5 text-${stat.color}-400`)} />
                             </div>
                         </div>
                     </Card>
                 ))}
             </div>
 
-            <div className={c('grid grid-cols-1 lg:grid-cols-2 gap-6', 'grid grid-cols-1 gap-3')}>
-                <Card compatto={compatto} bordo="#8FA3C7" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+            <div className={c('grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6', 'grid grid-cols-1 gap-3')}>
+                <Card compatto={compatto} bordo="#8FA3C7" classeDesktop="p-6" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Storico Finanziamenti nel Territorio (OpenCoesione)" icona={TrendingUp} coloreIcona="text-green-400" compatto={compatto}>
                         {dashboard.trend_storico.labels.length > 0
                             ? <Line data={lineData} options={chartOptions} />
                             : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun dato storico disponibile per il tuo territorio.</p>}
                     </SezioneGrafico>
                 </Card>
-                <Card compatto={compatto} bordo="#9C93C7" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#9C93C7" classeDesktop="p-6" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Bandi Attivi per Categoria" icona={Building2} coloreIcona="text-purple-400" compatto={compatto}>
                         {dashboard.per_categoria.labels.length > 0
                             ? <Bar data={barData} options={chartOptions} />
                             : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun bando attivo per categoria.</p>}
                     </SezioneGrafico>
                 </Card>
-            </div>
-
-            <div className={c('grid grid-cols-1 lg:grid-cols-3 gap-6', 'grid grid-cols-1 gap-3')}>
-                <Card compatto={compatto} bordo="#B08FC0" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
+                <Card compatto={compatto} bordo="#C08FA8" classeDesktop="p-6" classeCompatta="rounded-lg p-3">
+                    <h3 className={c('text-lg font-semibold text-white mb-4 flex items-center gap-2', 'text-xs font-semibold text-white mb-2 flex items-center gap-1.5')}>
+                        <Clock className={c('card-bolla-icona h-5 w-5 text-orange-400', 'card-bolla-icona h-3.5 w-3.5 text-orange-400')} />
+                        Prossime Scadenze
+                    </h3>
+                    {dashboard.prossime_scadenze.length > 0 ? dashboard.prossime_scadenze.map((item) => (
+                        <div key={item.titolo} className={c('flex justify-between p-3 rounded-lg bg-slate-900/50 mb-2', 'flex justify-between p-2.5 rounded-md bg-slate-900/50 mb-1.5')}>
+                            <div>
+                                <p className={c('text-white font-medium text-sm', 'text-white font-medium text-[11px]')}>{item.titolo}</p>
+                                <p className={c('text-xs text-slate-400', 'text-[10px] text-slate-400')}>Budget: {formatEuro(item.budget)}</p>
+                            </div>
+                            <div className="text-right">
+                                <p className={c('text-orange-400 font-semibold text-sm', 'text-orange-400 font-semibold text-[11px]')}>{item.giorni} giorni</p>
+                                <p className={c('text-xs text-slate-500', 'text-[10px] text-slate-500')}>alla scadenza</p>
+                            </div>
+                        </div>
+                    )) : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessuna scadenza imminente.</p>}
+                </Card>
+                <Card compatto={compatto} bordo="#66AB93" classeDesktop="p-6" classeCompatta="rounded-lg p-3">
+                    <h3 className={c('text-lg font-semibold text-white mb-4 flex items-center gap-2', 'text-xs font-semibold text-white mb-2 flex items-center gap-1.5')}>
+                        <Eye className={c('card-bolla-icona h-5 w-5 text-cyan-400', 'card-bolla-icona h-3.5 w-3.5 text-cyan-400')} />
+                        Bandi Consigliati
+                    </h3>
+                    {dashboard.gare_consigliate.length > 0 ? (
+                        <div className={c('grid grid-cols-1 gap-3', 'grid grid-cols-1 gap-2')}>
+                            {dashboard.gare_consigliate.map((gara, indice) => (
+                                <Link
+                                    key={gara.id}
+                                    href={`/ente/lista-bandi/${gara.id}`}
+                                    className={c('card-bolla card-bolla-entrata block p-3 transition-all hover:brightness-110', 'dc-card rounded-lg p-2.5 block')}
+                                    style={{ borderWidth: 2, borderStyle: 'solid', borderColor: coloriConsigliati[indice % coloriConsigliati.length] }}
+                                >
+                                    <span className={c('card-bolla-bg', 'dc-bg')} />
+                                    <div className="relative">
+                                        <div className="text-right"><span className={c('px-2 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs', 'px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px]')}>Match {gara.match}%</span></div>
+                                        <h4 className={c('text-white font-semibold mt-1 text-sm', 'text-white font-semibold mt-1 text-[11px]')}>{gara.titolo}</h4>
+                                        <p className={c('text-xs text-slate-400', 'text-[10px] text-slate-400')}>Budget: {formatEuro(gara.budget)}</p>
+                                        <span className={c('mt-1.5 text-xs text-green-400 inline-block', 'mt-1.5 text-[11px] text-green-400 inline-block')}>Dettagli →</span>
+                                    </div>
+                                </Link>
+                            ))}
+                        </div>
+                    ) : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun bando compatibile al momento.</p>}
+                </Card>
+                <Card compatto={compatto} bordo="#B08FC0" classeDesktop="p-6" classeCompatta="rounded-lg p-3">
                     <SezioneGrafico titolo="Budget per Livello" icona={Euro} coloreIcona="text-blue-400" compatto={compatto}>
                         {dashboard.per_livello.labels.length > 0
                             ? <Doughnut data={doughnutData} options={doughnutOptions} />
                             : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun budget disponibile.</p>}
                     </SezioneGrafico>
                 </Card>
-                <Card
-                    compatto={compatto}
-                    bordo="#C08FA8"
-                    classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50 col-span-2"
-                    classeCompatta="rounded-lg p-3"
-                >
-                    <h3 className={c('text-lg font-semibold text-white mb-4 flex items-center gap-2', 'text-xs font-semibold text-white mb-2 flex items-center gap-1.5')}>
-                        <Clock className={c('h-5 w-5 text-orange-400', 'dc-icona h-3.5 w-3.5 text-orange-400')} />
-                        Prossime Scadenze
-                    </h3>
-                    {dashboard.prossime_scadenze.length > 0 ? dashboard.prossime_scadenze.map((item) => (
-                        <div key={item.titolo} className={c('flex justify-between p-4 rounded-lg bg-slate-900/50 mb-2', 'flex justify-between p-2.5 rounded-md bg-slate-900/50 mb-1.5')}>
-                            <div>
-                                <p className={c('text-white font-medium', 'text-white font-medium text-[11px]')}>{item.titolo}</p>
-                                <p className={c('text-xs text-slate-400', 'text-[10px] text-slate-400')}>Budget: {formatEuro(item.budget)}</p>
-                            </div>
-                            <div className="text-right">
-                                <p className={c('text-orange-400 font-semibold', 'text-orange-400 font-semibold text-[11px]')}>{item.giorni} giorni</p>
-                                <p className={c('text-xs text-slate-500', 'text-[10px] text-slate-500')}>alla scadenza</p>
-                            </div>
-                        </div>
-                    )) : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessuna scadenza imminente.</p>}
-                </Card>
             </div>
-
-            <Card compatto={compatto} bordo="#66AB93" classeDesktop="rounded-xl bg-slate-800/50 p-6 border border-slate-700/50" classeCompatta="rounded-lg p-3">
-                <h3 className={c('text-lg font-semibold text-white mb-4 flex items-center gap-2', 'text-xs font-semibold text-white mb-2 flex items-center gap-1.5')}>
-                    <Eye className={c('h-5 w-5 text-cyan-400', 'dc-icona h-3.5 w-3.5 text-cyan-400')} />
-                    Bandi Consigliati
-                </h3>
-                {dashboard.gare_consigliate.length > 0 ? (
-                    <div className={c('grid grid-cols-1 md:grid-cols-3 gap-4', 'grid grid-cols-1 gap-2')}>
-                        {dashboard.gare_consigliate.map((gara, indice) =>
-                            compatto ? (
-                                <Link
-                                    key={gara.id}
-                                    href={`/ente/lista-bandi/${gara.id}`}
-                                    className="dc-card rounded-lg p-2.5 block"
-                                    style={{ borderWidth: 2, borderStyle: 'solid', borderColor: coloriConsigliati[indice % coloriConsigliati.length] }}
-                                >
-                                    <span className="dc-bg" />
-                                    <div className="relative">
-                                        <div className="text-right"><span className="px-1.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-[10px]">Match {gara.match}%</span></div>
-                                        <h4 className="text-white font-semibold mt-1 text-[11px]">{gara.titolo}</h4>
-                                        <p className="text-[10px] text-slate-400">Budget: {formatEuro(gara.budget)}</p>
-                                        <span className="mt-1.5 text-[11px] text-green-400 inline-block">Dettagli →</span>
-                                    </div>
-                                </Link>
-                            ) : (
-                                <Link key={gara.id} href={`/ente/lista-bandi/${gara.id}`} className="rounded-xl bg-slate-900/50 p-4 border border-slate-700/50 block hover:border-cyan-500/50 transition">
-                                    <div className="text-right"><span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs">Match {gara.match}%</span></div>
-                                    <h4 className="text-white font-semibold mt-2">{gara.titolo}</h4>
-                                    <p className="text-xs text-slate-400">Budget: {formatEuro(gara.budget)}</p>
-                                    <span className="mt-3 text-sm text-green-400 inline-block">Dettagli →</span>
-                                </Link>
-                            )
-                        )}
-                    </div>
-                ) : <p className={c('text-slate-400 text-sm', 'text-slate-400 text-[11px]')}>Nessun bando compatibile al momento.</p>}
-            </Card>
         </div>
     );
 }

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
 import { ChevronRight, Lock, Mail, Eye, EyeOff, Landmark } from 'lucide-react';
+import { publicUrl } from '@/lib/publicUrl';
 
 export default function Login({ status, canResetPassword }: any) {
     const [showPassword, setShowPassword] = useState(false);
@@ -26,14 +27,14 @@ export default function Login({ status, canResetPassword }: any) {
                     <div
                         aria-hidden="true"
                         className="absolute inset-0 bg-cover bg-center pointer-events-none"
-                        style={{ backgroundImage: "url('/images/sfondo-landing.jpg')", opacity: 0.5 }}
+                        style={{ backgroundImage: `url(${publicUrl('images/sfondo-landing.jpg')})`, opacity: 0.5 }}
                     />
 
                     <div className="relative z-10 bg-slate-800/50 backdrop-blur-sm p-8">
 
                     {/* Logo */}
                     <div className="flex items-center justify-center mb-8">
-                        <img src="/images/logo-deepbandi-chiaro.png" alt="DeepBandi" className="h-[84px] w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
+                        <img src={publicUrl('images/logo-deepbandi-chiaro.png')} alt="DeepBandi" className="h-[84px] w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                     </div>
 
                     <h2 className="text-2xl font-bold text-white text-center mb-2">Benvenuto</h2>

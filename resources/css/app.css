@@ -197,7 +197,9 @@
 .card-bolla-bg {
     position: absolute;
     inset: -10%;
-    background-image: url('/images/pattern-giochi.png');
+    /* Impostata a runtime su :root in resources/js/app.tsx (tiene conto del
+       base path di Vite per i deploy sotto sottopercorso, es. /bandi). */
+    background-image: var(--pattern-giochi-bg);
     background-size: 100px;
     background-repeat: repeat;
     filter: brightness(3.4) contrast(1.1);

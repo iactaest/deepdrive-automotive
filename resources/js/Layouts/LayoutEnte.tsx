@@ -21,6 +21,7 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import CampanellaNotifiche from '@/Components/Notifiche/CampanellaNotifiche';
 import AssistenteModal from '@/Components/Assistente/AssistenteModal';
+import { publicUrl } from '@/lib/publicUrl';
 
 interface NavItem { name: string; href: string; icon: LucideIcon }
 interface NavGroup { name: string; icon: LucideIcon; items: NavItem[] }
@@ -97,11 +98,11 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
 
             <aside className={`fixed lg:relative z-50 w-64 bg-slate-900/95 backdrop-blur-sm border-r border-slate-700/50 h-full transition-transform duration-300 ease-in-out ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
                 <div className="flex flex-col h-full">
-                    <div className="flex items-center justify-between p-4 border-b border-slate-700/50">
+                    <div className="relative flex items-center justify-center p-2 border-b border-slate-700/50">
                         <Link href="/ente/dashboard" className="flex items-center gap-2 group">
-                            <img src="/images/logo-deepbandi-chiaro.png" alt="DeepBandi" className="w-auto group-hover:scale-110 transition-transform" style={{ height: 90, filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
+                            <img src={publicUrl('images/logo-deepbandi-chiaro.png')} alt="DeepBandi" className="w-auto group-hover:scale-110 transition-transform" style={{ height: 110, filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                         </Link>
-                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400"><X className="h-5 w-5" /></button>
+                        <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-slate-400 absolute right-3 top-3"><X className="h-5 w-5" /></button>
                     </div>
 
                     <div className="mx-4 mt-4 p-3 bg-gradient-to-r from-green-500/20 to-emerald-500/20 rounded-xl border border-green-500/30">
@@ -187,18 +188,26 @@ export default function LayoutEnte({ children }: { children: React.ReactNode }) 
             </aside>
 
             <main className="flex-1 min-w-0 overflow-auto">
-                <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50">
+                {/* Barra mobile: menu hamburger + titolo + campanella. Su desktop
+                    (lg+) sparisce del tutto — resta solo la campanella, vedi sotto. */}
+                <div className="sticky top-0 z-30 bg-slate-900/80 backdrop-blur-sm border-b border-slate-700/50 lg:hidden">
                     <div className="flex items-center justify-between p-3">
                         <div className="flex items-center gap-3">
-                            <button onClick={() => setSidebarOpen(true)} className="lg:hidden text-slate-400 hover:text-white">
+                            <button onClick={() => setSidebarOpen(true)} className="text-slate-400 hover:text-white">
                                 <Menu className="h-6 w-6" />
                             </button>
-                            <span className="text-white font-bold lg:hidden">DeepBandi - Ente</span>
+                            <span className="text-white font-bold">DeepBandi - Ente</span>
                         </div>
                         <CampanellaNotifiche />
                     </div>
                 </div>
-                <div className="p-4 md:p-6 animate-fade-in">{children}</div>
+
+                {/* Desktop: solo la campanella, in alto a destra, senza barra/bordo attorno. */}
+                <div className="hidden lg:flex sticky top-0 z-30 justify-end p-3">
+                    <CampanellaNotifiche />
+                </div>
+
+                <div className="p-4 md:p-6 lg:pt-0 animate-fade-in">{children}</div>
             </main>
 
             <button

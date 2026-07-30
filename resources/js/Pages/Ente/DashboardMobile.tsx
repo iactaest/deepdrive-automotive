@@ -37,6 +37,7 @@ import {
     ORIGINE_RISUCCHIO_FRAZIONE,
     type PuntoVortice,
 } from './Vortice';
+import { publicUrl } from '@/lib/publicUrl';
 
 type Bolla = {
     label: string;
@@ -326,7 +327,7 @@ const CSS = `
 .mb-bg {
     position: absolute;
     inset: -10%;
-    background-image: url('/images/pattern-giochi.png');
+    background-image: var(--pattern-giochi-bg);
     background-size: 110px;
     background-repeat: repeat;
     filter: brightness(3.4) contrast(1.1);
@@ -809,7 +810,7 @@ export default function DashboardMobile() {
                     position: 'fixed',
                     inset: 0,
                     zIndex: -1,
-                    backgroundImage: "url('/images/sfondo-menu.jpg')",
+                    backgroundImage: `url(${publicUrl('images/sfondo-menu.jpg')})`,
                     backgroundSize: 'cover',
                     backgroundPosition: 'center',
                     opacity: 0.3,
@@ -853,7 +854,7 @@ export default function DashboardMobile() {
                 }}
             >
                 <img
-                    src="/images/logo-deepbandi-chiaro.png"
+                    src={publicUrl('images/logo-deepbandi-chiaro.png')}
                     alt=""
                     style={{
                         height: 'min(290px, 27vh)',
@@ -891,7 +892,7 @@ export default function DashboardMobile() {
                         {pannelloAperto ? PANNELLI[pannelloAperto].titolo : ''}
                     </span>
                     <img
-                        src="/images/logo-deepbandi-chiaro.png"
+                        src={publicUrl('images/logo-deepbandi-chiaro.png')}
                         alt="DeepBandi"
                         style={{ height: 75, width: 'auto', justifySelf: 'center', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }}
                     />
@@ -934,7 +935,7 @@ export default function DashboardMobile() {
             >
                 {!dashboardAperta && (
                     <img
-                        src="/images/logo-deepbandi-chiaro.png"
+                        src={publicUrl('images/logo-deepbandi-chiaro.png')}
                         alt="DeepBandi"
                         className="mb-float-logo2"
                         style={{ height: 160, width: 'auto', filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }}
