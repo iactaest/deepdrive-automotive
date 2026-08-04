@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
 import { publicUrl } from '@/lib/publicUrl';
-import RotatingTorus from '@/Components/RotatingTorus';
+import RotatingCone3D from '@/Components/RotatingCone3D';
 
 const CSS_TITOLO = `
 /* Stesso galleggiamento impercettibile del logo nel menu mobile (mb-float-logo2). */
@@ -118,7 +118,7 @@ export default function Welcome({ canLogin, canRegister }: any) {
                 {/* Hero: titolo animato, sottotitolo, bottoni centrati sotto */}
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-24 text-center">
                     <div className="relative inline-block">
-                        <RotatingTorus className="absolute z-0 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[260px] sm:w-[560px] sm:h-[340px] lg:w-[700px] lg:h-[420px] opacity-45 pointer-events-none" />
+                        <RotatingCone3D className="absolute z-0 left-1/2 top-1/2 -translate-x-1/2 -translate-y-[30%] w-[480px] h-[480px] sm:w-[600px] sm:h-[600px] lg:w-[760px] lg:h-[760px] opacity-45 pointer-events-none" />
                         <h1 className="relative z-10 lp-titolo-base text-6xl sm:text-7xl lg:text-8xl font-bold leading-none tracking-tight">
                             {PAROLE.map((parola, pi) => (
                                 <span key={pi} className={parola.className}>
@@ -152,11 +152,11 @@ export default function Welcome({ canLogin, canRegister }: any) {
                     {canLogin && (
                         <div className={`flex flex-row gap-3 sm:gap-4 justify-center mt-10 transition-all duration-1000 delay-700 ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}>
                             {canRegister && (
-                                <Link href="/register" className="border border-slate-600 hover:border-[#66AB93]/50 text-slate-300 hover:text-white px-5 sm:px-8 py-3 rounded-xl font-medium transition flex items-center gap-2 justify-center">
+                                <Link href="/register" className="bg-white/5 backdrop-blur-md border border-white/15 hover:border-[#66AB93]/50 hover:bg-white/10 text-slate-300 hover:text-white px-[15px] sm:px-[27px] py-[7px] rounded-xl font-medium transition-all duration-200 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 justify-center">
                                     Registrati
                                 </Link>
                             )}
-                            <Link href="/login" className="bg-gradient-to-r from-[#4FA39B] to-[#66AB93] hover:from-[#66AB93] hover:to-[#7CB08A] text-white px-5 sm:px-8 py-3 rounded-xl font-medium transition shadow-xl shadow-[#66AB93]/20 flex items-center gap-2 justify-center">
+                            <Link href="/login" className="bg-gradient-to-b from-[#5FB39F] to-[#4FA39B]/90 backdrop-blur-md border border-white/10 text-white px-[15px] sm:px-[27px] py-[7px] rounded-xl font-medium transition-all duration-200 shadow-[0_4px_14px_rgba(102,171,147,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] hover:shadow-[0_6px_20px_rgba(102,171,147,0.45),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-0.5 active:translate-y-0 flex items-center gap-2 justify-center">
                                 Accedi <ChevronRight className="h-5 w-5" />
                             </Link>
                         </div>

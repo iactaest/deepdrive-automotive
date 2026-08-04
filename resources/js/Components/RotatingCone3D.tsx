@@ -2,10 +2,11 @@ import { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 /**
- * Toro wireframe rotante, pensato come sfondo decorativo dietro al logo
- * (nessuna interazione: solo auto-rotazione a velocità media).
+ * Cono wireframe rotante (forma del marchio DeepBandi), pensato come sfondo
+ * decorativo dietro al logo/titolo (nessuna interazione: solo auto-rotazione
+ * a velocità media).
  */
-export default function RotatingTorus({ className = '' }: { className?: string }) {
+export default function RotatingCone3D({ className = '' }: { className?: string }) {
     const mountRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -30,21 +31,22 @@ export default function RotatingTorus({ className = '' }: { className?: string }
         const rimC = new THREE.PointLight(0x39e6d6, 60, 30); rimC.position.set(-3, -1, 2.5); scene.add(rimC);
         const rimM = new THREE.PointLight(0xff5db1, 60, 30); rimM.position.set(3, -2.5, -1.5); scene.add(rimM);
 
-        const geometry = new THREE.TorusGeometry(1.5, 0.5, 16, 80);
+        const geometry = new THREE.ConeGeometry(1.8, 2.6, 48, 24);
         const material = new THREE.MeshStandardMaterial({
             color: 0xaeb8ff, metalness: 0.85, roughness: 0.22,
             wireframe: true, transparent: true, opacity: 0.8,
         });
-        const torus = new THREE.Mesh(geometry, material);
-        scene.add(torus);
+        const cone = new THREE.Mesh(geometry, material);
+        cone.rotation.z = Math.PI; // apice verso il basso, come nel marchio
+        scene.add(cone);
 
         let frameId: number;
         const speed = 0.5; // velocità media
         const animate = () => {
             frameId = requestAnimationFrame(animate);
             if (!reduceMotion) {
-                torus.rotation.x += 0.002 + speed * 0.006;
-                torus.rotation.y += 0.004 + speed * 0.012;
+                cone.rotation.x += 0.002 + speed * 0.006;
+                cone.rotation.y += 0.004 + speed * 0.012;
             }
             renderer.render(scene, camera);
         };

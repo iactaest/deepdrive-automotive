@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useForm } from '@inertiajs/react';
 import { ChevronRight, Lock, Mail, Eye, EyeOff, Landmark } from 'lucide-react';
 import { publicUrl } from '@/lib/publicUrl';
-import RotatingTorus from '@/Components/RotatingTorus';
+import RotatingCone3D from '@/Components/RotatingCone3D';
 
 export default function Login({ status, canResetPassword }: any) {
     const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +35,7 @@ export default function Login({ status, canResetPassword }: any) {
 
                     {/* Logo */}
                     <div className="relative flex items-center justify-center mb-8 h-[160px]">
-                        <RotatingTorus className="absolute inset-0" />
+                        <RotatingCone3D className="absolute z-0 left-1/2 top-1/2 -translate-x-1/2 -translate-y-[15%] w-[260px] h-[260px] opacity-45 pointer-events-none" />
                         <img src={publicUrl('images/logo-deepbandi-chiaro.png')} alt="DeepBandi" className="relative z-10 h-[84px] w-auto" style={{ filter: 'drop-shadow(0 3px 4px rgba(0,0,0,.5)) drop-shadow(0 1px 0 rgba(255,255,255,.15))' }} />
                     </div>
 
@@ -108,7 +108,7 @@ export default function Login({ status, canResetPassword }: any) {
                         <button
                             type="submit"
                             disabled={processing}
-                            className="w-full bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white py-2.5 rounded-lg font-medium transition shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                            className="w-full bg-gradient-to-b from-emerald-500 to-green-600/90 backdrop-blur-md border border-white/10 text-white py-[5px] rounded-lg font-medium transition-all duration-200 shadow-[0_4px_14px_rgba(16,185,129,0.35),inset_0_1px_0_rgba(255,255,255,0.25)] hover:shadow-[0_6px_20px_rgba(16,185,129,0.45),inset_0_1px_0_rgba(255,255,255,0.3)] hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2"
                         >
                             {processing ? 'Caricamento...' : 'Accedi'}
                             <ChevronRight className="h-4 w-4" />
