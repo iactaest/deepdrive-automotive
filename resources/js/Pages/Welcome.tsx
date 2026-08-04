@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Link } from '@inertiajs/react';
 import { ChevronRight } from 'lucide-react';
 import { publicUrl } from '@/lib/publicUrl';
+import RotatingTorus from '@/Components/RotatingTorus';
 
 const CSS_TITOLO = `
 /* Stesso galleggiamento impercettibile del logo nel menu mobile (mb-float-logo2). */
@@ -117,7 +118,8 @@ export default function Welcome({ canLogin, canRegister }: any) {
                 {/* Hero: titolo animato, sottotitolo, bottoni centrati sotto */}
                 <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 sm:pt-20 pb-24 text-center">
                     <div className="relative inline-block">
-                        <h1 className="lp-titolo-base text-6xl sm:text-7xl lg:text-8xl font-bold leading-none tracking-tight">
+                        <RotatingTorus className="absolute z-0 left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[420px] h-[260px] sm:w-[560px] sm:h-[340px] lg:w-[700px] lg:h-[420px] opacity-45 pointer-events-none" />
+                        <h1 className="relative z-10 lp-titolo-base text-6xl sm:text-7xl lg:text-8xl font-bold leading-none tracking-tight">
                             {PAROLE.map((parola, pi) => (
                                 <span key={pi} className={parola.className}>
                                     {parola.testo.split('').map((ch, li) => {
@@ -131,7 +133,7 @@ export default function Welcome({ canLogin, canRegister }: any) {
                                 </span>
                             ))}
                         </h1>
-                        <div aria-hidden="true" className="lp-shimmer-layer select-none">
+                        <div aria-hidden="true" className="lp-shimmer-layer select-none z-20">
                             {PAROLE.map((parola, pi) => (
                                 <span
                                     key={pi}
